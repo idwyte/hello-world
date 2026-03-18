@@ -48,6 +48,15 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
+        {/* Service mini-game — hidden from tab bar, tab bar hidden while inside */}
+        <Tabs.Screen
+          name="service"
+          options={{
+            tabBarButton: () => null,
+            tabBarStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
       </Tabs>
     </GestureHandlerRootView>
   );

@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Station } from '../types/GameStateTypes';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { router } from 'expo-router';
+import { Station, ActiveService } from '../types/GameStateTypes';
 import { useGameStore } from '../store/gameStore';
 import { UI, SPACING, FONT, RADIUS } from '../constants/theme';
 import { SERVICES } from '../data/services';
@@ -10,13 +11,31 @@ interface Props {
 }
 
 export const StationSlot = ({ station }: Props) => {
-  const { activeCustomers, staff } = useGameStore();
+  const { activeCustomers, staff, activeService, setActiveService, setServicePhase } = useGameStore();
 
   const customer = activeCustomers.find((c) => c.stationId === station.id);
   const assignedStaff = staff.find((m) => m.assignedStationId === station.id);
   const service = customer ? SERVICES[customer.requestedServiceId] : null;
 
   const tierLabel = ['Basic', 'Comfort', 'VIP'][station.tier - 1];
+
+  const canDIY = !!customer && !assignedStaff && !activeService;
+
+  const handleDIY = () => {
+    if (!customer) return;
+    const newService: ActiveService = {
+      customerId: customer.id,
+      stationId: station.id,
+      selectedShape: null,
+      selectedColor: null,
+      nailArtDesignId: null,
+      satisfactionScore: 0,
+      isPlayerControlled: true,
+    };
+    setActiveService(newService);
+    setServicePhase('shape_selection');
+    router.push('/service');
+  };
 
   return (
     <View style={[styles.slot, customer && styles.slotActive]}>
@@ -38,6 +57,12 @@ export const StationSlot = ({ station }: Props) => {
             />
           </View>
           <Text style={styles.progressText}>{Math.round(station.serviceProgress)}%</Text>
+
+          {canDIY && (
+            <TouchableOpacity style={styles.diyBtn} onPress={handleDIY} activeOpacity={0.8}>
+              <Text style={styles.diyBtnText}>Do It Yourself 💅</Text>
+            </TouchableOpacity>
+          )}
         </>
       ) : (
         <View style={styles.emptySlot}>
@@ -108,4 +133,13 @@ const styles = StyleSheet.create({
   emptyText:    { fontSize: FONT.sm, color: UI.textMuted },
   tapHint:      { fontSize: FONT.xs, color: UI.textMuted, textAlign: 'center', marginTop: SPACING.xs },
   staffBadge:   { fontSize: FONT.xs, color: UI.textSecondary, marginTop: SPACING.xs },
+  diyBtn: {
+    marginTop: SPACING.sm,
+    backgroundColor: UI.btnActive,
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+    alignItems: 'center',
+  },
+  diyBtnText: { fontSize: FONT.xs, fontWeight: '700', color: UI.btnText },
 });

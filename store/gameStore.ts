@@ -68,6 +68,7 @@ interface GameState {
 
   setActiveService: (service: ActiveService | null) => void;
   setServicePhase: (phase: ServicePhase) => void;
+  finalizePlayerService: (stationId: string, earnings: number, tip: number) => void;
   purchaseUpgrade: (upgradeId: string) => void;
   unlockService: (serviceId: ServiceId) => void;
   completeTutorial: () => void;
@@ -227,6 +228,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   setActiveService: (service) => set({ activeService: service }),
 
   setServicePhase: (phase) => set({ servicePhase: phase }),
+
+  finalizePlayerService: (stationId, earnings, tip) => {
+    get().completeService(stationId, earnings, tip);
+    get().incrementServicesCompletedToday();
+    set({ activeService: null, servicePhase: 'idle' });
+  },
 
   purchaseUpgrade: (upgradeId) =>
     set((s) => ({

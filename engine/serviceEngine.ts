@@ -2,19 +2,22 @@ import { useGameStore } from '../store/gameStore';
 import { useOwnerStore } from '../store/ownerStore';
 import { SERVICES } from '../data/services';
 import { NailShape, ColorFamily, NailColorSelection } from '../types/NailTypes';
-import { NAIL_COLORS } from '../data/nailColors';
+import { getColorsByCollection } from '../data/nailColors';
 import { computeModifiers } from './traitEngine';
 import { postReview } from './reviewEngine';
 
 // Tick all active stations forward
 export const tickServiceProgress = () => {
-  const { stations, staff, completeService, activeCustomers, servicesCompletedToday, incrementServicesCompletedToday } =
+  const { stations, staff, completeService, activeCustomers, activeService,
+    servicesCompletedToday, incrementServicesCompletedToday } =
     useGameStore.getState();
   const ownerProfile = useOwnerStore.getState().profile;
   const mods = computeModifiers(ownerProfile?.traits ?? []);
 
   stations.forEach((station) => {
     if (!station.activeCustomerId) return;
+    // Player-controlled stations are managed by the service mini-game screen
+    if (activeService?.isPlayerControlled && activeService.stationId === station.id) return;
 
     const customer = activeCustomers.find((c) => c.id === station.activeCustomerId);
     if (!customer) return;
@@ -77,7 +80,8 @@ export const calculateSatisfaction = (
   }
 
   if (selectedColor) {
-    const color = NAIL_COLORS[selectedColor.colorIndex];
+    const colors = getColorsByCollection(selectedColor.collectionId);
+    const color = colors[selectedColor.colorIndex];
     if (color && color.family === preferredFamily) score += 15;
   }
 
