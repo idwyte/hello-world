@@ -4,6 +4,7 @@ import { OwnerProfile } from '../types/OwnerTypes';
 interface OwnerState {
   profile: OwnerProfile | null;
   isOnboarded: boolean;
+  hydrated: boolean;        // true after AsyncStorage load attempt completes
   setProfile: (profile: OwnerProfile) => void;
   updateProfile: (partial: Partial<OwnerProfile>) => void;
   resetProfile: () => void;
@@ -42,6 +43,7 @@ const DEFAULT_PROFILE: Partial<OwnerProfile> = {
 export const useOwnerStore = create<OwnerState>((set) => ({
   profile: null,
   isOnboarded: false,
+  hydrated: false,
 
   setProfile: (profile) => set({ profile, isOnboarded: true }),
 
@@ -52,5 +54,5 @@ export const useOwnerStore = create<OwnerState>((set) => ({
         : ({ ...DEFAULT_PROFILE, ...partial } as OwnerProfile),
     })),
 
-  resetProfile: () => set({ profile: null, isOnboarded: false }),
+  resetProfile: () => set({ profile: null, isOnboarded: false, hydrated: true }),
 }));

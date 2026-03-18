@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Redirect } from 'expo-router';
 import { useGameStore } from '../store/gameStore';
 import { useOwnerStore } from '../store/ownerStore';
 import { useGameLoop } from '../hooks/useGameLoop';
@@ -13,6 +14,12 @@ import { UI, SPACING, FONT, RADIUS } from '../constants/theme';
 
 export default function ShopFloorScreen() {
   useGameLoop();
+
+  const { hydrated, isOnboarded } = useOwnerStore();
+
+  // Wait for AsyncStorage load before deciding; redirect to onboarding if new player
+  if (!hydrated) return null;
+  if (!isOnboarded) return <Redirect href="/onboarding/name" />;
 
   const { stations, waitingCustomers, isDayActive, startDay, reviews, tutorialComplete } =
     useGameStore();

@@ -39,6 +39,15 @@ export default function RootLayout() {
           name="stats"
           options={{ title: 'Stats', tabBarLabel: 'Stats' }}
         />
+        {/* Onboarding group — hidden from tab bar, tab bar hidden while inside */}
+        <Tabs.Screen
+          name="onboarding"
+          options={{
+            tabBarButton: () => null,
+            tabBarStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
       </Tabs>
     </GestureHandlerRootView>
   );

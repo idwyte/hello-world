@@ -18,7 +18,9 @@ export const useSaveLoad = () => {
 
         if (ownerRaw) {
           const ownerData = JSON.parse(ownerRaw);
-          useOwnerStore.setState({ profile: ownerData, isOnboarded: true });
+          useOwnerStore.setState({ profile: ownerData, isOnboarded: true, hydrated: true });
+        } else {
+          useOwnerStore.setState({ hydrated: true });
         }
 
         if (gameRaw) {
@@ -27,6 +29,7 @@ export const useSaveLoad = () => {
         }
       } catch (e) {
         console.warn('Failed to load saved game:', e);
+        useOwnerStore.setState({ hydrated: true });
       }
     };
 
