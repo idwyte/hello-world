@@ -8,23 +8,25 @@ import { OnboardingShell } from '../../components/character/OnboardingShell';
 import { useOwnerStore } from '../../store/ownerStore';
 import { useGameStore } from '../../store/gameStore';
 import { SHOP_VIBE_OPTIONS } from '../../data/characterOptions';
-import { ShopVibe } from '../../types/OwnerTypes';
+import { ShopVibe, OwnerProfile } from '../../types/OwnerTypes';
 import { getStartingBonus } from '../../engine/traitEngine';
 import { UI, FONT, SPACING, RADIUS } from '../../constants/theme';
 
 export default function ShopScreen() {
   const profile       = useOwnerStore((s) => s.profile);
-  const updateProfile = useOwnerStore((s) => s.updateProfile);
   const setProfile    = useOwnerStore((s) => s.setProfile);
 
   const [shopName, setShopName] = useState(profile?.shopName ?? '');
   const shopVibe = (profile?.shopVibe ?? 'warm_cozy') as ShopVibe;
+  const [submitting, setSubmitting] = useState(false);
 
-  const canOpen = shopName.trim().length > 0;
+  const canOpen = shopName.trim().length > 0 && !submitting;
 
   const handleOpen = () => {
-    updateProfile({ shopName: shopName.trim(), shopVibe });
-    const final = useOwnerStore.getState().profile!;
+    if (submitting || !profile) return;
+    setSubmitting(true);
+    // Build final profile inline — avoids race between updateProfile setState and getState
+    const final: OwnerProfile = { ...profile, shopName: shopName.trim(), shopVibe };
     setProfile(final);
     const bonus = getStartingBonus(final);
     useGameStore.getState().applyStartingBonus(bonus);

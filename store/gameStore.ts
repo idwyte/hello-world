@@ -36,6 +36,7 @@ interface GameState {
   tutorialComplete: boolean;
   servicesCompletedToday: number;
   showDayEndModal: boolean;
+  startingBonusApplied: boolean;
 
   // Active service (player-controlled)
   activeService: ActiveService | null;
@@ -100,6 +101,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   tutorialComplete: false,
   servicesCompletedToday: 0,
   showDayEndModal: false,
+  startingBonusApplied: false,
 
   activeService: null,
   servicePhase: 'idle',
@@ -141,10 +143,14 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   applyStartingBonus: (bonus) =>
-    set((s) => ({
-      money: s.money - 500 + bonus.money, // replace default 500 with backstory amount
-      reputation: s.reputation + bonus.reputation,
-    })),
+    set((s) => {
+      if (s.startingBonusApplied) return s;
+      return {
+        money: s.money - 500 + bonus.money, // replace default 500 with backstory amount
+        reputation: Math.min(100, s.reputation + bonus.reputation),
+        startingBonusApplied: true,
+      };
+    }),
 
   incrementServicesCompletedToday: () =>
     set((s) => ({ servicesCompletedToday: s.servicesCompletedToday + 1 })),
