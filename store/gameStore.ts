@@ -12,6 +12,7 @@ interface GameState {
   gameTick: number;
   totalEarnings: number;
   dayEarnings: number;
+  dayEarningsSnapshot: number;
 
   // Stations
   stations: Station[];
@@ -33,6 +34,8 @@ interface GameState {
   // Day state
   isDayActive: boolean;
   tutorialComplete: boolean;
+  servicesCompletedToday: number;
+  showDayEndModal: boolean;
 
   // Active service (player-controlled)
   activeService: ActiveService | null;
@@ -45,6 +48,9 @@ interface GameState {
   tick: () => void;
   startDay: () => void;
   endDay: () => void;
+  applyStartingBonus: (bonus: { money: number; reputation: number; staffPreHired: boolean }) => void;
+  incrementServicesCompletedToday: () => void;
+  setShowDayEndModal: (show: boolean) => void;
 
   addCustomerToQueue: (customer: CustomerConfig) => void;
   removeCustomerFromQueue: (customerId: string) => void;
@@ -79,6 +85,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   gameTick: 0,
   totalEarnings: 0,
   dayEarnings: 0,
+  dayEarningsSnapshot: 0,
 
   stations: INITIAL_STATIONS,
   staff: [],
@@ -91,6 +98,8 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   isDayActive: false,
   tutorialComplete: false,
+  servicesCompletedToday: 0,
+  showDayEndModal: false,
 
   activeService: null,
   servicePhase: 'idle',
@@ -116,18 +125,31 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   tick: () => set((s) => ({ gameTick: s.gameTick + 1 })),
 
-  startDay: () => set({ isDayActive: true, dayEarnings: 0, gameTick: 0 }),
+  startDay: () => set({ isDayActive: true, dayEarnings: 0, gameTick: 0, servicesCompletedToday: 0 }),
 
   endDay: () => {
-    const { staff } = get();
+    const { staff, dayEarnings } = get();
     const totalWages = staff.reduce((sum, m) => sum + m.wage, 0);
     set((s) => ({
       isDayActive: false,
       money: s.money - totalWages,
       day: s.day + 1,
       waitingCustomers: [],
+      dayEarningsSnapshot: dayEarnings,
+      showDayEndModal: true,
     }));
   },
+
+  applyStartingBonus: (bonus) =>
+    set((s) => ({
+      money: s.money - 500 + bonus.money, // replace default 500 with backstory amount
+      reputation: s.reputation + bonus.reputation,
+    })),
+
+  incrementServicesCompletedToday: () =>
+    set((s) => ({ servicesCompletedToday: s.servicesCompletedToday + 1 })),
+
+  setShowDayEndModal: (show) => set({ showDayEndModal: show }),
 
   addCustomerToQueue: (customer) =>
     set((s) => ({ waitingCustomers: [...s.waitingCustomers, customer] })),

@@ -5,12 +5,13 @@ import { satisfactionToReview, satisfactionToRepChange } from './serviceEngine';
 export const postReview = (
   customerId: string,
   customerName: string,
-  satisfactionScore: number
+  satisfactionScore: number,
+  extraRep = 0
 ) => {
   const { addReview, addReputation, day } = useGameStore.getState();
 
   const { text, stars } = satisfactionToReview(satisfactionScore, customerName);
-  const repChange = satisfactionToRepChange(satisfactionScore);
+  const repChange = satisfactionToRepChange(satisfactionScore) + extraRep;
 
   const review: Review = {
     id: `review_${Date.now()}`,

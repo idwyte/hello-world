@@ -1,21 +1,27 @@
 import { useGameStore } from '../store/gameStore';
+import { useOwnerStore } from '../store/ownerStore';
 import { spawnCustomer } from './customerSpawner';
+import { computeModifiers } from './traitEngine';
 
 const MAX_WAITING = 4;
 
 // Called every tick to decrement patience for waiting customers
 export const tickCustomerPatience = () => {
   const { waitingCustomers, removeCustomerFromQueue, addReputation } = useGameStore.getState();
+  const ownerProfile = useOwnerStore.getState().profile;
+  const mods = computeModifiers(ownerProfile?.traits ?? []);
+  // Higher multiplier = customer stays longer = smaller patience decrement per tick
+  const decrement = 1 / Math.max(0.1, mods.customerPatienceMultiplier);
 
   waitingCustomers.forEach((customer) => {
-    if (customer.patience <= 1) {
+    if (customer.patience <= decrement) {
       // Customer walks out
       removeCustomerFromQueue(customer.id);
       addReputation(-2);
     } else {
       useGameStore.setState((s) => ({
         waitingCustomers: s.waitingCustomers.map((c) =>
-          c.id === customer.id ? { ...c, patience: c.patience - 1 } : c
+          c.id === customer.id ? { ...c, patience: c.patience - decrement } : c
         ),
       }));
     }

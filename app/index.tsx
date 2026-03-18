@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect } from 'expo-router';
 import { useGameStore } from '../store/gameStore';
@@ -21,13 +21,33 @@ export default function ShopFloorScreen() {
   if (!hydrated) return null;
   if (!isOnboarded) return <Redirect href="/onboarding/name" />;
 
-  const { stations, waitingCustomers, isDayActive, startDay, reviews, tutorialComplete } =
-    useGameStore();
+  const {
+    stations, waitingCustomers, isDayActive, startDay, reviews, tutorialComplete,
+    showDayEndModal, setShowDayEndModal, dayEarningsSnapshot, day,
+  } = useGameStore();
   const { profile } = useOwnerStore();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <HUD />
+
+      {/* End-of-day summary modal */}
+      <Modal visible={showDayEndModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Day {day - 1} Complete!</Text>
+            <Text style={styles.modalEarnings}>
+              Earnings: ${dayEarningsSnapshot.toFixed(0)}
+            </Text>
+            <TouchableOpacity
+              style={styles.modalBtn}
+              onPress={() => setShowDayEndModal(false)}
+            >
+              <Text style={styles.modalBtnText}>Start Day {day}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Shop name */}
@@ -110,6 +130,41 @@ const styles = StyleSheet.create({
   openBtnText: {
     color: UI.btnText,
     fontSize: FONT.lg,
+    fontWeight: '700',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCard: {
+    backgroundColor: '#FAF3E0',
+    borderRadius: RADIUS.lg,
+    padding: SPACING.xl,
+    width: '80%',
+    alignItems: 'center',
+    gap: SPACING.md,
+  },
+  modalTitle: {
+    fontSize: FONT.xl,
+    fontWeight: '700',
+    color: UI.textPrimary,
+  },
+  modalEarnings: {
+    fontSize: FONT.lg,
+    color: UI.textSecondary,
+  },
+  modalBtn: {
+    backgroundColor: UI.btnActive,
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.xl,
+    marginTop: SPACING.sm,
+  },
+  modalBtnText: {
+    color: UI.btnText,
+    fontSize: FONT.md,
     fontWeight: '700',
   },
 });

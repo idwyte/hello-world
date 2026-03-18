@@ -6,8 +6,10 @@ import {
 import { router } from 'expo-router';
 import { OnboardingShell } from '../../components/character/OnboardingShell';
 import { useOwnerStore } from '../../store/ownerStore';
+import { useGameStore } from '../../store/gameStore';
 import { SHOP_VIBE_OPTIONS } from '../../data/characterOptions';
 import { ShopVibe } from '../../types/OwnerTypes';
+import { getStartingBonus } from '../../engine/traitEngine';
 import { UI, FONT, SPACING, RADIUS } from '../../constants/theme';
 
 export default function ShopScreen() {
@@ -24,6 +26,8 @@ export default function ShopScreen() {
     updateProfile({ shopName: shopName.trim(), shopVibe });
     const final = useOwnerStore.getState().profile!;
     setProfile(final);
+    const bonus = getStartingBonus(final);
+    useGameStore.getState().applyStartingBonus(bonus);
     router.replace('/');
   };
 

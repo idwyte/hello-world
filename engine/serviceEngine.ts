@@ -1,13 +1,17 @@
 import { useGameStore } from '../store/gameStore';
+import { useOwnerStore } from '../store/ownerStore';
 import { SERVICES } from '../data/services';
 import { NailShape, ColorFamily, NailColorSelection } from '../types/NailTypes';
 import { NAIL_COLORS } from '../data/nailColors';
-
-const TICKS_PER_PROGRESS_UNIT = 1;
+import { computeModifiers } from './traitEngine';
+import { postReview } from './reviewEngine';
 
 // Tick all active stations forward
 export const tickServiceProgress = () => {
-  const { stations, staff, completeService, activeCustomers } = useGameStore.getState();
+  const { stations, staff, completeService, activeCustomers, servicesCompletedToday, incrementServicesCompletedToday } =
+    useGameStore.getState();
+  const ownerProfile = useOwnerStore.getState().profile;
+  const mods = computeModifiers(ownerProfile?.traits ?? []);
 
   stations.forEach((station) => {
     if (!station.activeCustomerId) return;
@@ -22,13 +26,27 @@ export const tickServiceProgress = () => {
       ? 1 + (assignedStaff.skillLevel - 1) * 0.15 + (station.tier - 1) * 0.2
       : 0.4; // Player not assigned = slower auto progress
 
-    const progressPerTick = (100 / service.durationTicks) * speedMultiplier;
+    const effectiveDuration = service.durationTicks * mods.serviceDurationMultiplier;
+    const progressPerTick = (100 / effectiveDuration) * speedMultiplier;
     const newProgress = station.serviceProgress + progressPerTick;
 
     if (newProgress >= 100) {
-      const earnings = calculateEarnings(customer.requestedServiceId, assignedStaff?.skillLevel ?? 1);
-      const tip = customer.tip;
+      let earnings = calculateEarnings(customer.requestedServiceId, assignedStaff?.skillLevel ?? 1);
+      if (servicesCompletedToday === 0) earnings += mods.firstServiceBonusPerDay;
+      const tip = Math.round(customer.tip * mods.tipMultiplier);
+
       completeService(station.id, earnings, tip);
+      incrementServicesCompletedToday();
+
+      // Auto satisfaction: staff-served, no explicit shape/color chosen by player
+      const satisfaction = calculateSatisfaction(
+        customer.preferredNailShape,
+        null,
+        customer.preferredColorFamily,
+        null,
+        false
+      );
+      postReview(customer.id, customer.name, satisfaction, mods.repGainPerInteraction);
     } else {
       useGameStore.setState((s) => ({
         stations: s.stations.map((st) =>
