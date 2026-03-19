@@ -10,12 +10,8 @@ import {
   CLOTHING_BOTTOM_COMPONENTS,
 } from './characterIndex';
 
-// FaceFeatures is imported only when the generated file exists.
-// Uncomment once `node scripts/generate-character-assets.js --batch=face` has run.
-// import { FaceFeatures } from './layers/FaceFeatures';
-
-// Accessories is imported only when the generated file exists.
-// import { Accessories } from './layers/Accessories';
+import { FaceFeatures } from './layers/FaceFeatures';
+import { Accessories } from './layers/Accessories';
 
 interface Props {
   config: Pick<
@@ -132,21 +128,7 @@ export const CharacterAvatar = ({
       )}
 
       {/* ── LAYER 5: Face features ─────────────────────────────────────── */}
-      {/* Uncomment when generated: */}
-      {/* <FaceFeatures expression={config.expression} width={width} height={height} /> */}
-      <Svg width={width} height={height} viewBox="0 0 48 64" style={{ position: 'absolute' }}>
-        {/* Placeholder eyes */}
-        <Circle cx="20" cy="15" r="1.5" fill="#3D2B1F" />
-        <Circle cx="28" cy="15" r="1.5" fill="#3D2B1F" />
-        {/* Placeholder mouth — shape varies by expression */}
-        {(config.expression === 'happy' || config.expression === 'delighted' || config.expression === 'excited') ? (
-          <Ellipse cx="24" cy="19" rx="3" ry="1.5" fill="#C87070" />
-        ) : (config.expression === 'impatient' || config.expression === 'disappointed') ? (
-          <Rect x="21" y="19" width="6" height="1.5" rx="1" fill="#C87070" />
-        ) : (
-          <Ellipse cx="24" cy="19" rx="2.5" ry="1" fill="#C87070" />
-        )}
-      </Svg>
+      <FaceFeatures expression={config.expression} width={width} height={height} />
 
       {/* ── LAYER 6: Hair front ────────────────────────────────────────── */}
       {HairFrontComp ? (
@@ -160,10 +142,9 @@ export const CharacterAvatar = ({
       )}
 
       {/* ── LAYER 7: Accessories ──────────────────────────────────────── */}
-      {/* Uncomment when generated: */}
-      {/* {config.accessories.length > 0 && (
+      {config.accessories.length > 0 && (
         <Accessories items={config.accessories} width={width} height={height} />
-      )} */}
+      )}
 
     </View>
   );
