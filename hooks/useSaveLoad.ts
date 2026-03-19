@@ -40,6 +40,7 @@ export const useSaveLoad = () => {
             purchasedUpgradeIds:Array.isArray(raw.purchasedUpgradeIds)? raw.purchasedUpgradeIds: undefined,
             tutorialComplete:   Boolean(raw.tutorialComplete),
             startingBonusApplied: Boolean(raw.startingBonusApplied),
+            vipEverUnlocked:   Boolean(raw.vipEverUnlocked),
           };
           // Only apply defined fields
           useGameStore.setState(
@@ -72,6 +73,7 @@ export const useSaveLoad = () => {
         purchasedUpgradeIds: state.purchasedUpgradeIds,
         tutorialComplete: state.tutorialComplete,
         startingBonusApplied: state.startingBonusApplied,
+        vipEverUnlocked: state.vipEverUnlocked,
       };
       AsyncStorage.setItem(GAME_KEY, JSON.stringify(toSave)).catch(() => null);
     });

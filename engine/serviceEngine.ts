@@ -5,6 +5,7 @@ import { NailShape, ColorFamily, NailColorSelection } from '../types/NailTypes';
 import { getColorsByCollection } from '../data/nailColors';
 import { computeModifiers } from './traitEngine';
 import { postReview } from './reviewEngine';
+import { moodSpeedFactor } from './staffEngine';
 
 // Tick all active stations forward
 export const tickServiceProgress = () => {
@@ -26,8 +27,10 @@ export const tickServiceProgress = () => {
     const assignedStaff = staff.find((m) => m.assignedStationId === station.id);
 
     const speedMultiplier = assignedStaff
-      ? 1 + (assignedStaff.skillLevel - 1) * 0.15 + (station.tier - 1) * 0.2
-      : 0.4; // Player not assigned = slower auto progress
+      ? (1 + (assignedStaff.skillLevel - 1) * 0.15 + (station.tier - 1) * 0.2)
+        * moodSpeedFactor(assignedStaff.mood)
+        * mods.staffSpeedMultiplier
+      : 0.4; // No assigned staff = slower auto progress
 
     const effectiveDuration = service.durationTicks * mods.serviceDurationMultiplier;
     const progressPerTick = (100 / effectiveDuration) * speedMultiplier;

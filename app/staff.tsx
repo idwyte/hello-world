@@ -75,8 +75,17 @@ export default function StaffScreen() {
                   <Text style={styles.actionBtnText}>{st.id.replace('_', ' ')}</Text>
                 </TouchableOpacity>
               ))}
-              {!member.isOnBreak && (
-                <TouchableOpacity style={styles.breakBtn} onPress={() => handleBreak(member.id)}>
+              {member.isOnBreak ? (
+                <View style={[styles.breakBtn, { opacity: 0.6 }]}>
+                  <Text style={styles.actionBtnText}>
+                    On Break ({member.breakTicksRemaining}s)
+                  </Text>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.breakBtn, member.mood >= 90 && { opacity: 0.4 }]}
+                  onPress={() => member.mood < 90 && handleBreak(member.id)}
+                >
                   <Text style={styles.actionBtnText}>Give Break</Text>
                 </TouchableOpacity>
               )}

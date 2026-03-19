@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { tickCustomerPatience, maybeSpawnCustomer } from '../engine/customerEngine';
 import { tickServiceProgress } from '../engine/serviceEngine';
+import { tickStaffMood } from '../engine/staffEngine';
 
 const DAY_LENGTH_TICKS = 240;
 const TICK_INTERVAL_MS = 1000;
@@ -21,6 +22,7 @@ export const useGameLoop = () => {
       tickCustomerPatience();
       maybeSpawnCustomer(gameTick + 1, reputation);
       tickServiceProgress();
+      tickStaffMood();
 
       if (gameTick + 1 >= DAY_LENGTH_TICKS) {
         endDay();

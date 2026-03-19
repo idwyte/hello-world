@@ -24,12 +24,29 @@ export default function ShopFloorScreen() {
   const {
     stations, waitingCustomers, isDayActive, startDay, reviews, tutorialComplete,
     showDayEndModal, setShowDayEndModal, dayEarningsSnapshot, day,
+    vipUnlocked, dismissVipUnlock,
   } = useGameStore();
   const { profile } = useOwnerStore();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <HUD />
+
+      {/* VIP unlock toast — fires once when reputation first crosses 50 */}
+      <Modal visible={vipUnlocked} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>VIP Clients Unlocked! 💎</Text>
+            <Text style={styles.modalEarnings}>
+              Your reputation hit 50!{'\n'}
+              VIP clients tip big — but expect perfection.
+            </Text>
+            <TouchableOpacity style={styles.modalBtn} onPress={dismissVipUnlock}>
+              <Text style={styles.modalBtnText}>Got it!</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* End-of-day summary modal */}
       <Modal visible={showDayEndModal} transparent animationType="fade">

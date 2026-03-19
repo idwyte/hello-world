@@ -38,6 +38,10 @@ interface GameState {
   showDayEndModal: boolean;
   startingBonusApplied: boolean;
 
+  // VIP unlock
+  vipUnlocked: boolean;     // transient: true while the unlock toast should show
+  vipEverUnlocked: boolean; // permanent: prevents re-triggering after dismiss
+
   // Active service (player-controlled)
   activeService: ActiveService | null;
   servicePhase: ServicePhase;
@@ -69,6 +73,7 @@ interface GameState {
   setActiveService: (service: ActiveService | null) => void;
   setServicePhase: (phase: ServicePhase) => void;
   finalizePlayerService: (stationId: string, earnings: number, tip: number) => void;
+  dismissVipUnlock: () => void;
   purchaseUpgrade: (upgradeId: string) => void;
   unlockService: (serviceId: ServiceId) => void;
   completeTutorial: () => void;
@@ -104,6 +109,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   showDayEndModal: false,
   startingBonusApplied: false,
 
+  vipUnlocked: false,
+  vipEverUnlocked: false,
+
   activeService: null,
   servicePhase: 'idle',
 
@@ -122,9 +130,15 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   addReputation: (amount) =>
-    set((s) => ({
-      reputation: Math.max(0, Math.min(100, s.reputation + amount)),
-    })),
+    set((s) => {
+      const newRep = Math.max(0, Math.min(100, s.reputation + amount));
+      const crossedVipThreshold = !s.vipEverUnlocked && s.reputation < 50 && newRep >= 50;
+      return {
+        reputation: newRep,
+        vipUnlocked: crossedVipThreshold ? true : s.vipUnlocked,
+        vipEverUnlocked: crossedVipThreshold ? true : s.vipEverUnlocked,
+      };
+    }),
 
   tick: () => set((s) => ({ gameTick: s.gameTick + 1 })),
 
@@ -234,6 +248,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     get().incrementServicesCompletedToday();
     set({ activeService: null, servicePhase: 'idle' });
   },
+
+  dismissVipUnlock: () => set({ vipUnlocked: false }),
 
   purchaseUpgrade: (upgradeId) =>
     set((s) => ({

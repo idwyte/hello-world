@@ -1,6 +1,7 @@
 import { CustomerConfig, BodyArchetype, SkinToneId, HairStyleId, CustomerType } from '../types/CustomerTypes';
 import { NailShape, ColorFamily, ServiceId } from '../types/NailTypes';
 import { randomCustomerName } from '../data/staffNames';
+import { SERVICES } from '../data/services';
 
 const SKIN_TONE_IDS: SkinToneId[] = [
   'tone01','tone02','tone03','tone04','tone05','tone06',
@@ -26,6 +27,11 @@ const COLOR_FAMILIES: ColorFamily[] = ['nudes','pinks','reds','corals','purples'
 const BODY_ARCHETYPES: BodyArchetype[] = ['A','B','C','D'];
 const SERVICE_IDS: ServiceId[] = ['basic_manicure'];
 
+// VIP customers have pickier preferences and higher tips
+const VIP_NAIL_SHAPES: NailShape[] = ['oval', 'almond', 'coffin', 'stiletto', 'ballerina'];
+const VIP_COLOR_FAMILIES: ColorFamily[] = ['pinks', 'reds', 'purples', 'metallics', 'darks'];
+const VIP_MIN_SERVICE_PRICE = 25;
+
 const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 const randInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 
@@ -35,15 +41,29 @@ export const spawnCustomer = (
   isTutorial = false
 ): CustomerConfig => {
   const id = `customer_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-  const maxPatience = isTutorial ? 999 : randInt(60, 180);
+
+  const isVip = !isTutorial && reputation >= 50 && Math.random() < 0.15;
+  const type: CustomerType = isTutorial ? 'tutorial' : isVip ? 'vip' : 'regular';
+
+  const maxPatience = isTutorial ? 999 : isVip ? randInt(40, 80) : randInt(60, 180);
+  const tip = isTutorial ? 20 : isVip ? randInt(20, 40) : randInt(0, 15);
 
   const clothingTopColor = pick(CLOTHING_COLORS);
-  const preferredColorFamily = deriveColorFamily(clothingTopColor);
+
+  // VIPs have narrower, premium hidden preferences — harder to match but more rewarding
+  const preferredNailShape = isVip ? pick(VIP_NAIL_SHAPES) : pick(NAIL_SHAPES);
+  const preferredColorFamily = isVip ? pick(VIP_COLOR_FAMILIES) : deriveColorFamily(clothingTopColor);
+
+  // VIPs prefer pricier services when available
+  const vipEligibleServices = isVip
+    ? availableServices.filter((sid) => (SERVICES[sid]?.basePrice ?? 0) >= VIP_MIN_SERVICE_PRICE)
+    : [];
+  const servicePool = vipEligibleServices.length > 0 ? vipEligibleServices : availableServices;
 
   return {
     id,
     name: isTutorial ? 'Maya' : randomCustomerName(),
-    type: isTutorial ? 'tutorial' : reputation >= 50 && Math.random() < 0.15 ? 'vip' : 'regular',
+    type,
     bodyArchetype: pick(BODY_ARCHETYPES),
     skinTone: pick(SKIN_TONE_IDS),
     hairStyle: pick(HAIR_STYLE_IDS),
@@ -53,12 +73,12 @@ export const spawnCustomer = (
     clothingBottomStyle: randInt(1, 10),
     clothingBottomColor: pick(CLOTHING_COLORS),
     accessories: Math.random() < 0.4 ? [pick(['glasses', 'studs', 'hoops'])] : [],
-    preferredNailShape: pick(NAIL_SHAPES),
+    preferredNailShape,
     preferredColorFamily,
-    requestedServiceId: pick(availableServices),
+    requestedServiceId: pick(servicePool),
     patience: maxPatience,
     maxPatience,
-    tip: isTutorial ? 20 : randInt(0, 15),
+    tip,
     expression: 'neutral',
     animationState: 'WALK_IN',
     stationId: null,

@@ -2,6 +2,13 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Station, ActiveService } from '../types/GameStateTypes';
+
+const moodEmoji = (mood: number): string => {
+  if (mood >= 70) return '😊';
+  if (mood >= 40) return '😐';
+  if (mood >= 15) return '😓';
+  return '😩';
+};
 import { useGameStore } from '../store/gameStore';
 import { UI, SPACING, FONT, RADIUS } from '../constants/theme';
 import { SERVICES } from '../data/services';
@@ -72,7 +79,10 @@ export const StationSlot = ({ station }: Props) => {
       )}
 
       {assignedStaff && (
-        <Text style={styles.staffBadge}>👩 {assignedStaff.name}</Text>
+        <Text style={styles.staffBadge}>
+          {moodEmoji(assignedStaff.mood)} {assignedStaff.name}
+          {assignedStaff.isOnBreak ? ' (break)' : ''}
+        </Text>
       )}
     </View>
   );
