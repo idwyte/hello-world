@@ -25,7 +25,7 @@ const CLOTHING_COLORS = [
 const NAIL_SHAPES: NailShape[] = ['square','round','oval','almond','coffin','stiletto','ballerina','flare'];
 const COLOR_FAMILIES: ColorFamily[] = ['nudes','pinks','reds','corals','purples','blues','greens','darks','brights','metallics'];
 const BODY_ARCHETYPES: BodyArchetype[] = ['A','B','C','D'];
-const SERVICE_IDS: ServiceId[] = ['basic_manicure'];
+const FALLBACK_SERVICES: ServiceId[] = ['basic_manicure'];
 
 // VIP customers have pickier preferences and higher tips
 const VIP_NAIL_SHAPES: NailShape[] = ['oval', 'almond', 'coffin', 'stiletto', 'ballerina'];
@@ -58,7 +58,10 @@ export const spawnCustomer = (
   const vipEligibleServices = isVip
     ? availableServices.filter((sid) => (SERVICES[sid]?.basePrice ?? 0) >= VIP_MIN_SERVICE_PRICE)
     : [];
-  const servicePool = vipEligibleServices.length > 0 ? vipEligibleServices : availableServices;
+  const servicePool =
+    vipEligibleServices.length > 0 ? vipEligibleServices :
+    availableServices.length > 0   ? availableServices :
+    FALLBACK_SERVICES;
 
   return {
     id,

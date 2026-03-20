@@ -8,11 +8,13 @@ const MAX_WAITING = 4;
 
 // Called every tick to decrement patience for waiting customers
 export const tickCustomerPatience = () => {
-  const { waitingCustomers, removeCustomerFromQueue, addReputation } = useGameStore.getState();
+  const { waitingCustomers, removeCustomerFromQueue, addReputation, purchasedUpgradeIds } = useGameStore.getState();
   const ownerProfile = useOwnerStore.getState().profile;
   const mods = computeModifiers(ownerProfile?.traits ?? []);
+  // reading_corner upgrade adds +20% patience multiplier on top of trait modifiers
+  const upgradeBoost = purchasedUpgradeIds.includes('reading_corner') ? 1.2 : 1;
   // Higher multiplier = customer stays longer = smaller patience decrement per tick
-  const decrement = 1 / Math.max(0.1, mods.customerPatienceMultiplier);
+  const decrement = 1 / Math.max(0.1, mods.customerPatienceMultiplier * upgradeBoost);
 
   waitingCustomers.forEach((customer) => {
     const patiencePctBefore = (customer.patience / customer.maxPatience) * 100;

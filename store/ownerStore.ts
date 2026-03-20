@@ -45,7 +45,7 @@ export const useOwnerStore = create<OwnerState>((set) => ({
   isOnboarded: false,
   hydrated: false,
 
-  setProfile: (profile) => set({ profile, isOnboarded: true }),
+  setProfile: (profile) => set({ profile, isOnboarded: true, hydrated: true }),
 
   updateProfile: (partial) =>
     set((state) => ({

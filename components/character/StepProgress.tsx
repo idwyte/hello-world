@@ -16,7 +16,7 @@ export const StepProgress = ({ current, total, label }: Props) => (
           key={i}
           style={[
             styles.dot,
-            i < current ? styles.dotFilled : i === current - 1 ? styles.dotActive : styles.dotEmpty,
+            i === current - 1 ? styles.dotActive : i < current ? styles.dotFilled : styles.dotEmpty,
           ]}
         />
       ))}

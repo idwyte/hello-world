@@ -32,13 +32,12 @@ export default function ServiceScreen() {
 
   const customer = activeCustomers.find((c) => c.id === activeService?.customerId);
 
-  // Guard: bail if service was cleared or customer is gone
+  // Guard: bail if service was cleared or customer is gone (including mid-session)
   useEffect(() => {
     if (!activeService || !customer) {
       router.replace('/');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [activeService, customer]);
 
   // Applying phase: compute satisfaction after brief pause, then show complete
   useEffect(() => {

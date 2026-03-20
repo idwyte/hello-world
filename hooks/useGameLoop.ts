@@ -3,14 +3,13 @@ import { useGameStore } from '../store/gameStore';
 import { tickCustomerPatience, maybeSpawnCustomer } from '../engine/customerEngine';
 import { tickServiceProgress } from '../engine/serviceEngine';
 import { tickStaffMood } from '../engine/staffEngine';
-import { soundManager } from './useSound';
 
 const DAY_LENGTH_TICKS = 240;
 const TICK_INTERVAL_MS = 1000;
 
 export const useGameLoop = () => {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const { isDayActive, gameTick, reputation, tick, endDay, pruneOldReviews } = useGameStore();
+  const { isDayActive } = useGameStore();
 
   useEffect(() => {
     if (!isDayActive) {
@@ -19,6 +18,8 @@ export const useGameLoop = () => {
     }
 
     intervalRef.current = setInterval(() => {
+      // Read live state inside the callback to avoid stale closures
+      const { gameTick, reputation, tick, endDay, pruneOldReviews } = useGameStore.getState();
       tick();
       tickCustomerPatience();
       maybeSpawnCustomer(gameTick + 1, reputation);
@@ -26,8 +27,7 @@ export const useGameLoop = () => {
       tickStaffMood();
 
       if (gameTick + 1 >= DAY_LENGTH_TICKS) {
-        soundManager.play('day_end');
-        endDay();
+        endDay();       // endDay plays day_end sound internally
         pruneOldReviews();
       }
     }, TICK_INTERVAL_MS);

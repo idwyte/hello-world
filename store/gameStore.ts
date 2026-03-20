@@ -6,6 +6,7 @@ import { SERVICE_LIST } from '../data/services';
 import { soundManager } from '../hooks/useSound';
 import { computeModifiers } from '../engine/traitEngine';
 import { useOwnerStore } from './ownerStore';
+import { randomStaffName } from '../data/staffNames';
 
 interface GameState {
   // Economy
@@ -58,6 +59,8 @@ interface GameState {
   startDay: () => void;
   endDay: () => void;
   applyStartingBonus: (bonus: { money: number; reputation: number; staffPreHired: boolean }) => void;
+  addStation: () => void;
+  upgradeStation: (stationId: string, tier: number) => void;
   incrementServicesCompletedToday: () => void;
   setShowDayEndModal: (show: boolean) => void;
 
@@ -179,6 +182,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       money: s.money - totalWages,
       day: s.day + 1,
       waitingCustomers: [],
+      activeCustomers: [],
+      activeService: null,
+      servicePhase: 'idle',
+      stations: s.stations.map((st) => ({ ...st, activeCustomerId: null, serviceProgress: 0 })),
       dayEarningsSnapshot: dayEarnings,
       showDayEndModal: true,
     }));
@@ -187,12 +194,41 @@ export const useGameStore = create<GameState>((set, get) => ({
   applyStartingBonus: (bonus) =>
     set((s) => {
       if (s.startingBonusApplied) return s;
+      const preHiredStaff: StaffMember[] = bonus.staffPreHired
+        ? [{
+            id: `staff_prehired_${Date.now()}`,
+            name: randomStaffName(),
+            skillLevel: 2,
+            mood: 70,
+            assignedStationId: null,
+            wage: 30,
+            isOnBreak: false,
+            breakTicksRemaining: 0,
+          }]
+        : [];
       return {
         money: s.money - 500 + bonus.money, // replace default 500 with backstory amount
         reputation: Math.min(100, s.reputation + bonus.reputation),
+        staff: [...s.staff, ...preHiredStaff],
         startingBonusApplied: true,
       };
     }),
+
+  addStation: () =>
+    set((s) => {
+      if (s.stations.length >= 8) return s;
+      const newId = `station_${s.stations.length + 1}`;
+      return {
+        stations: [...s.stations, { id: newId, tier: 1, assignedStaffId: null, activeCustomerId: null, serviceProgress: 0 }],
+      };
+    }),
+
+  upgradeStation: (stationId, tier) =>
+    set((s) => ({
+      stations: s.stations.map((st) =>
+        st.id === stationId ? { ...st, tier: tier as 1 | 2 | 3 } : st
+      ),
+    })),
 
   incrementServicesCompletedToday: () =>
     set((s) => ({ servicesCompletedToday: s.servicesCompletedToday + 1 })),
@@ -263,7 +299,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   pruneOldReviews: () =>
     set((s) => ({
-      reviews: s.reviews.filter((r) => s.day - r.createdDay < 3),
+      reviews: s.reviews.filter((r) => s.day - r.createdDay <= 3),
     })),
 
   setActiveService: (service) => set({ activeService: service }),

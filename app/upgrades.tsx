@@ -7,8 +7,8 @@ import { UI, SPACING, FONT, RADIUS } from '../constants/theme';
 import { soundManager } from '../hooks/useSound';
 
 export default function UpgradesScreen() {
-  const { money, reputation, purchasedUpgradeIds, purchaseUpgrade, spendMoney, stations, unlockService } =
-    useGameStore();
+  const { money, reputation, purchasedUpgradeIds, purchaseUpgrade, spendMoney, stations,
+    unlockService, addStation, upgradeStation } = useGameStore();
 
   const handleBuy = (upgradeId: string, cost: number, effect: { type: string; value?: string | number }) => {
     if (!spendMoney(cost)) return;
@@ -17,6 +17,13 @@ export default function UpgradesScreen() {
 
     if (effect.type === 'unlock_nail_art') {
       unlockService('nail_art');
+    } else if (effect.type === 'add_station') {
+      addStation();
+    } else if (effect.type === 'upgrade_chair') {
+      // Upgrade the first station not already at the target tier
+      const targetTier = typeof effect.value === 'number' ? effect.value : 2;
+      const target = stations.find((st) => st.tier < targetTier);
+      if (target) upgradeStation(target.id, targetTier);
     }
   };
 

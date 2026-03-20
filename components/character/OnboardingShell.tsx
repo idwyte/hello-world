@@ -1,8 +1,9 @@
 import React from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, SafeAreaView, Platform,
+  StyleSheet, Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StepProgress } from './StepProgress';
 import { UI, FONT, SPACING, RADIUS } from '../../constants/theme';
 import { soundManager } from '../../hooks/useSound';
@@ -28,7 +29,7 @@ export const OnboardingShell = ({
   continueLabel = 'Continue',
   children,
 }: Props) => (
-  <SafeAreaView style={styles.safe}>
+  <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
     <View style={styles.header}>
       <StepProgress current={step} total={totalSteps} />
     </View>

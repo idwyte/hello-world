@@ -6,14 +6,16 @@ import { StaffMember } from '../types/GameStateTypes';
 import { UI, SPACING, FONT, RADIUS } from '../constants/theme';
 import { randomStaffName } from '../data/staffNames';
 import { soundManager } from '../hooks/useSound';
+import { computeModifiers } from '../engine/traitEngine';
+import { useOwnerStore } from '../store/ownerStore';
 
 const MAX_STAFF = 2;
 
-const generateStaffCandidate = (): StaffMember => ({
+const generateStaffCandidate = (skillBonus = 0, moodBonus = 0): StaffMember => ({
   id: `staff_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`,
   name: randomStaffName(),
-  skillLevel: Math.floor(Math.random() * 3) + 1,
-  mood: 75 + Math.floor(Math.random() * 15),
+  skillLevel: Math.min(5, Math.floor(Math.random() * 3) + 1 + skillBonus),
+  mood: Math.min(100, 75 + Math.floor(Math.random() * 15) + moodBonus),
   assignedStationId: null,
   wage: 30 + Math.floor(Math.random() * 3) * 10,
   isOnBreak: false,
@@ -23,9 +25,14 @@ const generateStaffCandidate = (): StaffMember => ({
 export default function StaffScreen() {
   const { staff, stations, hireStaff, updateStaff, money, spendMoney, purchasedUpgradeIds } =
     useGameStore();
+  const ownerProfile = useOwnerStore((s) => s.profile);
+  const mods = computeModifiers(ownerProfile?.traits ?? []);
 
   const maxStaff = purchasedUpgradeIds.includes('extra_staff_slot') ? 3 : MAX_STAFF;
-  const [candidates] = React.useState(() => [generateStaffCandidate(), generateStaffCandidate()]);
+  const [candidates] = React.useState(() => [
+    generateStaffCandidate(mods.staffStartSkillBonus, mods.startingMoodBonus),
+    generateStaffCandidate(mods.staffStartSkillBonus, mods.startingMoodBonus),
+  ]);
 
   const handleHire = (candidate: StaffMember) => {
     if (staff.length >= maxStaff) return;

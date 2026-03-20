@@ -15,18 +15,17 @@ import { UI, SPACING, FONT, RADIUS } from '../constants/theme';
 export default function ShopFloorScreen() {
   useGameLoop();
 
-  const { hydrated, isOnboarded } = useOwnerStore();
-
-  // Wait for AsyncStorage load before deciding; redirect to onboarding if new player
-  if (!hydrated) return null;
-  if (!isOnboarded) return <Redirect href="/onboarding/name" />;
-
+  // All hooks must be called unconditionally before any early returns
+  const { hydrated, isOnboarded, profile } = useOwnerStore();
   const {
     stations, waitingCustomers, isDayActive, startDay, reviews, tutorialComplete,
     showDayEndModal, setShowDayEndModal, dayEarningsSnapshot, day,
     vipUnlocked, dismissVipUnlock,
   } = useGameStore();
-  const { profile } = useOwnerStore();
+
+  // Wait for AsyncStorage load before deciding; redirect to onboarding if new player
+  if (!hydrated) return null;
+  if (!isOnboarded) return <Redirect href="/onboarding/name" />;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

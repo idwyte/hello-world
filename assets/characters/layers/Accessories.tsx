@@ -16,7 +16,7 @@ export const Accessories = ({ items, width = 48, height = 64 }: Props) => {
     <Svg width={width} height={height} viewBox="0 0 48 64" style={{ position: 'absolute' }}>
 
       {/* Stud earrings */}
-      {items.includes('earrings') && (
+      {(items.includes('studs') || items.includes('earrings')) && (
         <>
           <Circle cx="14.5" cy="17" r="1.2" fill={GOLD} />
           <Circle cx="33.5" cy="17" r="1.2" fill={GOLD} />

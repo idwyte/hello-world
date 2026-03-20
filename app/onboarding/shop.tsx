@@ -13,8 +13,9 @@ import { getStartingBonus } from '../../engine/traitEngine';
 import { UI, FONT, SPACING, RADIUS } from '../../constants/theme';
 
 export default function ShopScreen() {
-  const profile       = useOwnerStore((s) => s.profile);
-  const setProfile    = useOwnerStore((s) => s.setProfile);
+  const profile        = useOwnerStore((s) => s.profile);
+  const setProfile     = useOwnerStore((s) => s.setProfile);
+  const updateProfile  = useOwnerStore((s) => s.updateProfile);
 
   const [shopName, setShopName] = useState(profile?.shopName ?? '');
   const shopVibe = (profile?.shopVibe ?? 'warm_cozy') as ShopVibe;

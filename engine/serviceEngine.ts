@@ -39,7 +39,13 @@ export const tickServiceProgress = () => {
 
     if (newProgress >= 100) {
       let earnings = calculateEarnings(customer.requestedServiceId, assignedStaff?.skillLevel ?? 1);
-      if (servicesCompletedToday === 0) earnings += mods.firstServiceBonusPerDay;
+      // Hustler: first 2 services each day earn the bonus
+      if (servicesCompletedToday < 2) earnings += mods.firstServiceBonusPerDay;
+      // Introvert: first 60 ticks of the day earn +10%
+      const { gameTick } = useGameStore.getState();
+      if (mods.quietHoursBonus > 0 && gameTick < 60) {
+        earnings += Math.round(earnings * mods.quietHoursBonus);
+      }
       const tip = Math.round(customer.tip * mods.tipMultiplier);
 
       completeService(station.id, earnings, tip);
