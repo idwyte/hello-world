@@ -71,10 +71,11 @@ export const soundManager = {
     }
   },
 
-  async playLoop(id: SoundId) {
+  async playLoop(id: SoundId, volume = 1.0) {
     const sound = _sounds[id];
     if (!sound) return;
     try {
+      await sound.setVolumeAsync(volume);
       await sound.setIsLoopingAsync(true);
       await sound.playAsync();
     } catch {}

@@ -1,6 +1,15 @@
+import { useEffect } from 'react';
 import { Stack } from 'expo-router';
+import { soundManager } from '../../hooks/useSound';
 
 export default function OnboardingLayout() {
+  useEffect(() => {
+    soundManager.playLoop('salon_ambience', 0.35);
+    return () => {
+      soundManager.stop('salon_ambience');
+    };
+  }, []);
+
   return (
     <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
       <Stack.Screen name="name" />

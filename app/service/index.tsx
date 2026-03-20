@@ -14,6 +14,7 @@ import { ColorPicker } from '../../components/service/ColorPicker';
 import { NailArtPanel } from '../../components/service/NailArtPanel';
 import { ServiceSummary } from '../../components/service/ServiceSummary';
 import { UI, SPACING, FONT, RADIUS } from '../../constants/theme';
+import { soundManager } from '../../hooks/useSound';
 
 export default function ServiceScreen() {
   const {
@@ -42,6 +43,7 @@ export default function ServiceScreen() {
   // Applying phase: compute satisfaction after brief pause, then show complete
   useEffect(() => {
     if (servicePhase !== 'applying' || !activeService || !customer) return;
+    soundManager.play('uv_lamp');
 
     const timer = setTimeout(() => {
       const score = calculateSatisfaction(
@@ -74,12 +76,18 @@ export default function ServiceScreen() {
     purchasedUpgradeIds.includes('nail_art_tools');
 
   // Phase advance handlers
-  const advanceFromShape = () => setServicePhase('color_selection');
+  const advanceFromShape = () => {
+    soundManager.play('nail_file');
+    setServicePhase('color_selection');
+  };
 
-  const advanceFromColor = () =>
+  const advanceFromColor = () => {
+    soundManager.play('polish_stroke');
     setServicePhase(hasNailArtPhase ? 'nail_art' : 'applying');
+  };
 
   const handleNailArtPick = (id: string) => {
+    soundManager.play('nail_art_stamp');
     setActiveService({ ...activeService, nailArtDesignId: id });
     setServicePhase('applying');
   };

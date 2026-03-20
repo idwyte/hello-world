@@ -7,6 +7,7 @@ import { useOwnerStore } from '../store/ownerStore';
 import { SERVICES } from '../data/services';
 import { UI, SPACING, FONT, RADIUS, SKIN_TONES } from '../constants/theme';
 import { computeModifiers } from '../engine/traitEngine';
+import { soundManager } from '../hooks/useSound';
 
 interface Props {
   customer: CustomerConfig;
@@ -36,6 +37,7 @@ export const CustomerCard = ({ customer }: Props) => {
 
   const handlePress = () => {
     if (!freeStation) return;
+    soundManager.play('button_tap');
     scale.value = withSpring(0.95, {}, () => { scale.value = withSpring(1); });
     assignCustomerToStation(customer.id, freeStation.id);
   };

@@ -5,6 +5,7 @@ import { useGameStore } from '../store/gameStore';
 import { StaffMember } from '../types/GameStateTypes';
 import { UI, SPACING, FONT, RADIUS } from '../constants/theme';
 import { randomStaffName } from '../data/staffNames';
+import { soundManager } from '../hooks/useSound';
 
 const MAX_STAFF = 2;
 
@@ -28,14 +29,17 @@ export default function StaffScreen() {
 
   const handleHire = (candidate: StaffMember) => {
     if (staff.length >= maxStaff) return;
+    soundManager.play('button_tap');
     hireStaff(candidate);
   };
 
   const handleAssign = (staffId: string, stationId: string) => {
+    soundManager.play('button_tap');
     updateStaff(staffId, { assignedStationId: stationId });
   };
 
   const handleBreak = (staffId: string) => {
+    soundManager.play('button_tap');
     updateStaff(staffId, { isOnBreak: true, breakTicksRemaining: 30 });
   };
 

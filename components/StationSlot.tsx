@@ -12,6 +12,7 @@ const moodEmoji = (mood: number): string => {
 import { useGameStore } from '../store/gameStore';
 import { UI, SPACING, FONT, RADIUS } from '../constants/theme';
 import { SERVICES } from '../data/services';
+import { soundManager } from '../hooks/useSound';
 
 interface Props {
   station: Station;
@@ -30,6 +31,7 @@ export const StationSlot = ({ station }: Props) => {
 
   const handleDIY = () => {
     if (!customer) return;
+    soundManager.play('button_tap');
     const newService: ActiveService = {
       customerId: customer.id,
       stationId: station.id,

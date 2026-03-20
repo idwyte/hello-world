@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { StepProgress } from './StepProgress';
 import { UI, FONT, SPACING, RADIUS } from '../../constants/theme';
+import { soundManager } from '../../hooks/useSound';
 
 interface Props {
   step: number;
@@ -46,7 +47,7 @@ export const OnboardingShell = ({
     <View style={styles.footer}>
       <TouchableOpacity
         style={[styles.btn, !canContinue && styles.btnDisabled]}
-        onPress={onContinue}
+        onPress={() => { soundManager.play('button_tap'); onContinue(); }}
         disabled={!canContinue}
         activeOpacity={0.8}
       >
