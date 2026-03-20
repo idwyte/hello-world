@@ -3,8 +3,10 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { CustomerConfig } from '../types/CustomerTypes';
 import { useGameStore } from '../store/gameStore';
+import { useOwnerStore } from '../store/ownerStore';
 import { SERVICES } from '../data/services';
 import { UI, SPACING, FONT, RADIUS, SKIN_TONES } from '../constants/theme';
+import { computeModifiers } from '../engine/traitEngine';
 
 interface Props {
   customer: CustomerConfig;
@@ -22,6 +24,8 @@ const EXPRESSION_EMOJI: Record<string, string> = {
 
 export const CustomerCard = ({ customer }: Props) => {
   const { stations, assignCustomerToStation } = useGameStore();
+  const ownerProfile = useOwnerStore((s) => s.profile);
+  const patienceAlwaysVisible = computeModifiers(ownerProfile?.traits ?? []).patienceAlwaysVisible;
 
   const freeStation = stations.find((s) => !s.activeCustomerId);
   const service = SERVICES[customer.requestedServiceId];
@@ -62,8 +66,15 @@ export const CustomerCard = ({ customer }: Props) => {
           </View>
           <Text style={styles.service}>{service?.name ?? customer.requestedServiceId}</Text>
           {/* Patience bar */}
-          <View style={styles.patienceBg}>
-            <View style={[styles.patienceFill, { width: `${patiencePercent}%`, backgroundColor: patienceColor }]} />
+          <View style={styles.patienceRow}>
+            <View style={[styles.patienceBg, { flex: 1 }]}>
+              <View style={[styles.patienceFill, { width: `${patiencePercent}%`, backgroundColor: patienceColor }]} />
+            </View>
+            {patienceAlwaysVisible && (
+              <Text style={[styles.patiencePct, { color: patienceColor }]}>
+                {Math.round(patiencePercent)}%
+              </Text>
+            )}
           </View>
         </View>
 
@@ -119,12 +130,14 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.sm,
   },
   service: { fontSize: FONT.xs, color: UI.textSecondary, marginBottom: SPACING.xs },
+  patienceRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
   patienceBg: {
     height: 4,
     backgroundColor: '#E0D4CC',
     borderRadius: RADIUS.full,
   },
   patienceFill: { height: 4, borderRadius: RADIUS.full },
+  patiencePct: { fontSize: FONT.xs, fontWeight: '600', minWidth: 28, textAlign: 'right' },
   right: {},
   assignText: { fontSize: FONT.sm, fontWeight: '700', color: UI.btnActive },
   assignTextDisabled: { color: UI.textMuted },

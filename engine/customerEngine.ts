@@ -2,6 +2,7 @@ import { useGameStore } from '../store/gameStore';
 import { useOwnerStore } from '../store/ownerStore';
 import { spawnCustomer } from './customerSpawner';
 import { computeModifiers } from './traitEngine';
+import { soundManager } from '../hooks/useSound';
 
 const MAX_WAITING = 4;
 
@@ -14,14 +15,22 @@ export const tickCustomerPatience = () => {
   const decrement = 1 / Math.max(0.1, mods.customerPatienceMultiplier);
 
   waitingCustomers.forEach((customer) => {
+    const patiencePctBefore = (customer.patience / customer.maxPatience) * 100;
     if (customer.patience <= decrement) {
       // Customer walks out
       removeCustomerFromQueue(customer.id);
       addReputation(-2);
+      soundManager.play('customer_leave');
     } else {
+      const newPatience = customer.patience - decrement;
+      const patiencePctAfter = (newPatience / customer.maxPatience) * 100;
+      // Play warning once as patience crosses below 25%
+      if (patiencePctBefore >= 25 && patiencePctAfter < 25) {
+        soundManager.play('patience_warning');
+      }
       useGameStore.setState((s) => ({
         waitingCustomers: s.waitingCustomers.map((c) =>
-          c.id === customer.id ? { ...c, patience: c.patience - decrement } : c
+          c.id === customer.id ? { ...c, patience: newPatience } : c
         ),
       }));
     }
@@ -39,6 +48,7 @@ export const maybeSpawnCustomer = (tick: number, reputation: number) => {
   if (!tutorialComplete && tick === 5) {
     const maya = spawnCustomer(unlockedServiceIds, reputation, true);
     addCustomerToQueue(maya);
+    soundManager.play('customer_arrive');
     return;
   }
 
@@ -51,5 +61,6 @@ export const maybeSpawnCustomer = (tick: number, reputation: number) => {
   if (tick % tickInterval === 0 && Math.random() < baseProbability + 0.3) {
     const customer = spawnCustomer(unlockedServiceIds, reputation);
     addCustomerToQueue(customer);
+    soundManager.play('customer_arrive');
   }
 };

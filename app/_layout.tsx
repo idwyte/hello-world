@@ -4,10 +4,12 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
 import { useSaveLoad } from '../hooks/useSaveLoad';
+import { useSound } from '../hooks/useSound';
 import { UI } from '../constants/theme';
 
 export default function RootLayout() {
   useSaveLoad();
+  useSound();
 
   return (
     <GestureHandlerRootView style={styles.root}>

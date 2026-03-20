@@ -2,6 +2,10 @@ import { create } from 'zustand';
 import { CustomerConfig } from '../types/CustomerTypes';
 import { Station, StaffMember, Review, ActiveService, ServicePhase } from '../types/GameStateTypes';
 import { ServiceId } from '../types/NailTypes';
+import { SERVICE_LIST } from '../data/services';
+import { soundManager } from '../hooks/useSound';
+import { computeModifiers } from '../engine/traitEngine';
+import { useOwnerStore } from './ownerStore';
 
 interface GameState {
   // Economy
@@ -133,20 +137,43 @@ export const useGameStore = create<GameState>((set, get) => ({
     set((s) => {
       const newRep = Math.max(0, Math.min(100, s.reputation + amount));
       const crossedVipThreshold = !s.vipEverUnlocked && s.reputation < 50 && newRep >= 50;
+
+      // Auto-unlock services based on reputation threshold (with trendsetter discount)
+      const ownerProfile = useOwnerStore.getState().profile;
+      const mods = computeModifiers(ownerProfile?.traits ?? []);
+      const newlyUnlocked = SERVICE_LIST.filter(
+        (svc) =>
+          svc.requiresUnlock &&
+          svc.unlockReputation !== undefined &&
+          !s.unlockedServiceIds.includes(svc.id as ServiceId) &&
+          newRep >= (svc.unlockReputation! - mods.serviceUnlockDiscount)
+      ).map((svc) => svc.id as ServiceId);
+
+      if (crossedVipThreshold) soundManager.play('level_up');
+
       return {
         reputation: newRep,
         vipUnlocked: crossedVipThreshold ? true : s.vipUnlocked,
         vipEverUnlocked: crossedVipThreshold ? true : s.vipEverUnlocked,
+        unlockedServiceIds:
+          newlyUnlocked.length > 0
+            ? [...s.unlockedServiceIds, ...newlyUnlocked]
+            : s.unlockedServiceIds,
       };
     }),
 
   tick: () => set((s) => ({ gameTick: s.gameTick + 1 })),
 
-  startDay: () => set({ isDayActive: true, dayEarnings: 0, gameTick: 0, servicesCompletedToday: 0 }),
+  startDay: () => {
+    soundManager.playLoop('salon_ambience');
+    set({ isDayActive: true, dayEarnings: 0, gameTick: 0, servicesCompletedToday: 0 });
+  },
 
   endDay: () => {
     const { staff, dayEarnings } = get();
     const totalWages = staff.reduce((sum, m) => sum + m.wage, 0);
+    soundManager.stop('salon_ambience');
+    soundManager.play('day_end');
     set((s) => ({
       isDayActive: false,
       money: s.money - totalWages,

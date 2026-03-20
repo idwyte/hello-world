@@ -11,6 +11,10 @@ export interface TraitModifiers {
   quietHoursBonus: number;
   firstServiceBonusPerDay: number;
   staffStartSkillBonus: number;
+  /** trendsetter: subtract this from service unlockReputation thresholds */
+  serviceUnlockDiscount: number;
+  /** analytical: show patience % text label on CustomerCard */
+  patienceAlwaysVisible: boolean;
 }
 
 const DEFAULT_MODIFIERS: TraitModifiers = {
@@ -24,6 +28,8 @@ const DEFAULT_MODIFIERS: TraitModifiers = {
   quietHoursBonus: 0,
   firstServiceBonusPerDay: 0,
   staffStartSkillBonus: 0,
+  serviceUnlockDiscount: 0,
+  patienceAlwaysVisible: false,
 };
 
 const TRAIT_EFFECTS: Record<PersonalityTraitId, Partial<TraitModifiers>> = {
@@ -32,12 +38,17 @@ const TRAIT_EFFECTS: Record<PersonalityTraitId, Partial<TraitModifiers>> = {
   boss_energy:     { staffSpeedMultiplier: 1.15, startingMoodBonus: 10 },
   chatterbox:      { customerPatienceMultiplier: 1.3, repGainPerInteraction: 0.5 },
   introvert:       { quietHoursBonus: 0.1 },
-  trendsetter:     {},
+  trendsetter:     { serviceUnlockDiscount: 1 },
   hustler:         { firstServiceBonusPerDay: 10 },
   nurturer:        { staffStartSkillBonus: 5 },
-  analytical:      {},
+  analytical:      { patienceAlwaysVisible: true },
   creative:        { tipMultiplier: 1.25 },
 };
+
+const MULTIPLICATIVE_KEYS = new Set<keyof TraitModifiers>([
+  'tipMultiplier', 'serviceDurationMultiplier', 'staffSpeedMultiplier',
+  'staffMoodDecayMultiplier', 'customerPatienceMultiplier',
+]);
 
 export const computeModifiers = (traits: PersonalityTraitId[]): TraitModifiers => {
   const mods = { ...DEFAULT_MODIFIERS };
@@ -46,8 +57,10 @@ export const computeModifiers = (traits: PersonalityTraitId[]): TraitModifiers =
     if (!effect) continue;
     for (const [key, value] of Object.entries(effect)) {
       const k = key as keyof TraitModifiers;
-      if (typeof value === 'number') {
-        if (k === 'tipMultiplier' || k === 'serviceDurationMultiplier' || k === 'staffSpeedMultiplier' || k === 'staffMoodDecayMultiplier' || k === 'customerPatienceMultiplier') {
+      if (typeof value === 'boolean') {
+        (mods[k] as boolean) = (mods[k] as boolean) || value;
+      } else if (typeof value === 'number') {
+        if (MULTIPLICATIVE_KEYS.has(k)) {
           (mods[k] as number) *= value;
         } else {
           (mods[k] as number) += value;

@@ -6,6 +6,7 @@ import { getColorsByCollection } from '../data/nailColors';
 import { computeModifiers } from './traitEngine';
 import { postReview } from './reviewEngine';
 import { moodSpeedFactor } from './staffEngine';
+import { soundManager } from '../hooks/useSound';
 
 // Tick all active stations forward
 export const tickServiceProgress = () => {
@@ -43,6 +44,9 @@ export const tickServiceProgress = () => {
 
       completeService(station.id, earnings, tip);
       incrementServicesCompletedToday();
+      soundManager.play('cash_register');
+      soundManager.play('service_complete');
+      if (tip > 5) soundManager.play('tip_earned');
 
       // Auto satisfaction: staff-served, no explicit shape/color chosen by player
       const satisfaction = calculateSatisfaction(

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGameStore } from '../store/gameStore';
 import { UPGRADES } from '../data/upgrades';
 import { UI, SPACING, FONT, RADIUS } from '../constants/theme';
+import { soundManager } from '../hooks/useSound';
 
 export default function UpgradesScreen() {
   const { money, reputation, purchasedUpgradeIds, purchaseUpgrade, spendMoney, stations, unlockService } =
@@ -12,6 +13,7 @@ export default function UpgradesScreen() {
   const handleBuy = (upgradeId: string, cost: number, effect: { type: string; value?: string | number }) => {
     if (!spendMoney(cost)) return;
     purchaseUpgrade(upgradeId);
+    soundManager.play('upgrade_purchased');
 
     if (effect.type === 'unlock_nail_art') {
       unlockService('nail_art');
