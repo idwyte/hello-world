@@ -4,9 +4,9 @@ import { soundManager } from '../../hooks/useSound';
 
 export default function OnboardingLayout() {
   useEffect(() => {
-    soundManager.playLoop('salon_ambience', 0.35);
+    soundManager.playLoop('onboarding_music', 0.35);
     return () => {
-      soundManager.stop('salon_ambience');
+      soundManager.stop('onboarding_music');
     };
   }, []);
 

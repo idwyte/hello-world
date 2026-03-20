@@ -5,6 +5,7 @@ import { ServiceId } from '../types/NailTypes';
 import { SERVICE_LIST } from '../data/services';
 import { soundManager } from '../hooks/useSound';
 import { computeModifiers } from '../engine/traitEngine';
+import { TutorialStep } from '../engine/tutorialEngine';
 import { useOwnerStore } from './ownerStore';
 import { randomStaffName } from '../data/staffNames';
 
@@ -39,6 +40,7 @@ interface GameState {
   // Day state
   isDayActive: boolean;
   tutorialComplete: boolean;
+  tutorialStep: TutorialStep;
   servicesCompletedToday: number;
   showDayEndModal: boolean;
   startingBonusApplied: boolean;
@@ -84,6 +86,7 @@ interface GameState {
   purchaseUpgrade: (upgradeId: string) => void;
   unlockService: (serviceId: ServiceId) => void;
   completeTutorial: () => void;
+  setTutorialStep: (step: TutorialStep) => void;
 }
 
 const INITIAL_STATIONS: Station[] = [
@@ -112,6 +115,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   isDayActive: false,
   tutorialComplete: false,
+  tutorialStep: 'welcome',
   servicesCompletedToday: 0,
   showDayEndModal: false,
   startingBonusApplied: false,
@@ -325,4 +329,5 @@ export const useGameStore = create<GameState>((set, get) => ({
     })),
 
   completeTutorial: () => set({ tutorialComplete: true }),
+  setTutorialStep: (step: TutorialStep) => set({ tutorialStep: step }),
 }));

@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useGameStore } from '../store/gameStore';
-import { TUTORIAL_TOOLTIPS, TutorialStep, nextStep } from '../engine/tutorialEngine';
+import { TUTORIAL_TOOLTIPS, nextStep } from '../engine/tutorialEngine';
 import { UI, SPACING, FONT, RADIUS } from '../constants/theme';
 
 export const TutorialTooltip = () => {
-  const { completeTutorial } = useGameStore();
-  const [step, setStep] = useState<TutorialStep>('welcome');
+  const { completeTutorial, tutorialStep: step, setTutorialStep } = useGameStore();
 
   if (step === 'done') return null;
 
@@ -17,7 +16,7 @@ export const TutorialTooltip = () => {
     if (next === 'done') {
       completeTutorial();
     }
-    setStep(next);
+    setTutorialStep(next);
   };
 
   return (

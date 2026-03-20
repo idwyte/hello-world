@@ -16,6 +16,7 @@ export type SoundId =
   | 'upgrade_purchased'
   | 'button_tap'
   | 'salon_ambience'
+  | 'onboarding_music'
   | 'day_end';
 
 // Singleton sound object cache — loaded once, reused across all calls
@@ -37,6 +38,7 @@ const SOUND_FILES: Record<SoundId, any> = {
   upgrade_purchased: require('../assets/sounds/upgrade_purchased.mp3'),
   button_tap:        require('../assets/sounds/button_tap.mp3'),
   salon_ambience:    require('../assets/sounds/salon_ambience.mp3'),
+  onboarding_music:  require('../assets/sounds/onboarding_music.mp3'),
   day_end:           require('../assets/sounds/day_end.mp3'),
 };
 
