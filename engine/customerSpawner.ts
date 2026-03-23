@@ -85,6 +85,9 @@ export const spawnCustomer = (
     expression: 'neutral',
     animationState: 'WALK_IN',
     stationId: null,
+    sceneX: -56,  // off-screen left (entrance); store assigns real coords
+    sceneY: 0,
+    waitingSlot: 0,
   };
 };
 

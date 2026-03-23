@@ -58,4 +58,8 @@ export interface CustomerConfig {
   expression: ExpressionType;
   animationState: CustomerAnimationState;
   stationId: string | null;
+  // Scene position (computed at runtime, used by NpcSprite)
+  sceneX: number;
+  sceneY: number;
+  waitingSlot: number;
 }

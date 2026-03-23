@@ -19,7 +19,9 @@ export default function RootLayout() {
           tabBarStyle: {
             backgroundColor: UI.hudBg,
             borderTopColor: UI.panelBorder,
+            height: 50,
           },
+          tabBarLabelStyle: { fontSize: 9 },
           tabBarActiveTintColor: UI.btnActive,
           tabBarInactiveTintColor: UI.textMuted,
           headerShown: false,

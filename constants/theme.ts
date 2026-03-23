@@ -31,35 +31,36 @@ export const HAIR_COLOR_PRESETS: Record<string, string> = {
   silver:      '#C0C0C0',
 };
 
-// ─── Salon Environment ─────────────────────────────────────────────────────────
+// ─── Salon Environment — Gen Z palette ─────────────────────────────────────────
 export const SALON = {
-  wallRose:     '#E8C4C4',
-  wallCream:    '#FAF3E0',
-  floorBlush:   '#F0D5D5',
-  floorGrout:   '#D4B5A0',
-  furniture:    '#8B6332',
-  furnitureLight: '#F5F5F0',
-  accentSage:   '#A8C5A0',
-  accentLavender: '#C4A8C5',
+  wallRose:       '#FDF2F8',  // barely-pink wall
+  wallCream:      '#FFFFFF',  // pure white accents
+  floorBlush:     '#FCE7F3',  // baby pink floor
+  floorGrout:     '#F9A8D4',  // bright pink grout
+  furniture:      '#7C3AED',  // vivid violet furniture
+  furnitureLight: '#EDE9FE',  // pale lavender surfaces
+  accentSage:     '#6EE7B7',  // mint green
+  accentLavender: '#C4B5FD',  // vivid lavender
 } as const;
 
-// ─── UI Chrome ─────────────────────────────────────────────────────────────────
+// ─── UI Chrome — Gen Z palette ──────────────────────────────────────────────────
 export const UI = {
-  panelBg:        '#FFF0F5',
-  panelBorder:    '#E8B4C0',
-  textPrimary:    '#3D2B1F',
-  textSecondary:  '#7A5C4A',
-  textMuted:      '#B0967E',
-  btnActive:      '#E8748A',
-  btnHover:       '#C4556A',
-  btnDisabled:    '#F0A0B0',
+  panelBg:        '#FFFFFF',  // clean white cards
+  panelBorder:    '#FBCFE8',  // pink-200
+  textPrimary:    '#18181B',  // zinc-900 near-black
+  textSecondary:  '#71717A',  // zinc-500
+  textMuted:      '#A1A1AA',  // zinc-400
+  btnActive:      '#EC4899',  // hot pink (pink-500)
+  btnHover:       '#BE185D',  // deep hot pink
+  btnDisabled:    '#FBCFE8',  // pink-200
   btnText:        '#FFFFFF',
-  success:        '#7CB97C',
-  warning:        '#E8A85A',
-  danger:         '#E87474',
-  gold:           '#DAA520',
-  hudBg:          '#3D2B1F',
-  hudText:        '#FFF0F5',
+  success:        '#10B981',  // emerald-500
+  warning:        '#F59E0B',  // amber-500
+  danger:         '#F43F5E',  // rose-500
+  gold:           '#FBBF24',  // amber-400
+  hudBg:          '#18103A',  // deep purple-black
+  hudText:        '#F5F3FF',  // violet-50
+  bg:             '#FAFAFA',  // zinc-50 app background
 } as const;
 
 // ─── Typography ────────────────────────────────────────────────────────────────
@@ -82,9 +83,10 @@ export const SPACING = {
   xxl: 32,
 } as const;
 
+// Rounder radii for Gen Z bubble aesthetic
 export const RADIUS = {
-  sm:  6,
-  md:  12,
-  lg:  18,
+  sm:  8,
+  md:  16,
+  lg:  24,
   full: 999,
 } as const;

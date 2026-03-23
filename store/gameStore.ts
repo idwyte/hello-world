@@ -1,7 +1,13 @@
 import { create } from 'zustand';
+import { Dimensions } from 'react-native';
 import { CustomerConfig } from '../types/CustomerTypes';
 import { Station, StaffMember, Review, ActiveService, ServicePhase } from '../types/GameStateTypes';
 import { ServiceId } from '../types/NailTypes';
+import {
+  buildLayoutFromDimensions,
+  getWaitingSlotPosition,
+  getStationPositions,
+} from '../constants/sceneLayout';
 import { SERVICE_LIST } from '../data/services';
 import { soundManager } from '../hooks/useSound';
 import { computeModifiers } from '../engine/traitEngine';
@@ -240,12 +246,29 @@ export const useGameStore = create<GameState>((set, get) => ({
   setShowDayEndModal: (show) => set({ showDayEndModal: show }),
 
   addCustomerToQueue: (customer) =>
-    set((s) => ({ waitingCustomers: [...s.waitingCustomers, customer] })),
+    set((s) => {
+      const slot = s.waitingCustomers.length;
+      const layout = buildLayoutFromDimensions();
+      const pos = getWaitingSlotPosition(slot, layout);
+      return {
+        waitingCustomers: [
+          ...s.waitingCustomers,
+          { ...customer, waitingSlot: slot, sceneX: pos.x, sceneY: pos.y },
+        ],
+      };
+    }),
 
   removeCustomerFromQueue: (customerId) =>
-    set((s) => ({
-      waitingCustomers: s.waitingCustomers.filter((c) => c.id !== customerId),
-    })),
+    set((s) => {
+      const layout = buildLayoutFromDimensions();
+      const remaining = s.waitingCustomers
+        .filter((c) => c.id !== customerId)
+        .map((c, i) => {
+          const pos = getWaitingSlotPosition(i, layout);
+          return { ...c, waitingSlot: i, sceneX: pos.x, sceneY: pos.y };
+        });
+      return { waitingCustomers: remaining };
+    }),
 
   updateCustomer: (customerId, partial) =>
     set((s) => ({
@@ -261,9 +284,29 @@ export const useGameStore = create<GameState>((set, get) => ({
     set((s) => {
       const customer = s.waitingCustomers.find((c) => c.id === customerId);
       if (!customer) return s;
+      const layout = buildLayoutFromDimensions();
+      const stationIdx = s.stations.findIndex((st) => st.id === stationId);
+      const positions = getStationPositions(s.stations.length, layout);
+      const pos = positions[stationIdx] ?? { x: 0, y: 0 };
+      // Reshuffle remaining waiting customers
+      const remaining = s.waitingCustomers
+        .filter((c) => c.id !== customerId)
+        .map((c, i) => {
+          const wp = getWaitingSlotPosition(i, layout);
+          return { ...c, waitingSlot: i, sceneX: wp.x, sceneY: wp.y };
+        });
       return {
-        waitingCustomers: s.waitingCustomers.filter((c) => c.id !== customerId),
-        activeCustomers: [...s.activeCustomers, { ...customer, stationId }],
+        waitingCustomers: remaining,
+        activeCustomers: [
+          ...s.activeCustomers,
+          {
+            ...customer,
+            stationId,
+            animationState: 'WALK_TO_SEAT' as const,
+            sceneX: pos.x,
+            sceneY: pos.y,
+          },
+        ],
         stations: s.stations.map((st) =>
           st.id === stationId
             ? { ...st, activeCustomerId: customerId, serviceProgress: 0 }
@@ -273,21 +316,33 @@ export const useGameStore = create<GameState>((set, get) => ({
     }),
 
   completeService: (stationId, earnings, tip) => {
-    const { stations, activeCustomers } = get();
+    const { stations, updateCustomer } = get();
     const station = stations.find((s) => s.id === stationId);
     if (!station?.activeCustomerId) return;
     const customerId = station.activeCustomerId;
+
+    // Free station immediately; animate customer out with a delay
     set((s) => ({
       stations: s.stations.map((st) =>
         st.id === stationId
           ? { ...st, activeCustomerId: null, serviceProgress: 0 }
           : st
       ),
-      activeCustomers: s.activeCustomers.filter((c) => c.id !== customerId),
       money: s.money + earnings + tip,
       totalEarnings: s.totalEarnings + earnings + tip,
       dayEarnings: s.dayEarnings + earnings + tip,
     }));
+
+    // Reaction → walk out → remove
+    updateCustomer(customerId, { animationState: 'REACTION_HAPPY' });
+    setTimeout(() => {
+      updateCustomer(customerId, { animationState: 'WALK_OUT' });
+    }, 1600);
+    setTimeout(() => {
+      set((s) => ({
+        activeCustomers: s.activeCustomers.filter((c) => c.id !== customerId),
+      }));
+    }, 2400);
   },
 
   hireStaff: (member) =>

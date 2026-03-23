@@ -17,6 +17,14 @@ export const tickCustomerPatience = () => {
   const decrement = 1 / Math.max(0.1, mods.customerPatienceMultiplier * upgradeBoost);
 
   waitingCustomers.forEach((customer) => {
+    // Transition WALK_IN → IDLE_WAITING on first tick so NpcSprite starts idle bounce
+    if (customer.animationState === 'WALK_IN') {
+      useGameStore.setState((s) => ({
+        waitingCustomers: s.waitingCustomers.map((c) =>
+          c.id === customer.id ? { ...c, animationState: 'IDLE_WAITING' } : c
+        ),
+      }));
+    }
     const patiencePctBefore = (customer.patience / customer.maxPatience) * 100;
     if (customer.patience <= decrement) {
       // Customer walks out

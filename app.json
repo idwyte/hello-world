@@ -3,7 +3,7 @@
     "name": "Nail Shop Simulator",
     "slug": "nail-shop-simulator",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "landscape",
     "icon": "./assets/images/icon.png",
     "scheme": "nailshop",
     "userInterfaceStyle": "light",
