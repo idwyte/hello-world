@@ -1,272 +1,261 @@
 /**
- * GIF 2: Service mini-game — shape picker → color picker → applying → summary
- * ~54 frames @ 100ms — landscape with service panel overlay at bottom
+ * GIF 2: Service Mini-Game
+ * Maya seated → shape picker (GBA menu) → color picker (pixel swatches)
+ * → applying (pixel progress) → service complete summary
+ *
+ * buildFrames(version)
  */
 const { createCanvas } = require('canvas');
-const { W, H, NPC_W, NPC_H, ZONE, getStationPositions } = require('./theme');
-const { clearBg, drawHUD, drawFloor, drawStation, drawNpc, roundRect } = require('./drawHelpers');
-const { UI, FONT, RADIUS, SALON } = require('./theme');
+const {
+  W, H, HUD_H,
+  PA, PB,
+  getStationsA, getStationsB,
+} = require('./theme');
+const {
+  pxFill, pixelSprite, drawGbaBox, drawGbaBar, pxText,
+  drawSceneA, drawStationA, drawNpcA, drawHudA,
+  drawSceneB, drawStationB, drawNpcB, drawHudB,
+  drawDialogueBox, drawStars,
+} = require('./drawHelpers');
+const { MAYA_FRONT, MAYA_TOPDOWN } = require('./sprites');
 
-const STATIONS = getStationPositions(2);
+// 5×5 pixel nail tip shape (shown on a hand silhouette in the panel)
+function drawPixelNail(ctx, cx, cy, color, shape = 'square') {
+  const nailW = shape === 'coffin' ? 14 : shape === 'oval' ? 12 : shape === 'almond' ? 10 : 14;
+  const nailH = shape === 'oval' ? 20 : shape === 'almond' ? 22 : shape === 'coffin' ? 24 : 16;
+  const sx = cx - Math.round(nailW / 2);
+  const sy = cy - nailH;
+  // Nail body
+  pxFill(ctx, sx, sy, nailW, nailH, color);
+  // Outline
+  pxFill(ctx, sx, sy, nailW, 4, '#181010');
+  pxFill(ctx, sx, sy, 4, nailH, '#181010');
+  pxFill(ctx, sx + nailW - 4, sy, 4, nailH, '#181010');
+  pxFill(ctx, sx, sy + nailH - 4, nailW, 4, '#181010');
+  // Shine pixel
+  pxFill(ctx, sx + 4, sy + 4, 4, 4, '#F8F8F8');
+}
 
-function drawNailHand(ctx, nailColor, cx, cy) {
-  const skinTone = '#EBB882';
-  ctx.fillStyle = skinTone;
-  roundRect(ctx, cx - 28, cy, 56, 44, 8, skinTone, null);
-  const fingers = [-20, -10, 0, 10, 20];
-  fingers.forEach((dx, i) => {
-    ctx.fillStyle = skinTone;
-    ctx.beginPath();
-    ctx.ellipse(cx + dx, cy - 8 - (i === 2 ? 3 : i === 1 || i === 3 ? 1 : 0), 6, 15, 0, 0, Math.PI * 2);
-    ctx.fill();
-    if (nailColor) {
-      ctx.fillStyle = nailColor;
-      ctx.beginPath();
-      ctx.ellipse(cx + dx, cy - 18 - (i === 2 ? 3 : 0), 4, 7, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
+function drawHandPixel(ctx, cx, cy, nailColor) {
+  // Simplified pixel hand: palm + 4 finger strips
+  const skin = '#F8C898';
+  // Palm block
+  pxFill(ctx, cx - 20, cy, 40, 28, skin);
+  pxFill(ctx, cx - 20, cy, 40, 4, '#181010'); // top of palm outline
+  // Fingers
+  const fingers = [-16, -8, 0, 8, 16];
+  fingers.forEach((dx) => {
+    pxFill(ctx, cx + dx - 3, cy - 28, 6, 32, skin);
+    pxFill(ctx, cx + dx - 3, cy - 28, 6, 4, '#181010');
+    if (nailColor) drawPixelNail(ctx, cx + dx, cy - 12, nailColor, 'coffin');
   });
 }
 
-function drawServicePanel(ctx, { title, panelY }) {
-  // Frosted panel overlay
-  ctx.fillStyle = 'rgba(253,242,248,0.96)';
-  roundRect(ctx, 0, panelY, W, H - panelY, RADIUS.lg, 'rgba(253,242,248,0.96)', null);
-  ctx.strokeStyle = UI.panelBorder;
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(0, panelY); ctx.lineTo(W, panelY); ctx.stroke();
+function buildFrames(version = 'vA') {
+  const isA     = version === 'vA';
+  const p       = isA ? PA : PB;
+  const drawScene   = isA ? drawSceneA  : drawSceneB;
+  const drawStation = isA ? drawStationA : drawStationB;
+  const drawNpc     = isA ? drawNpcA    : drawNpcB;
+  const drawHud     = isA ? drawHudA    : drawHudB;
+  const getStations = isA ? getStationsA : getStationsB;
+  const mayaGrid    = isA ? MAYA_TOPDOWN : MAYA_FRONT;
+  const npcScale    = isA ? 3 : 4;
+  const npcW        = mayaGrid[0].length * npcScale;
 
-  // Drag handle
-  ctx.fillStyle = UI.panelBorder;
-  roundRect(ctx, W / 2 - 20, panelY + 8, 40, 4, 2, UI.panelBorder, null);
+  const STATIONS = getStations(3);
+  const st0      = STATIONS[0];
+  // Maya at station
+  const mayaX    = st0.x + Math.round(st0.w / 2) - Math.round(npcW / 2);
+  const mayaY    = isA ? st0.y + 42 : st0.y + (10 + 30);
 
-  ctx.fillStyle = UI.textPrimary;
-  ctx.font = `700 ${FONT.lg}px sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.fillText(title, W / 2, panelY + 36);
-}
+  // Panel constants
+  const PANEL_Y  = Math.round(H * 0.55);
+  const PANEL_H  = H - PANEL_Y;
 
-function buildFrames() {
   const frames = [];
   function frame(fn) {
     const c = createCanvas(W, H);
     const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
     fn(ctx);
     frames.push(c);
   }
 
-  const PANEL_Y = H - 200;
-  const stationPos = STATIONS[0];
+  function drawBase(ctx, money, rep, dayPct, stProgress) {
+    pxFill(ctx, 0, 0, W, H, p.floorLight || p.floorDark);
+    drawScene(ctx);
+    drawHud(ctx, { money, rep, day: 1, dayPct, isDayActive: true });
+    STATIONS.forEach((st, i) =>
+      drawStation(ctx, { ...st, hasCustomer: i === 0, progress: i === 0 ? stProgress : 0 })
+    );
+    drawNpc(ctx, mayaX, mayaY, mayaGrid, { patienceFrac: 1 });
+  }
 
-  // ── Phase 1: Shape selector — cycling (12 frames) ─────────────────────────
-  const shapes = ['Square', 'Square', 'Round', 'Round', 'Oval', 'Oval',
-                  'Almond', 'Almond', 'Coffin', 'Coffin', 'Coffin', 'Coffin'];
-  const nailPreviews = {
-    Square:  '#EC4899', Round: '#A855F7', Oval: '#EC4899',
-    Almond:  '#F59E0B', Coffin: '#EC4899',
-  };
+  function drawPanel(ctx, title) {
+    pxFill(ctx, 0, PANEL_Y, W, PANEL_H, p.hudBg);
+    pxFill(ctx, 0, PANEL_Y, W, 4, p.outline);
+    // Accent border
+    const accentColor = p.hudBorder || p.hudAccent || p.white;
+    pxFill(ctx, 0, PANEL_Y + 4, W, 4, accentColor);
+    pxFill(ctx, 0, PANEL_Y + 4, 4, PANEL_H - 4, accentColor);
+    pxFill(ctx, W - 4, PANEL_Y + 4, 4, PANEL_H - 4, accentColor);
+    // Interior
+    pxFill(ctx, 4, PANEL_Y + 8, W - 8, PANEL_H - 8, p.hudBg);
+    pxText(ctx, title, W / 2, PANEL_Y + 26, p.gold, 12, 'center');
+  }
+
+  // ── Phase 1: Shape selector — 5 shapes cycling (12 frames) ──────────────────
+  const shapes    = ['SQUARE','SQUARE','ROUND','ROUND','OVAL','OVAL','ALMOND','ALMOND','COFFIN','COFFIN','COFFIN','COFFIN'];
+  const shapeList = ['SQUARE','ROUND','OVAL','ALMOND','COFFIN'];
 
   shapes.forEach((shape, i) => {
     frame((ctx) => {
-      clearBg(ctx);
-      drawFloor(ctx);
-      drawHUD(ctx, { money: 512, reputation: 2, day: 1, tickFraction: 0.3, isDayActive: true });
+      drawBase(ctx, 512, 2, 0.28, 0.12);
+      drawPanel(ctx, 'CHOOSE SHAPE');
 
-      // Station with Maya seated
-      drawStation(ctx, {
-        fixtureX: stationPos.fixtureX, fixtureW: stationPos.fixtureW,
-        stationY: stationPos.npcY - 24, hasCustomer: true, progress: 0.15,
-      });
-      drawStation(ctx, {
-        fixtureX: STATIONS[1].fixtureX, fixtureW: STATIONS[1].fixtureW,
-        stationY: STATIONS[1].npcY - 24, hasCustomer: false,
-      });
-      drawNpc(ctx, {
-        x: stationPos.npcX, y: stationPos.npcY,
-        skinTone: '#EBB882', hairColor: '#FF69B4', shirtColor: '#EC4899', name: 'Maya',
-      });
+      // Hand preview on left
+      drawHandPixel(ctx, 140, PANEL_Y + PANEL_H - 20, '#EC4899');
 
-      // Service panel
-      drawServicePanel(ctx, { title: '💅 Choose a Shape', panelY: PANEL_Y });
-
-      // Hand preview
-      drawNailHand(ctx, nailPreviews[shape] ?? '#EC4899', W * 0.25, PANEL_Y + 90);
-
-      // Shape buttons
-      const shapeList = ['Square', 'Round', 'Oval', 'Almond', 'Coffin'];
-      const bw = 72, gap = 10;
+      // Shape buttons (pixel style — no rounded corners)
+      const bw = 80; const gap = 8;
       const totalW = shapeList.length * (bw + gap) - gap;
-      const startX = W * 0.35 + (W * 0.6 - totalW) / 2;
+      const sx = Math.round((W - totalW) / 2) + 100;
+
       shapeList.forEach((s, j) => {
-        const bx = startX + j * (bw + gap);
-        const isSel = s === shape;
-        roundRect(ctx, bx, PANEL_Y + 60, bw, 32, RADIUS.sm,
-          isSel ? UI.btnActive : UI.panelBg,
-          isSel ? null : UI.panelBorder);
-        ctx.fillStyle = isSel ? '#FFFFFF' : UI.textPrimary;
-        ctx.font = `${isSel ? '700 ' : ''}${FONT.xs}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.fillText(s, bx + bw / 2, PANEL_Y + 80);
+        const bx  = sx + j * (bw + gap);
+        const by  = PANEL_Y + 38;
+        const sel = s === shape;
+        // Button border
+        pxFill(ctx, bx - 4, by - 4, bw + 8, 36, p.outline);
+        pxFill(ctx, bx, by, bw, 28, sel ? (p.hudBorder || p.hudAccent) : p.hudBarBg);
+        pxText(ctx, s, bx + bw / 2, by + 18, sel ? p.hudBg : p.hudText, 9, 'center');
       });
 
-      // Hint
-      ctx.fillStyle = UI.textMuted;
-      ctx.font = `${FONT.xs}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.fillText('Maya seems to like clean, structured looks 🤔', W / 2, PANEL_Y + 118);
+      pxText(ctx, 'MAYA LIKES CLEAN, STRUCTURED LOOKS', W / 2, PANEL_Y + 82, p.hudBarBg, 8, 'center');
 
       // Next button
-      roundRect(ctx, W - 120, PANEL_Y + 150, 100, 32, RADIUS.md, UI.btnActive, null);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = `700 ${FONT.sm}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.fillText('Next →', W - 70, PANEL_Y + 170);
+      const nx = W - 100;
+      pxFill(ctx, nx - 4, PANEL_Y + PANEL_H - 36, 96, 28, p.outline);
+      pxFill(ctx, nx,     PANEL_Y + PANEL_H - 32, 88, 20, p.hudBorder || p.hudAccent);
+      pxText(ctx, 'NEXT >', nx + 44, PANEL_Y + PANEL_H - 16, p.hudBg, 10, 'center');
     });
   });
 
-  // ── Phase 2: Color picker — landing on cherry red (14 frames) ─────────────
-  const colors = [null, null, '#FF0000', '#FF0000', '#C41E3A', '#DC143C',
-                  '#DC143C', '#DC143C', '#DC143C', '#DC143C', '#DC143C', '#DC143C', '#DC143C', '#DC143C'];
+  // ── Phase 2: Color picker — pixel swatches, landing on cherry red (14 frames) ─
+  const reds = [
+    '#C41E3A','#DC143C','#FF0000','#B22222','#8B0000',
+    '#CC3333','#E63946','#9B2335','#FF4444','#CC0000',
+    '#FF2222','#BB1111',
+  ];
+  const colorFrames = [null,null,'#FF0000','#FF0000','#C41E3A',
+    '#DC143C','#DC143C','#DC143C','#DC143C','#DC143C','#DC143C','#DC143C','#DC143C','#DC143C'];
 
-  colors.forEach((color, i) => {
+  colorFrames.forEach((selColor, i) => {
     frame((ctx) => {
-      clearBg(ctx);
-      drawFloor(ctx);
-      drawHUD(ctx, { money: 512, reputation: 2, day: 1, tickFraction: 0.3, isDayActive: true });
+      drawBase(ctx, 512, 2, 0.30, 0.20);
+      drawPanel(ctx, 'PICK COLOR');
 
-      drawStation(ctx, {
-        fixtureX: stationPos.fixtureX, fixtureW: stationPos.fixtureW,
-        stationY: stationPos.npcY - 24, hasCustomer: true, progress: 0.20,
-      });
-      drawStation(ctx, { fixtureX: STATIONS[1].fixtureX, fixtureW: STATIONS[1].fixtureW, stationY: STATIONS[1].npcY - 24, hasCustomer: false });
-      drawNpc(ctx, { x: stationPos.npcX, y: stationPos.npcY, skinTone: '#EBB882', hairColor: '#FF69B4', shirtColor: '#EC4899', name: 'Maya' });
+      // Hand preview on left
+      drawHandPixel(ctx, 120, PANEL_Y + PANEL_H - 20, selColor || '#F0D8D8');
 
-      drawServicePanel(ctx, { title: '🎨 Pick a Color', panelY: PANEL_Y });
-
-      // Hand with selected color
-      drawNailHand(ctx, color || '#E0D4D4', W * 0.25, PANEL_Y + 90);
-
-      // Color swatches (reds collection)
-      const reds = ['#C41E3A', '#DC143C', '#FF0000', '#B22222', '#8B0000', '#FF6B6B',
-                    '#FF4500', '#E63946', '#9B2335', '#FF7F7F', '#CC3333', '#FF3333'];
-      const cols = 6, sw = 28, sg = 6;
-      const gridX = W * 0.35 + 10;
+      // Swatch grid
+      const cols = 6; const sw = 24; const sg = 6;
+      const gridX = 280;
+      const gridY = PANEL_Y + 36;
       reds.forEach((c, ri) => {
-        const col = ri % cols, row = Math.floor(ri / cols);
-        const sx = gridX + col * (sw + sg);
-        const sy = PANEL_Y + 58 + row * (sw + sg);
-        const isSel = c === color;
-        roundRect(ctx, sx, sy, sw, sw, 4, c, isSel ? '#18181B' : null);
-        if (isSel) {
-          ctx.fillStyle = '#FFFFFF'; ctx.font = `bold 12px sans-serif`; ctx.textAlign = 'center';
-          ctx.fillText('✓', sx + sw / 2, sy + sw / 2 + 4);
+        const col = ri % cols;
+        const row = Math.floor(ri / cols);
+        const bx  = gridX + col * (sw + sg);
+        const by  = gridY + row * (sw + sg);
+        const sel = c === selColor;
+        pxFill(ctx, bx - 2, by - 2, sw + 4, sw + 4, sel ? p.outline : p.hudBarBg);
+        pxFill(ctx, bx, by, sw, sw, c);
+        if (sel) {
+          // Check mark pixel
+          pxFill(ctx, bx + sw / 2 - 3, by + sw / 2 - 3, 6, 6, '#F8F8F8');
         }
       });
 
-      if (color) {
-        ctx.fillStyle = UI.textMuted; ctx.font = `${FONT.xs}px sans-serif`; ctx.textAlign = 'center';
-        ctx.fillText('Cherry Red', W * 0.25, PANEL_Y + 155);
+      if (selColor) {
+        pxText(ctx, 'CHERRY RED', 120, PANEL_Y + PANEL_H - 4, p.hudBarBg, 8, 'center');
       }
     });
   });
 
-  // ── Phase 3: Applying spinner (8 frames) ──────────────────────────────────
+  // ── Phase 3: Applying — progress fills (8 frames) ───────────────────────────
   for (let i = 0; i < 8; i++) {
+    const prog = 0.30 + i * 0.06;
     frame((ctx) => {
-      clearBg(ctx);
-      drawFloor(ctx);
-      drawHUD(ctx, { money: 512, reputation: 2, day: 1, tickFraction: 0.32, isDayActive: true });
+      drawBase(ctx, 512, 2, 0.32, prog);
+      drawPanel(ctx, 'APPLYING...');
 
-      drawStation(ctx, { fixtureX: stationPos.fixtureX, fixtureW: stationPos.fixtureW, stationY: stationPos.npcY - 24, hasCustomer: true, progress: 0.3 + i * 0.05 });
-      drawStation(ctx, { fixtureX: STATIONS[1].fixtureX, fixtureW: STATIONS[1].fixtureW, stationY: STATIONS[1].npcY - 24, hasCustomer: false });
-      drawNpc(ctx, { x: stationPos.npcX, y: stationPos.npcY, skinTone: '#EBB882', hairColor: '#FF69B4', shirtColor: '#EC4899', name: 'Maya' });
+      drawHandPixel(ctx, W / 2, PANEL_Y + PANEL_H - 20, '#DC143C');
 
-      // Apply overlay
-      ctx.fillStyle = 'rgba(253,242,248,0.96)';
-      roundRect(ctx, 0, PANEL_Y, W, H - PANEL_Y, RADIUS.lg, 'rgba(253,242,248,0.96)', null);
-
-      ctx.fillStyle = UI.textPrimary;
-      ctx.font = `700 ${FONT.xl}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.fillText('✨ Applying...', W / 2, PANEL_Y + 60);
-
-      // Spinner dots
-      const dots = 8;
-      for (let d = 0; d < dots; d++) {
-        const angle = (d / dots) * Math.PI * 2 + (i / 8) * Math.PI * 2;
-        const cx2 = W / 2 + Math.cos(angle) * 30;
-        const cy2 = PANEL_Y + 110 + Math.sin(angle) * 30;
-        ctx.fillStyle = d === 0 ? UI.btnActive : `rgba(236,72,153,${0.15 + d * 0.1})`;
-        ctx.beginPath(); ctx.arc(cx2, cy2, 6, 0, Math.PI * 2); ctx.fill();
+      // Pixel spinner (8 rotating blocks)
+      const dotCount = 8;
+      const radius   = 28;
+      for (let d = 0; d < dotCount; d++) {
+        const angle = (d / dotCount) * Math.PI * 2 + (i / 8) * Math.PI * 2;
+        const bx = Math.round(W / 2 - 40 + Math.cos(angle) * radius) - 4;
+        const by = Math.round(PANEL_Y + 46 + Math.sin(angle) * radius) - 4;
+        const bright = d === 0;
+        pxFill(ctx, bx, by, 8, 8, bright ? (p.hudBorder || p.hudAccent) : p.hudBarBg);
       }
 
-      drawNailHand(ctx, '#DC143C', W / 2, PANEL_Y + 130);
+      // Progress bar across panel
+      drawGbaBar(ctx, 20, PANEL_Y + 80, W - 40, prog, p);
     });
   }
 
-  // ── Phase 4: Summary (20 frames — hold) ───────────────────────────────────
-  for (let i = 0; i < 20; i++) {
+  // ── Phase 4: Service complete summary (18 frames) ────────────────────────────
+  for (let i = 0; i < 18; i++) {
+    // Maya exits — stepped 8px per frame for first 8 frames
+    const mayaExitX = i < 8 ? mayaX + i * 12 : mayaX + 96;
+    const showMaya  = mayaExitX < W + npcW;
+
     frame((ctx) => {
-      clearBg(ctx);
-      drawFloor(ctx);
-      drawHUD(ctx, { money: 530, reputation: 4, day: 1, tickFraction: 0.35, isDayActive: true });
+      pxFill(ctx, 0, 0, W, H, p.floorLight || p.floorDark);
+      drawScene(ctx);
+      drawHud(ctx, { money: 530, rep: 4, day: 1, dayPct: 0.36, isDayActive: true });
+      STATIONS.forEach((st) => drawStation(ctx, { ...st, hasCustomer: false }));
+      if (showMaya) drawNpc(ctx, mayaExitX, mayaY, mayaGrid, { patienceFrac: 1 });
 
-      drawStation(ctx, { fixtureX: stationPos.fixtureX, fixtureW: stationPos.fixtureW, stationY: stationPos.npcY - 24, hasCustomer: false });
-      drawStation(ctx, { fixtureX: STATIONS[1].fixtureX, fixtureW: STATIONS[1].fixtureW, stationY: STATIONS[1].npcY - 24, hasCustomer: false });
-      // Maya exits right
-      if (i < 10) {
-        const exitX = stationPos.npcX + Math.round((i / 9) * (W + NPC_W - stationPos.npcX));
-        drawNpc(ctx, { x: exitX, y: stationPos.npcY, skinTone: '#EBB882', hairColor: '#FF69B4', shirtColor: '#EC4899', name: 'Maya' });
-        // Sparkle
-        ctx.fillStyle = UI.gold; ctx.font = `24px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.globalAlpha = Math.max(0, 1 - i * 0.12);
-        ctx.fillText('✨', exitX + NPC_W / 2, stationPos.npcY - 10);
-        ctx.globalAlpha = 1;
-      }
+      // Summary GBA box (centre)
+      const bw = Math.round(W * 0.5);
+      const bh = 180;
+      const bx = Math.round((W - bw) / 2);
+      const by = Math.round((H - bh) / 2);
+      drawGbaBox(ctx, bx, by, bw, bh, p);
 
-      // Summary card (center)
-      const cx = W / 2, cw = 380, ch = 190, cmx = cx - cw / 2;
-      const cmy = H / 2 - ch / 2 - 20;
-      roundRect(ctx, cmx, cmy, cw, ch, RADIUS.lg, UI.panelBg, UI.panelBorder);
-      ctx.shadowColor = UI.btnActive; ctx.shadowBlur = 16;
-      roundRect(ctx, cmx, cmy, cw, ch, RADIUS.lg, null, UI.btnActive);
-      ctx.shadowBlur = 0;
+      pxText(ctx, 'SERVICE COMPLETE!', bx + bw / 2, by + 24, p.gold, 11, 'center');
 
-      ctx.fillStyle = UI.textPrimary;
-      ctx.font = `700 ${FONT.xl}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.fillText('💅 Service Complete!', cx, cmy + 36);
-
-      // Satisfaction ring
-      const rcx = cx - 100, rcy = cmy + 90, r = 36;
-      ctx.strokeStyle = '#E9D5FF'; ctx.lineWidth = 8;
-      ctx.beginPath(); ctx.arc(rcx, rcy, r, -Math.PI / 2, Math.PI * 2 - Math.PI / 2); ctx.stroke();
-      ctx.strokeStyle = UI.success; ctx.lineWidth = 8;
-      ctx.beginPath(); ctx.arc(rcx, rcy, r, -Math.PI / 2, Math.PI * 2 * 0.94 - Math.PI / 2); ctx.stroke();
-      ctx.fillStyle = UI.textPrimary; ctx.font = `700 ${FONT.lg}px sans-serif`; ctx.textAlign = 'center';
-      ctx.fillText('94%', rcx, rcy + 6);
-
-      // Earnings breakdown
-      const lines = [['Service', '$15'], ['Nail Art', '+$8'], ['Tip', '+$5'], ['Total', '$28']];
+      // Stats
+      const lines = [
+        ['SERVICE',  '$15'],
+        ['NAIL ART', '+$8'],
+        ['TIP',      '+$5'],
+        ['TOTAL',    '$28'],
+      ];
       lines.forEach(([label, val], li) => {
-        const ry = cmy + 56 + li * 26;
-        ctx.fillStyle = li === 3 ? UI.success : UI.textSecondary;
-        ctx.font = li === 3 ? `700 ${FONT.md}px sans-serif` : `${FONT.sm}px sans-serif`;
-        ctx.textAlign = 'left'; ctx.fillText(label, cx - 30, ry);
-        ctx.textAlign = 'right'; ctx.fillText(val, cmx + cw - 24, ry);
+        const ry  = by + 44 + li * 22;
+        const col = label === 'TOTAL' ? p.green : p.hudText;
+        pxText(ctx, label, bx + 20, ry, col, 10, 'left');
+        pxText(ctx, val,   bx + bw - 20, ry, col, 10, 'right');
       });
 
       // Stars
-      ctx.fillStyle = UI.gold; ctx.font = `${FONT.md}px sans-serif`; ctx.textAlign = 'center';
-      ctx.fillText('★★★★★', cx + 60, cmy + 90);
-      ctx.fillStyle = UI.textMuted; ctx.font = `${FONT.xs}px sans-serif`;
-      ctx.fillText('"Perfect coffin shape!"', cx + 60, cmy + 108);
+      drawStars(ctx, bx + 20, by + 140, 5, p);
+      pxText(ctx, '"PERFECT COFFIN!"', bx + 20, by + 158, p.hudBarBg, 8, 'left');
 
       // Button
-      roundRect(ctx, cmx + 24, cmy + ch - 48, cw - 48, 36, RADIUS.md, UI.btnActive, null);
-      ctx.fillStyle = '#FFFFFF'; ctx.font = `700 ${FONT.md}px sans-serif`; ctx.textAlign = 'center';
-      ctx.fillText('Done ✓', cx, cmy + ch - 24);
+      const btnY = by + bh - 36;
+      pxFill(ctx, bx + 16, btnY, bw - 32, 4, p.outline);
+      pxFill(ctx, bx + 16, btnY, 4, 26, p.outline);
+      pxFill(ctx, bx + bw - 20, btnY, 4, 26, p.outline);
+      pxFill(ctx, bx + 16, btnY + 22, bw - 32, 4, p.outline);
+      pxFill(ctx, bx + 20, btnY + 4, bw - 40, 18, p.hudBorder || p.hudAccent);
+      pxText(ctx, 'DONE', bx + bw / 2, btnY + 17, p.hudBg, 10, 'center');
     });
   }
 

@@ -1,192 +1,162 @@
 /**
- * GIF 1: Customer arrival → walks in from left → idles with patience bar → taps to seat → walks to station
- * ~44 frames @ 80ms — landscape spatial floor view
+ * GIF 1: Customer Arrival
+ * Empty shop → day opens → Maya walks in (stepped 8px) → idles with patience bar
+ * → station picker dialogue → walks to station (stepped)
+ *
+ * buildFrames(version) — 'vA' = top-down FireRed, 'vB' = front-facing Girl-Game
  */
 const { createCanvas } = require('canvas');
-const { W, H, NPC_W, NPC_H, ZONE, getStationPositions, getWaitingPos } = require('./theme');
-const { clearBg, drawHUD, drawFloor, drawStation, drawNpc, drawBench, roundRect } = require('./drawHelpers');
-const { UI, FONT, RADIUS, SALON } = require('./theme');
+const {
+  W, H, HUD_H,
+  PA, PB,
+  ZONE_A, ZONE_B,
+  NPC_TOP_W, NPC_TOP_H,
+  NPC_FRONT_W, NPC_FRONT_H,
+  getStationsA, getStationsB,
+  getWaitingA, getWaitingB,
+} = require('./theme');
+const {
+  pxFill, pixelSprite, drawGbaBox, drawGbaBar, pxText,
+  drawSceneA, drawStationA, drawNpcA, drawHudA,
+  drawSceneB, drawStationB, drawNpcB, drawHudB,
+  drawDialogueBox,
+} = require('./drawHelpers');
+const { MAYA_FRONT, MAYA_TOPDOWN, STAFF_FRONT, STAFF_TOPDOWN } = require('./sprites');
 
-const STATIONS = getStationPositions(2);
-const BENCH_X  = ZONE.waitingX - 4;
-const BENCH_W  = ZONE.slotSpacing * 4;
+function buildFrames(version = 'vA') {
+  const isA   = version === 'vA';
+  const p     = isA ? PA : PB;
+  const drawScene   = isA ? drawSceneA  : drawSceneB;
+  const drawStation = isA ? drawStationA : drawStationB;
+  const drawNpc     = isA ? drawNpcA    : drawNpcB;
+  const drawHud     = isA ? drawHudA    : drawHudB;
+  const getStations = isA ? getStationsA : getStationsB;
+  const getWaiting  = isA ? getWaitingA  : getWaitingB;
+  const mayaGrid    = isA ? MAYA_TOPDOWN : MAYA_FRONT;
+  const npcScale    = isA ? 3 : 4;
+  const npcW        = mayaGrid[0].length * npcScale;
+  const npcH        = mayaGrid.length   * npcScale;
 
-function buildFrames() {
+  const STATIONS = getStations(3);
+  const slot0    = getWaiting(0);
+  // Station 1 NPC anchor (centre of station minus half sprite width)
+  const st0 = STATIONS[0];
+  const stNpcX = st0.x + Math.round(st0.w / 2) - Math.round(npcW / 2);
+  const stNpcY = isA ? st0.y + 32 + 8 : st0.y + (10 + 30); // below table
+
   const frames = [];
   function frame(fn) {
     const c = createCanvas(W, H);
     const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
     fn(ctx);
     frames.push(c);
   }
 
-  // ── Phase 1: Empty shop, day not yet active (6 frames) ───────────────────
-  for (let i = 0; i < 6; i++) {
-    frame((ctx) => {
-      clearBg(ctx);
-      drawFloor(ctx);
-      drawHUD(ctx, { money: 500, reputation: 0, day: 1, tickFraction: 0, isDayActive: false });
+  // Helper: draw scene base (bg + all stations + bench already inside drawScene)
+  function drawBase(ctx, money, rep, dayPct, isDayActive = true) {
+    pxFill(ctx, 0, 0, W, H, p.floorLight || p.floorDark);
+    drawScene(ctx);
+    drawHud(ctx, { money, rep, day: 1, dayPct, isDayActive });
+    STATIONS.forEach((st) => drawStation(ctx, { ...st, hasCustomer: false }));
+  }
 
-      // Empty stations
-      STATIONS.forEach((pos) => {
-        drawStation(ctx, { fixtureX: pos.fixtureX, fixtureW: pos.fixtureW, stationY: pos.npcY - 24, hasCustomer: false });
-      });
-      drawBench(ctx, { x: BENCH_X, y: ZONE.waitingY + NPC_H, width: BENCH_W });
+  // ── Phase 1: Empty shop, day closed (5 frames) ──────────────────────────────
+  for (let i = 0; i < 5; i++) {
+    frame((ctx) => {
+      drawBase(ctx, 500, 0, 0, false);
     });
   }
 
-  // ── Phase 2: Day opens — "Open Shop" tapped (3 frames) ───────────────────
+  // ── Phase 2: Day opens (3 frames) ───────────────────────────────────────────
   for (let i = 0; i < 3; i++) {
     frame((ctx) => {
-      clearBg(ctx);
-      drawFloor(ctx);
-      drawHUD(ctx, { money: 500, reputation: 0, day: 1, tickFraction: i / 40, isDayActive: true });
-
-      STATIONS.forEach((pos) => {
-        drawStation(ctx, { fixtureX: pos.fixtureX, fixtureW: pos.fixtureW, stationY: pos.npcY - 24, hasCustomer: false });
-      });
-      drawBench(ctx, { x: BENCH_X, y: ZONE.waitingY + NPC_H, width: BENCH_W });
+      drawBase(ctx, 500, 0, i / 40, true);
     });
   }
 
-  // ── Phase 3: Maya walks in from left (10 frames) ──────────────────────────
-  const slot0 = getWaitingPos(0);
+  // ── Phase 3: Maya walks in — stepped 8px per frame (10 frames) ──────────────
+  // Start: off-screen left (vB) or off-screen top (vA)
   for (let i = 0; i < 10; i++) {
-    const t = i / 9;
-    // Spring-like ease: fast start, slower end
-    const ease = 1 - Math.pow(1 - t, 2.5);
-    const npcX = Math.round(-NPC_W + ease * (slot0.x + NPC_W));
+    let npcX, npcY;
+    if (isA) {
+      // Enter from top (door is top-right, but let's walk from off-top-left)
+      npcX = slot0.x;
+      npcY = isA
+        ? HUD_H + 4 + i * Math.round((slot0.y - HUD_H - 4) / 9)
+        : slot0.y;
+    } else {
+      // Enter from left door
+      npcX = -npcW + i * Math.round((slot0.x + npcW) / 9);
+      npcY = slot0.y;
+    }
     frame((ctx) => {
-      clearBg(ctx);
-      drawFloor(ctx);
-      drawHUD(ctx, { money: 500, reputation: 0, day: 1, tickFraction: (3 + i) / 40, isDayActive: true });
-
-      STATIONS.forEach((pos) => {
-        drawStation(ctx, { fixtureX: pos.fixtureX, fixtureW: pos.fixtureW, stationY: pos.npcY - 24, hasCustomer: false });
+      drawBase(ctx, 500, 0, (3 + i) / 40, true);
+      drawNpc(ctx, npcX, npcY, mayaGrid, {
+        patienceFrac: 1.0,
+        label: i === 9 ? 'MAYA' : '',
       });
-      drawBench(ctx, { x: BENCH_X, y: ZONE.waitingY + NPC_H, width: BENCH_W });
-
-      // Maya walking in
-      drawNpc(ctx, {
-        x: npcX, y: slot0.y,
-        skinTone: '#EBB882', hairColor: '#FF69B4', shirtColor: '#EC4899',
-        name: 'Maya',
-        showPatience: i > 6, patienceFrac: 1.0,
-      });
-
-      // Arrival notification
+      // Arrival notification (GBA dialogue box style)
       if (i === 9) {
-        roundRect(ctx, W / 2 - 80, H - 36, 160, 26, RADIUS.sm, UI.hudBg, null);
-        ctx.fillStyle = UI.hudText;
-        ctx.font = `600 ${FONT.sm}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.fillText('🔔 Maya arrived!', W / 2, H - 18);
+        drawGbaBox(ctx, W / 2 - 100, H - 44, 200, 36, p);
+        pxText(ctx, 'MAYA ARRIVED!', W / 2, H - 20, p.hudText, 10, 'center');
       }
     });
   }
 
-  // ── Phase 4: Maya idle in waiting zone with patience bar (10 frames) ──────
+  // ── Phase 4: Maya idles at waiting spot, patience ticking (10 frames) ────────
   for (let i = 0; i < 10; i++) {
-    const bounce = Math.sin(i * 0.8) * 2.5;
+    const bounce   = (i % 2) * 2; // GBA-style 2px bounce every other frame
     const patience = 1.0 - i * 0.012;
     frame((ctx) => {
-      clearBg(ctx);
-      drawFloor(ctx);
-      drawHUD(ctx, { money: 500, reputation: 0, day: 1, tickFraction: (13 + i) / 40, isDayActive: true });
-
-      STATIONS.forEach((pos) => {
-        drawStation(ctx, { fixtureX: pos.fixtureX, fixtureW: pos.fixtureW, stationY: pos.npcY - 24, hasCustomer: false });
+      drawBase(ctx, 500, 0, (13 + i) / 40, true);
+      drawNpc(ctx, slot0.x, slot0.y + bounce, mayaGrid, {
+        patienceFrac: patience,
+        label: 'MAYA',
       });
-      drawBench(ctx, { x: BENCH_X, y: ZONE.waitingY + NPC_H, width: BENCH_W });
-
-      drawNpc(ctx, {
-        x: slot0.x, y: slot0.y + bounce,
-        skinTone: '#EBB882', hairColor: '#FF69B4', shirtColor: '#EC4899',
-        name: 'Maya',
-        showPatience: true, patienceFrac: patience,
-      });
-
-      // Tutorial tip
+      // Tutorial hint box
       if (i < 8) {
-        roundRect(ctx, W / 2 - 120, H - 38, 240, 28, RADIUS.sm, UI.hudBg, null);
-        ctx.fillStyle = UI.hudText;
-        ctx.font = `600 ${FONT.xs}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.fillText('👆 Tap Maya to seat her at a station!', W / 2, H - 20);
+        drawGbaBox(ctx, W / 2 - 140, H - 48, 280, 40, p);
+        pxText(ctx, 'TAP MAYA TO SEAT HER', W / 2, H - 24, p.hudText, 9, 'center');
       }
     });
   }
 
-  // ── Phase 5: Tap → station picker appears (4 frames) ─────────────────────
-  for (let i = 0; i < 4; i++) {
-    const sheetY = H - Math.round((i / 3) * 120);
+  // ── Phase 5: Station picker dialogue appears (5 frames) ──────────────────────
+  for (let i = 0; i < 5; i++) {
+    const boxH = Math.round((i / 4) * 100);
     frame((ctx) => {
-      clearBg(ctx);
-      drawFloor(ctx);
-      drawHUD(ctx, { money: 500, reputation: 0, day: 1, tickFraction: 0.6, isDayActive: true });
-
-      STATIONS.forEach((pos) => {
-        drawStation(ctx, { fixtureX: pos.fixtureX, fixtureW: pos.fixtureW, stationY: pos.npcY - 24, hasCustomer: false });
-      });
-      drawBench(ctx, { x: BENCH_X, y: ZONE.waitingY + NPC_H, width: BENCH_W });
-
-      drawNpc(ctx, {
-        x: slot0.x, y: slot0.y,
-        skinTone: '#EBB882', hairColor: '#FF69B4', shirtColor: '#EC4899',
-        name: 'Maya', showPatience: true, patienceFrac: 0.88,
-      });
-
-      // Bottom sheet
-      roundRect(ctx, 0, sheetY, W, H - sheetY, RADIUS.lg, UI.panelBg, null);
-      if (sheetY < H - 80) {
-        ctx.fillStyle = UI.textPrimary;
-        ctx.font = `700 ${FONT.md}px sans-serif`;
-        ctx.textAlign = 'left';
-        ctx.fillText('Seat Maya at…', 20, sheetY + 28);
-
-        roundRect(ctx, 20, sheetY + 42, W / 2 - 30, 32, RADIUS.md, UI.btnActive, null);
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = `700 ${FONT.sm}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.fillText('Station 1 — Tier 1', (W / 2 - 30) / 2 + 20, sheetY + 62);
-
-        roundRect(ctx, W / 2, sheetY + 42, W / 2 - 30, 32, RADIUS.md, UI.btnActive, null);
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillText('Station 2 — Tier 1', W * 0.75, sheetY + 62);
+      drawBase(ctx, 500, 0, 0.6, true);
+      drawNpc(ctx, slot0.x, slot0.y, mayaGrid, { patienceFrac: 0.88, label: 'MAYA' });
+      // Dialogue box slides up
+      if (boxH > 20) {
+        const bx = W / 2 - 200;
+        const by = H - boxH - 8;
+        drawGbaBox(ctx, bx, by, 400, boxH, p);
+        if (boxH > 60) {
+          pxText(ctx, 'SEAT MAYA AT...',  bx + 16, by + 26, p.gold,    10, 'left');
+          pxText(ctx, '>  STATION 1',     bx + 16, by + 44, p.hudText, 10, 'left');
+          pxText(ctx, '   STATION 2',     bx + 16, by + 58, p.hudText, 10, 'left');
+          pxText(ctx, '   STATION 3',     bx + 16, by + 72, p.hudText, 10, 'left');
+        }
       }
     });
   }
 
-  // ── Phase 6: Maya springs to station 1 (11 frames) ───────────────────────
-  const stationPos = STATIONS[0];
-  for (let i = 0; i < 11; i++) {
-    const t = i / 10;
-    const ease = 1 - Math.pow(1 - t, 2.2);
-    const arcY = Math.sin(t * Math.PI) * -20; // slight arc upward
-    const npcX = Math.round(slot0.x + ease * (stationPos.npcX - slot0.x));
-    const npcY = Math.round(slot0.y + ease * (stationPos.npcY - slot0.y) + arcY);
-    const progress = Math.min(1, i / 10 * 0.1);
+  // ── Phase 6: Maya walks to station — stepped (10 frames) ─────────────────────
+  for (let i = 0; i < 10; i++) {
+    const t    = i / 9;
+    const npcX = Math.round(slot0.x + t * (stNpcX - slot0.x));
+    const npcY = Math.round(slot0.y + t * (stNpcY - slot0.y));
+    const progress = i > 7 ? (i - 7) / 2 * 0.06 : 0;
     frame((ctx) => {
-      clearBg(ctx);
-      drawFloor(ctx);
-      drawHUD(ctx, { money: 500, reputation: 0, day: 1, tickFraction: 0.65, isDayActive: true });
-
-      // Station 1 shows occupied
-      drawStation(ctx, {
-        fixtureX: stationPos.fixtureX, fixtureW: stationPos.fixtureW,
-        stationY: stationPos.npcY - 24, hasCustomer: i > 8, progress,
-      });
-      drawStation(ctx, {
-        fixtureX: STATIONS[1].fixtureX, fixtureW: STATIONS[1].fixtureW,
-        stationY: STATIONS[1].npcY - 24, hasCustomer: false,
-      });
-      drawBench(ctx, { x: BENCH_X, y: ZONE.waitingY + NPC_H, width: BENCH_W });
-
-      drawNpc(ctx, {
-        x: npcX, y: npcY,
-        skinTone: '#EBB882', hairColor: '#FF69B4', shirtColor: '#EC4899',
-        name: 'Maya',
-      });
+      pxFill(ctx, 0, 0, W, H, p.floorLight || p.floorDark);
+      drawScene(ctx);
+      drawHud(ctx, { money: 500, rep: 0, day: 1, dayPct: 0.65, isDayActive: true });
+      STATIONS.forEach((st, idx) =>
+        drawStation(ctx, { ...st, hasCustomer: idx === 0 && i > 8, progress })
+      );
+      drawNpc(ctx, npcX, npcY, mayaGrid, { patienceFrac: 0.86 });
     });
   }
 
