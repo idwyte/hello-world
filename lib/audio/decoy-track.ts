@@ -33,6 +33,26 @@ const DEFAULT_CONFIG: DecoyConfig = {
   artist: 'Mindful Audio',
 };
 
+// TODO(midjourney-assets): replace nulls with require() calls per
+// assets/audio/README.md once cover PNGs are bundled. Stays exported so
+// the in-app stealth screen can render the same artwork as the lockscreen.
+export const COVER_ARTWORK: Record<DecoyCover, number | null> = {
+  minimal_violet: null, // require('../../assets/audio/covers/minimal_violet.png')
+  gradient_blue: null, // require('../../assets/audio/covers/gradient_blue.png')
+  paper_grain: null, // require('../../assets/audio/covers/paper_grain.png')
+};
+
+// TODO(elevenlabs-assets): once assets/audio/focus-session.m4a is bundled,
+// set this to `require('../../assets/audio/focus-session.m4a')`. The
+// resolveTrackSource fn picks the bundled handle when available, otherwise
+// the placeholder URL — which lets the catch in startDecoy degrade
+// gracefully on real devices instead of crashing the lazy import path.
+const BUNDLED_TRACK: number | null = null;
+
+function resolveTrackSource(): number | string {
+  return BUNDLED_TRACK ?? 'https://example.com/silence.m4a';
+}
+
 let started = false;
 let serviceRegistered = false;
 
@@ -103,14 +123,10 @@ export async function startDecoy(
     await TP.reset();
     await TP.add({
       id: 'focus-session-loop',
-      // TODO(M5-assets): require('../../assets/audio/focus-session.m4a')
-      //   Until the real ambient track ships this is a placeholder URL;
-      //   failure is handled by the catch and the session continues with
-      //   haptics only.
-      url: 'https://example.com/silence.m4a',
+      url: resolveTrackSource(),
       title: final.title,
       artist: final.artist,
-      // TODO(M5-assets): artwork = require for cover variant
+      artwork: COVER_ARTWORK[final.cover] ?? undefined,
     });
     await TP.play();
     started = true;

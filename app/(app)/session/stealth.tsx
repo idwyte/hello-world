@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   Alert,
+  Image,
   Pressable,
   Text,
   View,
@@ -12,7 +13,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { playCue, preloadCues, unloadCues } from '@/lib/audio/cues';
-import { startDecoy, stopDecoy } from '@/lib/audio/decoy-track';
+import { COVER_ARTWORK, startDecoy, stopDecoy } from '@/lib/audio/decoy-track';
 import { currentAudioRoute, type AudioRouteKind } from '@/lib/audio/routing';
 import { hasSupabaseConfig } from '@/lib/env';
 import { EXERCISES, getExercise } from '@/lib/exercises';
@@ -284,18 +285,26 @@ export default function StealthSession() {
       <SafeAreaView className="flex-1 bg-bg">
         <View className="flex-1 px-6 pt-6 pb-10">
           <View className="flex-1 items-center justify-center">
-            <View
-              className="w-64 h-64 rounded-2xl"
-              style={{
-                backgroundColor:
-                  settings.decoyCover === 'gradient_blue'
-                    ? '#1E3A5F'
-                    : settings.decoyCover === 'paper_grain'
-                      ? '#3F3A2F'
-                      : '#3A2A6E',
-              }}
-              accessibilityLabel="Focus Session album art"
-            />
+            {COVER_ARTWORK[settings.decoyCover] ? (
+              <Image
+                source={COVER_ARTWORK[settings.decoyCover] as number}
+                className="w-64 h-64 rounded-2xl"
+                accessibilityLabel="Focus Session album art"
+              />
+            ) : (
+              <View
+                className="w-64 h-64 rounded-2xl"
+                style={{
+                  backgroundColor:
+                    settings.decoyCover === 'gradient_blue'
+                      ? '#1E3A5F'
+                      : settings.decoyCover === 'paper_grain'
+                        ? '#3F3A2F'
+                        : '#3A2A6E',
+                }}
+                accessibilityLabel="Focus Session album art"
+              />
+            )}
             <Text
               className="text-ink text-xl font-semibold mt-8"
               accessibilityRole="header"
