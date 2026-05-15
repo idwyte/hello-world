@@ -36,7 +36,7 @@ export default function SettingsIndex() {
     {
       label: 'Stealth Mode',
       href: '/settings/stealth',
-      hint: 'Coming in M4',
+      hint: 'Haptic intensity, AirPods cues, lockscreen cover',
     },
   ];
 

@@ -37,6 +37,15 @@ const config: ExpoConfig = {
   plugins: [
     'expo-router',
     './plugins/withStealthAudioBackground',
+    [
+      'expo-notifications',
+      {
+        // Health-adjacent content: never sound the device speaker for cues.
+        // The notification's `sound: false` is set per-message in
+        // `lib/notifications.ts`.
+        color: '#7C5CFF',
+      },
+    ],
   ],
   experiments: {
     typedRoutes: true,
