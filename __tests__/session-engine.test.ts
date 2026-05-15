@@ -112,10 +112,73 @@ describe('createSessionRunner', () => {
     expect(runner.getState().phase.kind).not.toBe('prep');
   });
 
-  it('stops cleanly even if start was never called', () => {
+  it('stops cleanly even if start was never called and does NOT fire onAbort', () => {
     const t = buildTimeline(simpleDay());
-    const runner = createSessionRunner(t);
+    let aborted = false;
+    const runner = createSessionRunner(t, {
+      onAbort: () => {
+        aborted = true;
+      },
+    });
     runner.stop();
     expect(runner.getState().status).toBe('done');
+    expect(aborted).toBe(false);
+  });
+
+  it('stop() while running fires onAbort but NOT onComplete', () => {
+    let now = 0;
+    const t = buildTimeline(simpleDay());
+    let completed = false;
+    let aborted = false;
+    const runner = createSessionRunner(
+      t,
+      {
+        onComplete: () => {
+          completed = true;
+        },
+        onAbort: () => {
+          aborted = true;
+        },
+      },
+      { now: () => now },
+    );
+    runner.start();
+    now = 1000;
+    runner.tick(now);
+    runner.stop();
+    expect(completed).toBe(false);
+    expect(aborted).toBe(true);
+    expect(runner.getState().status).toBe('done');
+  });
+
+  it('natural completion fires onComplete exactly once even with extra stop() after', () => {
+    let now = 0;
+    const t = buildTimeline(simpleDay());
+    let completeCount = 0;
+    let abortCount = 0;
+    const runner = createSessionRunner(
+      t,
+      {
+        onComplete: () => {
+          completeCount += 1;
+        },
+        onAbort: () => {
+          abortCount += 1;
+        },
+      },
+      { now: () => now },
+    );
+    runner.start();
+    const total = t.reduce((a, p) => a + p.durationMs, 0);
+    for (let elapsed = 0; elapsed <= total + 100; elapsed += 50) {
+      now = elapsed;
+      runner.tick(now);
+    }
+    expect(completeCount).toBe(1);
+    expect(abortCount).toBe(0);
+    // simulate the unmount-after-natural-completion path
+    runner.stop();
+    expect(completeCount).toBe(1);
+    expect(abortCount).toBe(0);
   });
 });

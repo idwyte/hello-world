@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { AccessibilityInfo, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PacerRing } from '@/components/session/PacerRing';
@@ -13,7 +13,7 @@ import {
   buildTimeline,
   createSessionRunner,
 } from '@/lib/session-engine';
-import type { ProgramDay } from '@/lib/types';
+import type { PhaseKind, ProgramDay } from '@/lib/types';
 import { useSessionStore } from '@/stores/session';
 
 // M1: hardcoded program day. M2+ will read from Supabase.
@@ -25,6 +25,23 @@ function todaysHardcodedDay(): ProgramDay {
     exercises: [short, quick],
     targetDurationS: 240,
   };
+}
+
+function phaseAnnouncement(kind: PhaseKind): string {
+  switch (kind) {
+    case 'prep':
+      return 'Get ready';
+    case 'squeeze':
+      return 'Squeeze';
+    case 'hold':
+      return 'Hold';
+    case 'release':
+      return 'Release';
+    case 'rest':
+      return 'Rest';
+    case 'done':
+      return 'Session complete';
+  }
 }
 
 export default function Player() {
@@ -49,6 +66,7 @@ export default function Player() {
       onPhaseStart: (phase) => {
         const pattern = patternForPhase(phase.kind);
         if (pattern) void play(pattern);
+        AccessibilityInfo.announceForAccessibility(phaseAnnouncement(phase.kind));
         setTick((t) => t + 1);
       },
       onPhaseEnd: () => {
@@ -64,6 +82,10 @@ export default function Player() {
           repsCompleted: repsPlanned,
           completed: true,
         });
+        setTick((t) => t + 1);
+      },
+      onAbort: () => {
+        // Intentionally do NOT log — user navigated away before completion.
         setTick((t) => t + 1);
       },
     });
@@ -119,6 +141,8 @@ export default function Player() {
           <Pressable
             onPress={() => router.replace('/home')}
             className="bg-accent rounded-xl mt-8 py-4 px-8 active:opacity-80"
+            accessibilityRole="button"
+            accessibilityLabel="Back to home"
           >
             <Text className="text-ink font-semibold">Back to home</Text>
           </Pressable>
@@ -138,13 +162,20 @@ export default function Player() {
         <View className="self-end">
           <Pressable
             onPress={() => router.replace('/home')}
-            className="py-2 px-3"
+            className="py-3 px-4 active:opacity-60"
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="End session"
           >
             <Text className="text-muted">End</Text>
           </Pressable>
         </View>
 
-        <View className="items-center">
+        <View
+          className="items-center"
+          accessibilityLabel={`${phaseAnnouncement(state.phase.kind)}, ${Math.ceil((state.phase.durationMs - state.phaseElapsedMs) / 1000)} seconds remaining`}
+          accessibilityLiveRegion="polite"
+        >
           <PacerRing
             progress={phaseProgress}
             color={colorForPhase(state.phase.kind)}

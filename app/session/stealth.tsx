@@ -21,6 +21,8 @@ export default function StealthPreview() {
         <Pressable
           onPress={() => router.back()}
           className="bg-surface border border-border rounded-xl mt-8 py-3 px-6 active:opacity-80"
+          accessibilityRole="button"
+          accessibilityLabel="Back"
         >
           <Text className="text-ink">Back</Text>
         </Pressable>

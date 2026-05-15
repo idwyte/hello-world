@@ -26,7 +26,11 @@ export default function Home() {
           </Text>
 
           <Link href="/session/today" asChild>
-            <Pressable className="bg-accent rounded-xl mt-5 py-4 items-center active:opacity-80">
+            <Pressable
+              className="bg-accent rounded-xl mt-5 py-4 items-center active:opacity-80"
+              accessibilityRole="button"
+              accessibilityLabel="Start today's session"
+            >
               <Text className="text-ink font-semibold">Start session</Text>
             </Pressable>
           </Link>

@@ -59,7 +59,10 @@ export type SessionCallbacks = {
   onPhaseStart?: PhaseCallback;
   onPhaseEnd?: PhaseCallback;
   onTick?: (state: SessionState) => void;
+  /** Fired exactly once when the timeline reaches its `done` phase naturally. */
   onComplete?: (state: SessionState) => void;
+  /** Fired when `stop()` is called before natural completion. */
+  onAbort?: (state: SessionState) => void;
 };
 
 type TimeFn = () => number;
@@ -91,6 +94,7 @@ export function createSessionRunner(
   let pausedAt = 0;
   let totalPausedMs = 0;
   let sessionStartedAt = 0;
+  let completionFired = false;
 
   function state(): SessionState {
     const phase = timeline[phaseIndex];
@@ -121,8 +125,8 @@ export function createSessionRunner(
     while (
       status === 'running' &&
       phaseIndex < timeline.length - 1 &&
-      timeline[phaseIndex].durationMs > 0 &&
-      targetTime - phaseStartedAt >= timeline[phaseIndex].durationMs
+      (timeline[phaseIndex].durationMs === 0 ||
+        targetTime - phaseStartedAt >= timeline[phaseIndex].durationMs)
     ) {
       const finished = timeline[phaseIndex];
       callbacks.onPhaseEnd?.(finished, phaseIndex, timeline.length);
@@ -133,7 +137,10 @@ export function createSessionRunner(
       callbacks.onPhaseStart?.(next, phaseIndex, timeline.length);
       if (next.kind === 'done') {
         status = 'done';
-        callbacks.onComplete?.(state());
+        if (!completionFired) {
+          completionFired = true;
+          callbacks.onComplete?.(state());
+        }
         return;
       }
     }
@@ -161,8 +168,12 @@ export function createSessionRunner(
       status = 'running';
     },
     stop() {
+      if (status === 'done') return;
+      const wasRunning = status === 'running' || status === 'paused';
       status = 'done';
-      callbacks.onComplete?.(state());
+      if (wasRunning) {
+        callbacks.onAbort?.(state());
+      }
     },
     getState: state,
     tick(time: number) {

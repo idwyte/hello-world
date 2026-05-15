@@ -7,7 +7,13 @@ export default function SessionPreview() {
   return (
     <SafeAreaView className="flex-1 bg-bg">
       <View className="flex-1 px-6 pt-6">
-        <Pressable onPress={() => router.back()} className="self-start py-2">
+        <Pressable
+          onPress={() => router.back()}
+          className="self-start py-3 px-3 -ml-3 active:opacity-60"
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
           <Text className="text-muted">← Back</Text>
         </Pressable>
 
@@ -25,7 +31,11 @@ export default function SessionPreview() {
           </Text>
 
           <Link href="/session/player" asChild>
-            <Pressable className="bg-accent rounded-xl mt-4 py-4 px-5 active:opacity-80">
+            <Pressable
+              className="bg-accent rounded-xl mt-4 py-4 px-5 active:opacity-80"
+              accessibilityRole="button"
+              accessibilityLabel="Start session in Normal mode with on-screen pacer and haptics"
+            >
               <Text className="text-ink font-semibold text-lg">Normal</Text>
               <Text className="text-ink/70 text-sm mt-1">
                 On-screen pacer + haptics
@@ -34,7 +44,11 @@ export default function SessionPreview() {
           </Link>
 
           <Link href="/session/stealth" asChild>
-            <Pressable className="bg-surface2 border border-border rounded-xl mt-3 py-4 px-5 active:opacity-80">
+            <Pressable
+              className="bg-surface2 border border-border rounded-xl mt-3 py-4 px-5 active:opacity-80"
+              accessibilityRole="button"
+              accessibilityLabel="Preview Stealth Haptic Mode, coming in M4"
+            >
               <Text className="text-ink font-semibold text-lg">
                 Stealth (preview)
               </Text>
