@@ -1,12 +1,32 @@
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { hasSupabaseConfig } from '@/lib/env';
+import { fetchRecentSessions, fetchStreak } from '@/lib/sessions';
 import { useSessionStore } from '@/stores/session';
 
 export default function Home() {
-  const streak = useSessionStore((s) => s.streak);
-  const history = useSessionStore((s) => s.history);
+  const localStreak = useSessionStore((s) => s.streak);
+  const localHistory = useSessionStore((s) => s.history);
+
+  const streakQuery = useQuery({
+    queryKey: ['streak'],
+    enabled: hasSupabaseConfig(),
+    queryFn: fetchStreak,
+  });
+  const sessionsQuery = useQuery({
+    queryKey: ['sessions', 'recent'],
+    enabled: hasSupabaseConfig(),
+    queryFn: () => fetchRecentSessions(60),
+  });
+
+  const streak = streakQuery.data ?? {
+    current: localStreak.current,
+    longest: localStreak.longest,
+  };
+  const sessionsCount = sessionsQuery.data?.length ?? localHistory.length;
 
   return (
     <SafeAreaView className="flex-1 bg-bg">
@@ -53,7 +73,7 @@ export default function Home() {
               Sessions
             </Text>
             <Text className="text-ink text-2xl font-semibold mt-1">
-              {history.length}
+              {sessionsCount}
             </Text>
             <Text className="text-muted text-xs mt-1">All time</Text>
           </View>

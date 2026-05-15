@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Pressable, Text, View } from 'react-native';
@@ -13,11 +14,14 @@ import {
   buildTimeline,
   createSessionRunner,
 } from '@/lib/session-engine';
+import { logCompletedSession } from '@/lib/sessions';
 import type { PhaseKind, ProgramDay } from '@/lib/types';
 import { useSessionStore } from '@/stores/session';
 
-// M1: hardcoded program day. M2+ will read from Supabase.
-function todaysHardcodedDay(): ProgramDay {
+// Hardcoded program day for the dev-without-backend M1 path. When Supabase
+// is configured the day comes from the user's active program (M3+ flow
+// reads program_days from Supabase in the pre-session screen).
+function fallbackDay(): ProgramDay {
   const short = getExercise('short_holds');
   const quick = getExercise('quick_flicks');
   return {
@@ -47,13 +51,14 @@ function phaseAnnouncement(kind: PhaseKind): string {
 export default function Player() {
   const router = useRouter();
   const logSession = useSessionStore((s) => s.logSession);
+  const queryClient = useQueryClient();
   const [tick, setTick] = useState(0);
   const runnerRef = useRef<SessionRunner | null>(null);
   const timelineRef = useRef<ReturnType<typeof buildTimeline>>([]);
   const startedAtRef = useRef<number>(0);
 
   useEffect(() => {
-    const day = todaysHardcodedDay();
+    const day = fallbackDay();
     const timeline = buildTimeline(day);
     timelineRef.current = timeline;
     const repsPlanned = day.exercises.reduce(
@@ -73,15 +78,33 @@ export default function Player() {
         setTick((t) => t + 1);
       },
       onComplete: () => {
+        const endedAt = Date.now();
         logSession({
           id: `s_${startedAtRef.current}`,
           startedAt: startedAtRef.current,
-          endedAt: Date.now(),
+          endedAt,
           mode: 'normal',
           repsPlanned,
           repsCompleted: repsPlanned,
           completed: true,
         });
+        // Persist to Supabase if configured. Fire-and-forget; the local
+        // log is the user-visible record either way.
+        void logCompletedSession({
+          programDayId: null,
+          startedAt: new Date(startedAtRef.current),
+          endedAt: new Date(endedAt),
+          mode: 'normal',
+          repsPlanned,
+          repsCompleted: repsPlanned,
+        })
+          .then(() => {
+            void queryClient.invalidateQueries({ queryKey: ['streak'] });
+            void queryClient.invalidateQueries({ queryKey: ['sessions'] });
+          })
+          .catch(() => {
+            // Don't block the success screen on a sync failure.
+          });
         setTick((t) => t + 1);
       },
       onAbort: () => {

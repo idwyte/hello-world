@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { markOnboarded } from '@/lib/persistence';
+import { hasRevenueCatConfig } from '@/lib/revenuecat';
 import { useOnboardingStore } from '@/stores/onboarding';
 
 export default function PlanPreview() {
@@ -36,11 +37,11 @@ export default function PlanPreview() {
     setBusy(true);
     try {
       await markOnboarded();
-      // Invalidate the index.tsx router's onboarded check so /home renders
-      // without bouncing back here.
       await queryClient.invalidateQueries({ queryKey: ['profile'] });
       reset();
-      router.replace('/home');
+      // Paywall is a hard gate post-onboarding when RC is configured;
+      // otherwise drop straight to home.
+      router.replace(hasRevenueCatConfig() ? '/paywall' : '/home');
     } catch (e) {
       const msg =
         e instanceof Error

@@ -1,9 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
+import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 import { useAuth } from '@/lib/auth';
 import { hasSupabaseConfig } from '@/lib/env';
+import {
+  configureRevenueCat,
+  hasRevenueCatConfig,
+  useEntitlement,
+} from '@/lib/revenuecat';
 import { getSupabase } from '@/lib/supabase';
 
 function useOnboardingState(userId: string | null) {
@@ -35,8 +41,18 @@ export default function Index() {
 function Router() {
   const auth = useAuth();
   const onboarded = useOnboardingState(auth.user?.id ?? null);
+  const { loading: entLoading, entitlement } = useEntitlement();
 
-  if (auth.loading || (auth.user && onboarded.isLoading)) {
+  // Bind RC's anonymous ID to the Supabase user once signed in.
+  useEffect(() => {
+    void configureRevenueCat(auth.user?.id ?? null);
+  }, [auth.user?.id]);
+
+  if (
+    auth.loading ||
+    (auth.user && onboarded.isLoading) ||
+    (auth.user && entLoading && hasRevenueCatConfig())
+  ) {
     return (
       <View className="flex-1 bg-bg items-center justify-center">
         <ActivityIndicator color="#7C5CFF" />
@@ -49,6 +65,9 @@ function Router() {
   }
   if (onboarded.data !== true) {
     return <Redirect href="/welcome" />;
+  }
+  if (hasRevenueCatConfig() && !entitlement.isPro) {
+    return <Redirect href="/paywall" />;
   }
   return <Redirect href="/home" />;
 }
