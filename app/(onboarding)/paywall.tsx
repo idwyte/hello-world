@@ -111,6 +111,11 @@ export default function Paywall() {
   );
 }
 
+type PaywallLoadState =
+  | { kind: 'loading' }
+  | { kind: 'ready'; module: typeof import('react-native-purchases-ui').default }
+  | { kind: 'failed' };
+
 function ConfiguredPaywall({
   onRestore,
   busy,
@@ -119,25 +124,23 @@ function ConfiguredPaywall({
   busy: boolean;
 }) {
   const router = useRouter();
-  const [PaywallUI, setPaywallUI] = useState<
-    null | typeof import('react-native-purchases-ui').default
-  >(null);
+  const [load, setLoad] = useState<PaywallLoadState>({ kind: 'loading' });
 
   useEffect(() => {
     let mounted = true;
     import('react-native-purchases-ui')
       .then((m) => {
-        if (mounted) setPaywallUI(m.default);
+        if (mounted) setLoad({ kind: 'ready', module: m.default });
       })
       .catch(() => {
-        if (mounted) setPaywallUI(null);
+        if (mounted) setLoad({ kind: 'failed' });
       });
     return () => {
       mounted = false;
     };
   }, []);
 
-  if (!PaywallUI) {
+  if (load.kind === 'loading') {
     return (
       <SafeAreaView className="flex-1 bg-bg items-center justify-center">
         <ActivityIndicator color="#7C5CFF" />
@@ -145,6 +148,47 @@ function ConfiguredPaywall({
     );
   }
 
+  if (load.kind === 'failed') {
+    return (
+      <SafeAreaView className="flex-1 bg-bg">
+        <View className="flex-1 px-6 pt-10 pb-6 justify-between">
+          <View>
+            <Text className="text-muted text-xs uppercase tracking-wider">
+              Subscription unavailable
+            </Text>
+            <Text className="text-ink text-2xl font-semibold mt-2 leading-8">
+              We couldn't load the subscription page.
+            </Text>
+            <Text className="text-muted mt-3 leading-6">
+              Check your connection and try again. If you already paid, tap
+              Restore purchases to recover your subscription.
+            </Text>
+          </View>
+          <View className="gap-3">
+            <Pressable
+              onPress={onRestore}
+              disabled={busy}
+              accessibilityRole="button"
+              accessibilityLabel="Restore previous purchases"
+              className="bg-accent rounded-xl py-4 items-center active:opacity-80"
+            >
+              <Text className="text-ink font-semibold">Restore purchases</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              className="bg-surface border border-border rounded-xl py-4 items-center active:opacity-80"
+            >
+              <Text className="text-ink">Back</Text>
+            </Pressable>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const PaywallUI = load.module;
   return (
     <SafeAreaView className="flex-1 bg-bg">
       <PaywallUI.Paywall

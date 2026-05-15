@@ -11,6 +11,22 @@ export const ENTITLEMENT_ID = 'pro';
 
 let configured = false;
 
+async function safeIsConfigured(): Promise<boolean> {
+  if (configured) return true;
+  try {
+    // Purchases.isConfigured exists in v8 but is sometimes a method, sometimes
+    // a property depending on minor version. Probe both shapes defensively.
+    const maybe = (Purchases as unknown as { isConfigured?: unknown }).isConfigured;
+    if (typeof maybe === 'function') {
+      return Boolean(await (maybe as () => Promise<boolean>)());
+    }
+    if (typeof maybe === 'boolean') return maybe;
+  } catch {
+    // ignore
+  }
+  return false;
+}
+
 export function hasRevenueCatConfig(): boolean {
   if (Platform.OS === 'ios') return env.revenuecatIosKey.length > 0;
   if (Platform.OS === 'android') return env.revenuecatAndroidKey.length > 0;
@@ -82,14 +98,28 @@ export function useEntitlement(): {
     }
     let mounted = true;
 
-    Purchases.getCustomerInfo()
-      .then((info) => {
+    // Wait until configure has been called by the root layout. RC v8 throws
+    // UninitializedPurchasesError if getCustomerInfo runs before configure.
+    (async () => {
+      try {
+        let attempts = 0;
+        // configured flips synchronously inside configureRevenueCat; this
+        // backoff handles the rare case where the consumer mounts in the
+        // same tick as configure.
+        while (attempts < 5 && !(await safeIsConfigured())) {
+          await new Promise((r) => setTimeout(r, 50));
+          attempts += 1;
+        }
+        const info = await Purchases.getCustomerInfo();
         if (!mounted) return;
         setEntitlement(entitlementFrom(info));
-      })
-      .finally(() => {
+      } catch {
+        if (!mounted) return;
+        setEntitlement(entitlementFrom(null));
+      } finally {
         if (mounted) setLoading(false);
-      });
+      }
+    })();
 
     const listener = (info: CustomerInfo) => {
       setEntitlement(entitlementFrom(info));

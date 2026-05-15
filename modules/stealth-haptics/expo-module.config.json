@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["StealthHapticsModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.stealthhaptics.StealthHapticsModule"]
+  }
+}

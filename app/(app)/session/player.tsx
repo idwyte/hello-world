@@ -1,12 +1,13 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PacerRing } from '@/components/session/PacerRing';
 import { PhaseLabel, colorForPhase } from '@/components/session/PhaseLabel';
-import { getExercise } from '@/lib/exercises';
+import { hasSupabaseConfig } from '@/lib/env';
+import { EXERCISES, getExercise } from '@/lib/exercises';
 import { play, patternForPhase } from '@/lib/haptics';
 import {
   type SessionState,
@@ -14,7 +15,7 @@ import {
   buildTimeline,
   createSessionRunner,
 } from '@/lib/session-engine';
-import { logCompletedSession } from '@/lib/sessions';
+import { fetchTodayProgramDay, logCompletedSession } from '@/lib/sessions';
 import type { PhaseKind, ProgramDay } from '@/lib/types';
 import { useSessionStore } from '@/stores/session';
 
@@ -57,8 +58,38 @@ export default function Player() {
   const timelineRef = useRef<ReturnType<typeof buildTimeline>>([]);
   const startedAtRef = useRef<number>(0);
 
+  // Fetch today's program day. If the query is still loading we start a
+  // session against the fallback (M1 demo) day; the player blocks navigation
+  // until the timeline is built so this is effectively synchronous from the
+  // user's POV.
+  const todayDayQuery = useQuery({
+    queryKey: ['program-day', 'today'],
+    enabled: hasSupabaseConfig(),
+    queryFn: fetchTodayProgramDay,
+  });
+
+  const { day, programDayId } = useMemo<{
+    day: ProgramDay;
+    programDayId: string | null;
+  }>(() => {
+    const today = todayDayQuery.data;
+    if (!today) return { day: fallbackDay(), programDayId: null };
+    const exercises = today.exercises
+      .map((slug) => EXERCISES[slug])
+      .filter((e): e is NonNullable<typeof e> => Boolean(e));
+    if (exercises.length === 0)
+      return { day: fallbackDay(), programDayId: today.programDayId };
+    return {
+      day: {
+        dayIndex: 0,
+        exercises,
+        targetDurationS: today.targetDurationS,
+      },
+      programDayId: today.programDayId,
+    };
+  }, [todayDayQuery.data]);
+
   useEffect(() => {
-    const day = fallbackDay();
     const timeline = buildTimeline(day);
     timelineRef.current = timeline;
     const repsPlanned = day.exercises.reduce(
@@ -88,10 +119,8 @@ export default function Player() {
           repsCompleted: repsPlanned,
           completed: true,
         });
-        // Persist to Supabase if configured. Fire-and-forget; the local
-        // log is the user-visible record either way.
         void logCompletedSession({
-          programDayId: null,
+          programDayId,
           startedAt: new Date(startedAtRef.current),
           endedAt: new Date(endedAt),
           mode: 'normal',
@@ -108,7 +137,6 @@ export default function Player() {
         setTick((t) => t + 1);
       },
       onAbort: () => {
-        // Intentionally do NOT log — user navigated away before completion.
         setTick((t) => t + 1);
       },
     });
@@ -127,7 +155,7 @@ export default function Player() {
       runner.stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [day, programDayId]);
 
   const state: SessionState | null = runnerRef.current?.getState() ?? null;
   const total = timelineRef.current.length;

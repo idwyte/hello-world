@@ -106,7 +106,7 @@ export default function PlanPreview() {
           )}
         </Pressable>
         <Text className="text-muted text-xs text-center mt-3">
-          M3 will gate this on a subscription. For now, full access.
+          3-day free trial, then $5.99/week. Cancel anytime in the App Store.
         </Text>
       </View>
     </SafeAreaView>
