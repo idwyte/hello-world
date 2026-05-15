@@ -21,9 +21,10 @@ export async function preloadCues(style: CueStyle): Promise<void> {
 export async function playCue(
   _style: CueStyle,
   _kind: PhaseKind,
+  options: { bluetoothOnly?: boolean } = {},
 ): Promise<void> {
   if (!prepared) return;
-  if (!(await shouldPlayAudioCue())) return;
+  if (!(await shouldPlayAudioCue(options))) return;
   // TODO(M5-assets): sound.setPositionAsync(0); sound.playAsync()
 }
 

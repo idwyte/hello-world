@@ -35,8 +35,14 @@ export async function currentAudioRoute(): Promise<AudioRouteKind> {
  * only audible when the user has Bluetooth audio (AirPods etc.) or wired
  * headphones connected. If neither is connected, cues are silently
  * suppressed and the user gets haptics only.
+ *
+ * When `bluetoothOnly` is false (set via Settings → Stealth) the gate is
+ * relaxed: cues will play through any output route, including the speaker.
  */
-export async function shouldPlayAudioCue(): Promise<boolean> {
+export async function shouldPlayAudioCue(
+  options: { bluetoothOnly?: boolean } = {},
+): Promise<boolean> {
+  if (options.bluetoothOnly === false) return true;
   const r = await currentAudioRoute();
   return r === 'bluetooth' || r === 'wired';
 }

@@ -34,6 +34,7 @@ const DEFAULT_CONFIG: DecoyConfig = {
 };
 
 let started = false;
+let serviceRegistered = false;
 
 type TrackPlayerModule = {
   setupPlayer: (opts?: object) => Promise<void>;
@@ -41,9 +42,11 @@ type TrackPlayerModule = {
   play: () => Promise<void>;
   pause: () => Promise<void>;
   reset: () => Promise<void>;
-  destroy?: () => Promise<void>;
-  Capability: Record<string, unknown>;
+  registerPlaybackService: (factory: () => () => Promise<void>) => void;
   updateOptions: (o: object) => Promise<void>;
+  IOSCategory?: Record<string, string>;
+  IOSCategoryOptions?: Record<string, string>;
+  AppKilledPlaybackBehavior?: Record<string, string>;
 };
 
 async function loadModule(): Promise<TrackPlayerModule | null> {
@@ -55,6 +58,21 @@ async function loadModule(): Promise<TrackPlayerModule | null> {
   }
 }
 
+/**
+ * RNTP requires a registered playback service before `play()` resolves on a
+ * real device. The factory returns an event handler that processes
+ * remote-control events (play/pause/skip). We don't expose remote controls,
+ * so the handler is a no-op. Registration must happen exactly once at app
+ * boot — guarded by `serviceRegistered`.
+ */
+function ensureServiceRegistered(TP: TrackPlayerModule) {
+  if (serviceRegistered) return;
+  TP.registerPlaybackService(() => async () => {
+    // Intentionally empty.
+  });
+  serviceRegistered = true;
+}
+
 export async function startDecoy(
   config: Partial<DecoyConfig> = {},
 ): Promise<boolean> {
@@ -64,17 +82,31 @@ export async function startDecoy(
   const final: DecoyConfig = { ...DEFAULT_CONFIG, ...config };
 
   try {
-    await TP.setupPlayer({ waitForBuffer: true });
+    ensureServiceRegistered(TP);
+    await TP.setupPlayer({
+      // Explicit iOS audio session category + Bluetooth options — matches
+      // plan §6 spec. Falls back to string literals when the enum object
+      // isn't yet exposed on older RNTP builds.
+      iosCategory: TP.IOSCategory?.Playback ?? 'playback',
+      iosCategoryOptions: [
+        TP.IOSCategoryOptions?.AllowBluetooth ?? 'allowBluetooth',
+        TP.IOSCategoryOptions?.AllowBluetoothA2DP ?? 'allowBluetoothA2DP',
+      ],
+    });
     await TP.updateOptions({
-      // Reasonable defaults; capabilities array goes here in real RNTP setup.
-      stopWithApp: true,
+      android: {
+        appKilledPlaybackBehavior:
+          TP.AppKilledPlaybackBehavior?.StopPlaybackAndRemoveNotification ??
+          'stop-playback-and-remove-notification',
+      },
     });
     await TP.reset();
     await TP.add({
       id: 'focus-session-loop',
       // TODO(M5-assets): require('../../assets/audio/focus-session.m4a')
-      //   Until the real ambient track ships, this just attempts a remote
-      //   placeholder; failure is handled by the catch.
+      //   Until the real ambient track ships this is a placeholder URL;
+      //   failure is handled by the catch and the session continues with
+      //   haptics only.
       url: 'https://example.com/silence.m4a',
       title: final.title,
       artist: final.artist,

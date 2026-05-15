@@ -1,16 +1,25 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { hasSupabaseConfig } from '@/lib/env';
 import { hasRevenueCatConfig, useEntitlement } from '@/lib/revenuecat';
 import { fetchTodayProgramDay } from '@/lib/sessions';
+import { useSettingsStore } from '@/stores/settings';
 
 export default function SessionPreview() {
   const router = useRouter();
   const { entitlement } = useEntitlement();
   const blockedBySubscription = hasRevenueCatConfig() && !entitlement.isPro;
+  const { settings, hydrated, hydrate } = useSettingsStore();
+
+  // Hydrate so we can honor `defaultMode` and pre-select the user's chosen
+  // entry point.
+  useEffect(() => {
+    if (!hydrated) void hydrate();
+  }, [hydrate, hydrated]);
 
   const todayQuery = useQuery({
     queryKey: ['program-day', 'today'],
@@ -67,35 +76,9 @@ export default function SessionPreview() {
               </Pressable>
             </View>
           ) : (
-            <>
-              <Link href="/session/player" asChild>
-                <Pressable
-                  className="bg-accent rounded-xl mt-4 py-4 px-5 active:opacity-80"
-                  accessibilityRole="button"
-                  accessibilityLabel="Start session in Normal mode with on-screen pacer and haptics"
-                >
-                  <Text className="text-ink font-semibold text-lg">Normal</Text>
-                  <Text className="text-ink/70 text-sm mt-1">
-                    On-screen pacer + haptics
-                  </Text>
-                </Pressable>
-              </Link>
-
-              <Link href="/session/stealth" asChild>
-                <Pressable
-                  className="bg-surface2 border border-border rounded-xl mt-3 py-4 px-5 active:opacity-80"
-                  accessibilityRole="button"
-                  accessibilityLabel="Preview Stealth Haptic Mode, coming in M4"
-                >
-                  <Text className="text-ink font-semibold text-lg">
-                    Stealth (preview)
-                  </Text>
-                  <Text className="text-muted text-sm mt-1">
-                    AirPods + haptics, podcast-decoy lockscreen · M4
-                  </Text>
-                </Pressable>
-              </Link>
-            </>
+            <ModePicker
+              stealthFirst={hydrated && settings.defaultMode === 'stealth'}
+            />
           )}
         </View>
       </View>
@@ -108,4 +91,63 @@ function prettyName(slug: string): string {
     .split('_')
     .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
     .join(' ');
+}
+
+function NormalCard({ primary }: { primary: boolean }) {
+  return (
+    <Link href="/session/player" asChild>
+      <Pressable
+        className={`rounded-xl py-4 px-5 active:opacity-80 ${
+          primary ? 'bg-accent' : 'bg-surface2 border border-border'
+        }`}
+        accessibilityRole="button"
+        accessibilityLabel="Start session in Normal mode with on-screen pacer and haptics"
+      >
+        <Text className="text-ink font-semibold text-lg">Normal</Text>
+        <Text
+          className={`text-sm mt-1 ${primary ? 'text-ink/70' : 'text-muted'}`}
+        >
+          On-screen pacer + haptics
+        </Text>
+      </Pressable>
+    </Link>
+  );
+}
+
+function StealthCard({ primary }: { primary: boolean }) {
+  return (
+    <Link href="/session/stealth" asChild>
+      <Pressable
+        className={`rounded-xl py-4 px-5 active:opacity-80 ${
+          primary ? 'bg-accent' : 'bg-surface2 border border-border'
+        }`}
+        accessibilityRole="button"
+        accessibilityLabel="Start a Stealth session — AirPods and haptics, podcast-style lockscreen"
+      >
+        <Text className="text-ink font-semibold text-lg">Stealth</Text>
+        <Text
+          className={`text-sm mt-1 ${primary ? 'text-ink/70' : 'text-muted'}`}
+        >
+          AirPods + haptics, podcast-decoy lockscreen
+        </Text>
+      </Pressable>
+    </Link>
+  );
+}
+
+function ModePicker({ stealthFirst }: { stealthFirst: boolean }) {
+  if (stealthFirst) {
+    return (
+      <View className="mt-4 gap-3">
+        <StealthCard primary />
+        <NormalCard primary={false} />
+      </View>
+    );
+  }
+  return (
+    <View className="mt-4 gap-3">
+      <NormalCard primary />
+      <StealthCard primary={false} />
+    </View>
+  );
 }

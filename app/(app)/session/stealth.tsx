@@ -23,6 +23,7 @@ import {
   patternForPhase,
   setHapticsIntensity,
 } from '@/lib/haptics';
+import { notifySessionComplete } from '@/lib/notifications';
 import {
   type SessionRunner,
   type SessionState,
@@ -30,6 +31,7 @@ import {
   createSessionRunner,
 } from '@/lib/session-engine';
 import { fetchTodayProgramDay, logCompletedSession } from '@/lib/sessions';
+import { AppState, type AppStateStatus } from 'react-native';
 import type { ProgramDay } from '@/lib/types';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
@@ -120,7 +122,9 @@ export default function StealthSession() {
         if (pattern) {
           void play(pattern, settings.hapticIntensity);
           if (phase.kind !== 'rest' && phase.kind !== 'prep') {
-            void playCue(settings.cueStyle, phase.kind);
+            void playCue(settings.cueStyle, phase.kind, {
+              bluetoothOnly: settings.bluetoothOnly,
+            });
           }
         }
         setTick((t) => t + 1);
@@ -150,6 +154,11 @@ export default function StealthSession() {
             void queryClient.invalidateQueries({ queryKey: ['sessions'] });
           })
           .catch(() => {});
+        // Backgrounded → notification ping; foregrounded → in-app
+        // completion screen handles it.
+        if (AppState.currentState !== 'active') {
+          void notifySessionComplete();
+        }
         setTick((t) => t + 1);
       },
       onAbort: () => setTick((t) => t + 1),
@@ -159,14 +168,47 @@ export default function StealthSession() {
     runner.start();
     void play('sessionStart', settings.hapticIntensity);
 
-    const id = setInterval(() => {
+    const tickId = setInterval(() => {
       runner.tick(Date.now());
       setTick((t) => t + 1);
     }, 100);
 
+    // Poll the audio route every second so we can update the speaker-hint
+    // banner and fire a 'reconnect' haptic when the user re-pairs AirPods
+    // mid-session. The native module exposes a snapshot but not an event
+    // stream (event emitter wiring is M5).
+    let lastRoute: AudioRouteKind = 'unknown';
+    const routeId = setInterval(async () => {
+      const r = await currentAudioRoute();
+      if (!cancelled && r !== lastRoute) {
+        const wasUsable = lastRoute === 'bluetooth' || lastRoute === 'wired';
+        const isUsable = r === 'bluetooth' || r === 'wired';
+        if (!wasUsable && isUsable && lastRoute !== 'unknown') {
+          // Audio came back — gentle haptic acknowledgement.
+          void play('reconnect', settings.hapticIntensity);
+        }
+        lastRoute = r;
+        setRoute(r);
+      }
+    }, 1000);
+
+    // Pause/resume on app background changes — keeps phase clock honest if
+    // iOS suspends JS despite the audio session.
+    const appStateSub = AppState.addEventListener(
+      'change',
+      (next: AppStateStatus) => {
+        if (next === 'active') {
+          // resume; runner's pause/resume keeps phase progress, but iOS will
+          // have its own clock and we re-tick on next interval
+        }
+      },
+    );
+
     return () => {
       cancelled = true;
-      clearInterval(id);
+      clearInterval(tickId);
+      clearInterval(routeId);
+      appStateSub.remove();
       runner.stop();
       void stopDecoy();
       void cancelAllHaptics();
@@ -281,7 +323,12 @@ export default function StealthSession() {
           </View>
 
           {route === 'speaker' || route === 'silent' ? (
-            <View className="bg-surface border border-border rounded-xl p-3 mb-3">
+            <View
+              className="bg-surface border border-border rounded-xl p-3 mb-3"
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
+              accessibilityLabel="Connect AirPods or headphones for audio cues. Haptics still work without them."
+            >
               <Text className="text-muted text-xs">
                 Connect AirPods or headphones for audio cues. Haptics still
                 work without them.

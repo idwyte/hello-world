@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { Pressable, Switch, Text, View } from 'react-native';
+import { Platform, Pressable, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type { CueStyle } from '@/lib/audio/cues';
@@ -48,6 +48,21 @@ export default function StealthSettings() {
         <Text className="text-muted mt-2 leading-5">
           These preferences stay on this device and never sync.
         </Text>
+
+        {Platform.OS === 'android' ? (
+          <View
+            className="bg-surface2 border border-border rounded-xl p-3 mt-4"
+            accessibilityRole="alert"
+          >
+            <Text className="text-ink text-sm font-semibold">Beta on Android</Text>
+            <Text className="text-muted text-xs mt-1 leading-5">
+              Stealth Mode works best on iPhone. Android haptic precision
+              varies by device — VibrationEffect amplitude control isn't
+              universal. Audio cues and the lockscreen disguise work the
+              same on both platforms.
+            </Text>
+          </View>
+        ) : null}
 
         <View className="mt-6">
           <Text className="text-muted text-xs uppercase tracking-wider">
