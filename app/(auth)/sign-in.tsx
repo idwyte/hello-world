@@ -58,7 +58,7 @@ export default function SignIn() {
             </View>
           ) : null}
 
-          {Platform.OS === 'ios' ? (
+          {Platform.OS === 'ios' && configured ? (
             <AppleAuthentication.AppleAuthenticationButton
               buttonType={
                 AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN

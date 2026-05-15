@@ -1,9 +1,13 @@
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { isAssessmentComplete } from '@/lib/assessment-questions';
+import {
+  rawAssessmentScore,
+  saveAssessmentAndProgram,
+} from '@/lib/persistence';
 import {
   buildProgram,
   defaultStealthFromAnswers,
@@ -12,15 +16,17 @@ import {
 import { useOnboardingStore } from '@/stores/onboarding';
 
 /**
- * Generates the program locally from the draft answers. M3 will persist it
- * to Supabase before showing the paywall.
+ * Generates the program locally, persists it to Supabase (when configured),
+ * then navigates to plan-preview.
  */
 export default function Generating() {
   const router = useRouter();
   const draft = useOnboardingStore((s) => s.draft);
   const setGenerated = useOnboardingStore((s) => s.setGenerated);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     if (!isAssessmentComplete(draft)) {
       router.replace('/welcome');
       return;
@@ -28,11 +34,40 @@ export default function Generating() {
     const level = recommendLevel(draft);
     const program = buildProgram(level, draft.dailyMinutes, draft.goal);
     const stealthDefault = defaultStealthFromAnswers(draft);
+    const rawScore = rawAssessmentScore(draft);
     setGenerated({ level, program, stealthDefault });
 
-    // Brief pause for UX; the actual computation finishes synchronously.
-    const id = setTimeout(() => router.replace('/plan-preview'), 1400);
-    return () => clearTimeout(id);
+    (async () => {
+      const minDelay = new Promise((r) => setTimeout(r, 1400));
+      try {
+        await Promise.all([
+          saveAssessmentAndProgram({
+            answers: draft,
+            level,
+            rawScore,
+            program,
+          }),
+          minDelay,
+        ]);
+      } catch (e) {
+        if (cancelled) return;
+        const msg =
+          e instanceof Error
+            ? e.message
+            : "Couldn't save your plan. Try again.";
+        setError(msg);
+        Alert.alert('Save failed', msg, [
+          { text: 'Retry', onPress: () => router.replace('/generating') },
+          { text: 'Cancel', onPress: () => router.replace('/welcome') },
+        ]);
+        return;
+      }
+      if (!cancelled) router.replace('/plan-preview');
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [draft, router, setGenerated]);
 
   return (
@@ -45,6 +80,9 @@ export default function Generating() {
         <Text className="text-muted text-center mt-2 leading-5">
           Tuning eight weeks of sessions to your strength, goal, and daily time.
         </Text>
+        {error ? (
+          <Text className="text-danger text-sm mt-6 text-center">{error}</Text>
+        ) : null}
       </View>
     </SafeAreaView>
   );

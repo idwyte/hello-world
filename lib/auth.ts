@@ -104,10 +104,11 @@ export async function signInWithGoogle(): Promise<void> {
   });
   await GoogleSignin.hasPlayServices();
   const result = await GoogleSignin.signIn();
+  // v15 returns { type: 'cancelled', data: null } if the user dismisses the
+  // sheet; treat as a no-op rather than crashing.
+  if (!result?.data) return;
   const idToken =
-    'idToken' in result.data!
-      ? result.data.idToken
-      : ((result.data as unknown as { idToken?: string }).idToken ?? null);
+    (result.data as { idToken?: string | null }).idToken ?? null;
   if (!idToken) throw new Error('Google sign-in returned no idToken.');
   const supabase = getSupabase();
   const { error } = await supabase.auth.signInWithIdToken({
@@ -147,6 +148,12 @@ export async function signOut(): Promise<void> {
  * Delete the user's account. Calls a Supabase Edge Function with the user's
  * JWT; the function uses the service role to call `auth.admin.deleteUser`.
  * Required by App Store guideline 5.1.1(v).
+ *
+ * TODO(M5): implement `supabase/functions/delete-account/index.ts` —
+ *   reads `Authorization` header, verifies JWT, calls
+ *   `auth.admin.deleteUser(userId)` with the service-role key, returns
+ *   `{ ok: true }` on success. Until that ships, this function will throw
+ *   "Edge Function not found".
  */
 export async function deleteAccount(): Promise<void> {
   const supabase = getSupabase();

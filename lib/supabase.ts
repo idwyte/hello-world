@@ -2,36 +2,24 @@ import 'react-native-url-polyfill/auto';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
 
 import { env, hasSupabaseConfig } from './env';
 
 /**
- * Secure-store-backed storage for the Supabase auth session.
+ * Storage adapter for the Supabase auth session.
  *
- * SecureStore values are capped at ~2KB on iOS; Supabase session tokens fit
- * within that envelope. Web falls back to AsyncStorage (no SecureStore on web).
+ * AsyncStorage (not SecureStore) because Supabase session blobs — especially
+ * with Apple/Google OAuth provider tokens — routinely exceed the iOS
+ * SecureStore 2 KB per-value cap and would silently fail to persist. This is
+ * also the pattern Supabase's RN docs recommend.
+ *
+ * `expo-secure-store` is still used for device-local sensitive prefs (haptic
+ * intensity, stealth cue style, decoy cover) — see `stores/settings.ts`.
  */
 const supabaseStorage = {
-  getItem: async (key: string) => {
-    if (Platform.OS === 'web') {
-      return AsyncStorage.getItem(key);
-    }
-    return SecureStore.getItemAsync(key);
-  },
-  setItem: async (key: string, value: string) => {
-    if (Platform.OS === 'web') {
-      return AsyncStorage.setItem(key, value);
-    }
-    return SecureStore.setItemAsync(key, value);
-  },
-  removeItem: async (key: string) => {
-    if (Platform.OS === 'web') {
-      return AsyncStorage.removeItem(key);
-    }
-    return SecureStore.deleteItemAsync(key);
-  },
+  getItem: (key: string) => AsyncStorage.getItem(key),
+  setItem: (key: string, value: string) => AsyncStorage.setItem(key, value),
+  removeItem: (key: string) => AsyncStorage.removeItem(key),
 };
 
 let client: SupabaseClient | null = null;

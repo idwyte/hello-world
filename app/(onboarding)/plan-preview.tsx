@@ -1,12 +1,25 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { markOnboarded } from '@/lib/persistence';
 import { useOnboardingStore } from '@/stores/onboarding';
 
 export default function PlanPreview() {
   const router = useRouter();
   const generated = useOnboardingStore((s) => s.generated);
+  const reset = useOnboardingStore((s) => s.reset);
+  const queryClient = useQueryClient();
+  const [busy, setBusy] = useState(false);
 
   if (!generated) {
     return (
@@ -17,6 +30,26 @@ export default function PlanPreview() {
   }
 
   const firstWeek = generated.program.slice(0, 7);
+
+  async function handleStart() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await markOnboarded();
+      // Invalidate the index.tsx router's onboarded check so /home renders
+      // without bouncing back here.
+      await queryClient.invalidateQueries({ queryKey: ['profile'] });
+      reset();
+      router.replace('/home');
+    } catch (e) {
+      const msg =
+        e instanceof Error
+          ? e.message
+          : "Couldn't finalize your plan. Try again.";
+      Alert.alert('Save failed', msg);
+      setBusy(false);
+    }
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-bg">
@@ -56,12 +89,20 @@ export default function PlanPreview() {
         </ScrollView>
 
         <Pressable
-          onPress={() => router.replace('/home')}
+          onPress={handleStart}
+          disabled={busy}
           accessibilityRole="button"
           accessibilityLabel="Start training"
-          className="bg-accent rounded-xl py-4 items-center active:opacity-80"
+          accessibilityState={{ disabled: busy }}
+          className={`rounded-xl py-4 items-center active:opacity-80 ${
+            busy ? 'bg-surface2' : 'bg-accent'
+          }`}
         >
-          <Text className="text-ink font-semibold">Start training</Text>
+          {busy ? (
+            <ActivityIndicator color="#F5F5F7" />
+          ) : (
+            <Text className="text-ink font-semibold">Start training</Text>
+          )}
         </Pressable>
         <Text className="text-muted text-xs text-center mt-3">
           M3 will gate this on a subscription. For now, full access.
