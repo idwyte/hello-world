@@ -38,6 +38,15 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="program"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabIcon label="Plan" focused={focused} />
+          ),
+          tabBarAccessibilityLabel: 'Plan',
+        }}
+      />
+      <Tabs.Screen
         name="progress"
         options={{
           tabBarIcon: ({ focused }) => (
