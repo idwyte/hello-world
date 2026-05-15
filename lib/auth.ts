@@ -145,15 +145,13 @@ export async function signOut(): Promise<void> {
 }
 
 /**
- * Delete the user's account. Calls a Supabase Edge Function with the user's
- * JWT; the function uses the service role to call `auth.admin.deleteUser`.
+ * Delete the user's account. Calls the `delete-account` Edge Function which
+ * uses the service role to call `auth.admin.deleteUser`. Data in owner-scoped
+ * tables cascades off auth.users on delete (see 0001_init.sql).
  * Required by App Store guideline 5.1.1(v).
  *
- * TODO(M5): implement `supabase/functions/delete-account/index.ts` —
- *   reads `Authorization` header, verifies JWT, calls
- *   `auth.admin.deleteUser(userId)` with the service-role key, returns
- *   `{ ok: true }` on success. Until that ships, this function will throw
- *   "Edge Function not found".
+ * The function source lives at `supabase/functions/delete-account/index.ts`
+ * and is deployed via `supabase functions deploy delete-account`.
  */
 export async function deleteAccount(): Promise<void> {
   const supabase = getSupabase();

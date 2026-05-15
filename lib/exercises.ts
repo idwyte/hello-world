@@ -20,7 +20,8 @@ export const EXERCISES: Record<string, ExerciseTemplate> = {
   short_holds: {
     slug: 'short_holds',
     name: 'Short Holds',
-    description: 'Standard Kegel: squeeze, hold briefly, release fully.',
+    description:
+      'Standard pelvic-floor contraction: squeeze, hold briefly, release fully.',
     difficulty: 1,
     sets: 2,
     reps: 8,

@@ -50,8 +50,8 @@ export const QUESTIONS: Question[] = [
     help: 'Select all that apply. Skip if none.',
     choices: [
       { label: 'Occasional leaks', value: 'leaks' },
-      { label: 'Trouble lasting longer', value: 'premature' },
-      { label: 'Weaker erections', value: 'weak_erection' },
+      { label: 'Trouble with control', value: 'control' },
+      { label: 'Reduced firmness', value: 'firmness' },
       { label: 'None of the above', value: 'none' },
     ],
   },

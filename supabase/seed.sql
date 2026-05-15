@@ -6,7 +6,7 @@ insert into public.exercises (slug, name, description, difficulty, phase_templat
    1,
    '{"sets":2,"reps":10,"phases":[{"kind":"squeeze","durationMs":1000},{"kind":"release","durationMs":1500}],"restBetweenSetsMs":20000}'::jsonb),
   ('short_holds', 'Short Holds',
-   'Standard Kegel: squeeze, hold briefly, release fully.',
+   'Standard pelvic-floor contraction: squeeze, hold briefly, release fully.',
    1,
    '{"sets":2,"reps":8,"phases":[{"kind":"squeeze","durationMs":1000},{"kind":"hold","durationMs":3000},{"kind":"release","durationMs":3000}],"restBetweenSetsMs":30000}'::jsonb),
   ('long_holds', 'Long Holds',

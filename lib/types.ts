@@ -34,7 +34,7 @@ export type Goal = 'control' | 'strength' | 'stamina' | 'general';
 export type AssessmentAnswers = {
   ageBand: '18-24' | '25-34' | '35-44' | '45-54' | '55+';
   currentStrength: 1 | 2 | 3 | 4 | 5;
-  symptoms: Array<'leaks' | 'premature' | 'weak_erection' | 'none'>;
+  symptoms: Array<'leaks' | 'control' | 'firmness' | 'none'>;
   priorExperience: 'never' | 'tried' | 'regularly';
   holdDuration: '<3s' | '3-5s' | '5-10s' | '>10s';
   goal: Goal;
