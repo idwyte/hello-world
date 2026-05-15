@@ -36,6 +36,7 @@ const config: ExpoConfig = {
   },
   plugins: [
     'expo-router',
+    './plugins/withStealthAudioBackground',
   ],
   experiments: {
     typedRoutes: true,
