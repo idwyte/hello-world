@@ -85,6 +85,19 @@ describe('buildProgram', () => {
     const program = buildProgram('intermediate', 5, 'control');
     expect(program[0].exercises[0].slug).toBe('quick_flicks');
   });
+
+  it('beginner + stamina includes long_holds (goal honored despite beginner pool)', () => {
+    const program = buildProgram('beginner', 5, 'stamina');
+    const slugs = program[0].exercises.map((e) => e.slug);
+    expect(slugs).toContain('long_holds');
+    expect(slugs[0]).toBe('long_holds');
+  });
+
+  it('beginner + general does NOT include long_holds (pool stays minimal)', () => {
+    const program = buildProgram('beginner', 5, 'general');
+    const slugs = program[0].exercises.map((e) => e.slug);
+    expect(slugs).not.toContain('long_holds');
+  });
 });
 
 describe('defaultStealthFromAnswers', () => {

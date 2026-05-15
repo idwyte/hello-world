@@ -25,10 +25,15 @@ export function recommendLevel(a: AssessmentAnswers): Level {
 }
 
 function pickExercisesFor(level: Level, goal: Goal): string[] {
-  // Returns an ordered exercise pool. Goal weights the mix.
+  // Returns an ordered exercise pool. Goal weights the mix; beginners get
+  // long_holds added when their goal is strength/stamina even though the
+  // default beginner pool is shorter.
   const pool: string[] = [];
   if (level === 'beginner') {
     pool.push('short_holds', 'quick_flicks');
+    if (goal === 'strength' || goal === 'stamina') {
+      pool.push('long_holds');
+    }
   } else if (level === 'intermediate') {
     pool.push('short_holds', 'quick_flicks', 'long_holds');
   } else {

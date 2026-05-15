@@ -1,5 +1,5 @@
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -105,14 +105,6 @@ export default function Player() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      return () => {
-        runnerRef.current?.stop();
-      };
-    }, []),
-  );
 
   const state: SessionState | null = runnerRef.current?.getState() ?? null;
   const total = timelineRef.current.length;
