@@ -1,0 +1,174 @@
+import type { ExerciseTemplate, Phase, ProgramDay } from './types';
+
+export function buildTimeline(day: ProgramDay): Phase[] {
+  const phases: Phase[] = [];
+  phases.push({
+    kind: 'prep',
+    durationMs: 3000,
+    repIndex: 0,
+    setIndex: 0,
+    exerciseIndex: 0,
+  });
+  day.exercises.forEach((ex: ExerciseTemplate, exerciseIndex) => {
+    for (let s = 0; s < ex.sets; s++) {
+      for (let r = 0; r < ex.reps; r++) {
+        for (const p of ex.phases) {
+          phases.push({
+            kind: p.kind,
+            durationMs: p.durationMs,
+            repIndex: r,
+            setIndex: s,
+            exerciseIndex,
+          });
+        }
+      }
+      const isLastSet = s === ex.sets - 1;
+      if (!isLastSet && ex.restBetweenSetsMs > 0) {
+        phases.push({
+          kind: 'rest',
+          durationMs: ex.restBetweenSetsMs,
+          repIndex: ex.reps - 1,
+          setIndex: s,
+          exerciseIndex,
+        });
+      }
+    }
+  });
+  phases.push({
+    kind: 'done',
+    durationMs: 0,
+    repIndex: 0,
+    setIndex: 0,
+    exerciseIndex: Math.max(0, day.exercises.length - 1),
+  });
+  return phases;
+}
+
+export type SessionState = {
+  status: 'idle' | 'running' | 'paused' | 'done';
+  phaseIndex: number;
+  phase: Phase;
+  phaseElapsedMs: number;
+  totalElapsedMs: number;
+  totalDurationMs: number;
+};
+
+export type PhaseCallback = (phase: Phase, index: number, total: number) => void;
+
+export type SessionCallbacks = {
+  onPhaseStart?: PhaseCallback;
+  onPhaseEnd?: PhaseCallback;
+  onTick?: (state: SessionState) => void;
+  onComplete?: (state: SessionState) => void;
+};
+
+type TimeFn = () => number;
+
+export type SessionRunner = {
+  start: () => void;
+  pause: () => void;
+  resume: () => void;
+  stop: () => void;
+  getState: () => SessionState;
+  /** Advance internal clock — used by tests; in production driver, `tick()` is called from setInterval. */
+  tick: (now: number) => void;
+};
+
+export function createSessionRunner(
+  timeline: Phase[],
+  callbacks: SessionCallbacks = {},
+  options: { now?: TimeFn } = {},
+): SessionRunner {
+  if (timeline.length === 0) {
+    throw new Error('Timeline cannot be empty');
+  }
+  const now = options.now ?? (() => Date.now());
+  const totalDurationMs = timeline.reduce((acc, p) => acc + p.durationMs, 0);
+
+  let status: SessionState['status'] = 'idle';
+  let phaseIndex = 0;
+  let phaseStartedAt = 0;
+  let pausedAt = 0;
+  let totalPausedMs = 0;
+  let sessionStartedAt = 0;
+
+  function state(): SessionState {
+    const phase = timeline[phaseIndex];
+    const nowMs = now();
+    const phaseElapsed =
+      status === 'running'
+        ? nowMs - phaseStartedAt
+        : status === 'paused'
+          ? pausedAt - phaseStartedAt
+          : 0;
+    const totalElapsed =
+      status === 'running'
+        ? nowMs - sessionStartedAt - totalPausedMs
+        : status === 'paused'
+          ? pausedAt - sessionStartedAt - totalPausedMs
+          : 0;
+    return {
+      status,
+      phaseIndex,
+      phase,
+      phaseElapsedMs: Math.max(0, phaseElapsed),
+      totalElapsedMs: Math.max(0, totalElapsed),
+      totalDurationMs,
+    };
+  }
+
+  function advance(targetTime: number) {
+    while (
+      status === 'running' &&
+      phaseIndex < timeline.length - 1 &&
+      timeline[phaseIndex].durationMs > 0 &&
+      targetTime - phaseStartedAt >= timeline[phaseIndex].durationMs
+    ) {
+      const finished = timeline[phaseIndex];
+      callbacks.onPhaseEnd?.(finished, phaseIndex, timeline.length);
+      const elapsedInPhase = timeline[phaseIndex].durationMs;
+      phaseStartedAt += elapsedInPhase;
+      phaseIndex += 1;
+      const next = timeline[phaseIndex];
+      callbacks.onPhaseStart?.(next, phaseIndex, timeline.length);
+      if (next.kind === 'done') {
+        status = 'done';
+        callbacks.onComplete?.(state());
+        return;
+      }
+    }
+  }
+
+  return {
+    start() {
+      if (status !== 'idle') return;
+      status = 'running';
+      sessionStartedAt = now();
+      phaseStartedAt = sessionStartedAt;
+      phaseIndex = 0;
+      callbacks.onPhaseStart?.(timeline[0], 0, timeline.length);
+    },
+    pause() {
+      if (status !== 'running') return;
+      status = 'paused';
+      pausedAt = now();
+    },
+    resume() {
+      if (status !== 'paused') return;
+      const pauseDuration = now() - pausedAt;
+      totalPausedMs += pauseDuration;
+      phaseStartedAt += pauseDuration;
+      status = 'running';
+    },
+    stop() {
+      status = 'done';
+      callbacks.onComplete?.(state());
+    },
+    getState: state,
+    tick(time: number) {
+      if (status !== 'running') return;
+      advance(time);
+      callbacks.onTick?.(state());
+    },
+  };
+}
