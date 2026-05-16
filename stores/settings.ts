@@ -21,7 +21,7 @@ const DEFAULTS: StealthSettings = {
   defaultMode: 'normal',
 };
 
-const STORAGE_KEY = 'sqz_stealth_settings_v1';
+const STORAGE_KEY = 'hone_stealth_settings_v1';
 
 type SettingsStore = {
   hydrated: boolean;

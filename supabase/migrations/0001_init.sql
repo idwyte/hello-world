@@ -1,4 +1,4 @@
--- SQZ Clone — initial schema with RLS
+-- Hone — initial schema with RLS
 -- All user-scoped tables enforce `auth.uid() = user_id`. Service role is used
 -- only from Edge Functions, never from the client.
 

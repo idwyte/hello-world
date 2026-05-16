@@ -42,7 +42,7 @@ export default function SignIn() {
     <SafeAreaView className="flex-1 bg-bg">
       <View className="flex-1 px-6 pt-10 pb-8">
         <View className="flex-1 justify-center">
-          <Text className="text-ink text-4xl font-semibold">SQZ</Text>
+          <Text className="text-ink text-4xl font-semibold">Hone</Text>
           <Text className="text-muted mt-2">
             Train pelvic floor strength in a few minutes a day.
           </Text>

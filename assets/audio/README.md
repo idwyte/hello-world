@@ -32,7 +32,7 @@ instead of the `https://example.com/silence.m4a` placeholder.
 
 ### `covers/minimal_violet.png` / `gradient_blue.png` / `paper_grain.png` (recommended)
 
-- 1024×1024 PNG, no SQZ branding, no Kegel/anatomy imagery
+- 1024×1024 PNG, no Hone branding, no Kegel/anatomy imagery
 - Matches the visual identity of generic "focus / ambient podcast" cover art
 - Wire into `lib/audio/decoy-track.ts` via the same `require()` pattern,
   selecting by `config.cover`.

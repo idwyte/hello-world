@@ -32,7 +32,7 @@ export default function Home() {
     <SafeAreaView className="flex-1 bg-bg">
       <View className="flex-1 px-6 pt-6">
         <Text className="text-muted text-sm">Today</Text>
-        <Text className="text-ink text-3xl font-semibold mt-1">SQZ</Text>
+        <Text className="text-ink text-3xl font-semibold mt-1">Hone</Text>
 
         <View className="bg-surface rounded-2xl p-5 mt-6 border border-border">
           <Text className="text-muted text-xs uppercase tracking-wider">

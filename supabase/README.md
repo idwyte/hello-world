@@ -1,6 +1,6 @@
 # Supabase
 
-Schema, migrations and seed for the SQZ clone backend.
+Schema, migrations and seed for the Hone backend.
 
 ## First-time setup
 

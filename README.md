@@ -1,9 +1,9 @@
-# SQZ — Pelvic-floor training for men
+# Hone — Pelvic-floor training for men
 
 A React Native / Expo clone of the SQZ Kegel Men Exercises app (App Store id
-6754498100), with one headline differentiator: **Stealth Haptic Mode** — run a
-full session via AirPods cues + phone haptics behind a podcast-style
-lockscreen, no visible UI.
+6754498100), rebranded as **Hone**, with one headline differentiator:
+**Stealth Haptic Mode** — run a full session via AirPods cues + phone
+haptics behind a podcast-style lockscreen, no visible UI.
 
 ## Quick start
 
@@ -86,8 +86,8 @@ Enable Apple, Google, and Email auth providers in the Supabase dashboard.
 
 ## RevenueCat
 
-- App Store Connect / Play Console products: `sqz_weekly` ($5.99/wk, 3-day
-  trial) and `sqz_yearly` ($24.99/yr)
+- App Store Connect / Play Console products: `hone_weekly` ($5.99/wk, 3-day
+  trial) and `hone_yearly` ($24.99/yr)
 - Single entitlement: `pro`
 - RC dashboard offering: `default` with both packages
 - Client wiring: `lib/revenuecat.ts` + `(onboarding)/paywall.tsx` (uses RC

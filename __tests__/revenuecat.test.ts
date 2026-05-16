@@ -46,7 +46,7 @@ function activeEntitlement(overrides: Partial<{
       isActive: true,
       latestPurchaseDate: '2024-01-01T00:00:00Z',
       originalPurchaseDate: '2024-01-01T00:00:00Z',
-      productIdentifier: 'sqz_yearly',
+      productIdentifier: 'hone_yearly',
       isSandbox: true,
       unsubscribeDetectedAt: null,
       billingIssueDetectedAt: null,

@@ -1,10 +1,10 @@
 import type { ExpoConfig } from 'expo/config';
 
 const config: ExpoConfig = {
-  name: 'SQZ',
-  slug: 'sqz-clone',
+  name: 'Hone',
+  slug: 'hone',
   version: '0.1.0',
-  scheme: 'sqzclone',
+  scheme: 'hone',
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
@@ -16,13 +16,13 @@ const config: ExpoConfig = {
   },
   ios: {
     supportsTablet: false,
-    bundleIdentifier: 'com.sqzclone.app',
+    bundleIdentifier: 'com.honeapp.mobile',
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
     },
   },
   android: {
-    package: 'com.sqzclone.app',
+    package: 'com.honeapp.mobile',
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#0B0B0F',

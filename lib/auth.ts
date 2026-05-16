@@ -132,7 +132,7 @@ export async function sendMagicLink(email: string): Promise<void> {
     email: trimmed,
     options: {
       shouldCreateUser: true,
-      emailRedirectTo: 'sqzclone://auth/callback',
+      emailRedirectTo: 'hone://auth/callback',
     },
   });
   if (error) throw error;

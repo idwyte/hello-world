@@ -4,7 +4,7 @@ Paste / adapt these into App Store Connect when submitting.
 
 ## App information
 
-- **Name**: SQZ — Pelvic Floor Health
+- **Name**: Hone — Pelvic Floor Health
 - **Subtitle**: Train control, strength, and confidence
 - **Category**: Health & Fitness (Primary), Lifestyle (Secondary)
 - **Age rating**: 17+ (frequent/intense mature/suggestive themes, even though
@@ -40,9 +40,9 @@ Supabase `signInWithIdToken({ provider: 'apple' })`.
 
 ## Subscription metadata
 
-- Group: `SQZ Pro`
-- `sqz_weekly`: $5.99/week with 3-day Introductory Offer (free trial)
-- `sqz_yearly`: $24.99/year, no trial
+- Group: `Hone Pro`
+- `hone_weekly`: $5.99/week with 3-day Introductory Offer (free trial)
+- `hone_yearly`: $24.99/year, no trial
 
 The paywall surfaces prices directly via RevenueCat's hosted Paywall UI;
 review the localized strings in App Store Connect → Subscriptions →
@@ -50,7 +50,7 @@ Localizations.
 
 ## Review notes (paste into "App Review Information → Notes")
 
-> SQZ is a discreet pelvic-floor training app for men. The "Stealth Haptic
+> Hone is a discreet pelvic-floor training app for men. The "Stealth Haptic
 > Mode" plays a low-volume ambient audio track (visible on the lockscreen
 > as "Focus Session — Episode 12") so the system audio session stays alive
 > while a user trains via haptic feedback alone, without showing in-app
