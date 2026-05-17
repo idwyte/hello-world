@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Components page — ErrorBoundary (last of 7; full-screen render-time crash fallback).
+**Next action:** Components page is complete (7/7). Next milestone — Components page expansion (12+ new primitives) OR jump to Screens page to start composing routes with the existing library.
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -25,14 +25,14 @@
   - [x] Brand page: **Inset** picked; wordmark + 8-card lockup set built (mark-only, wordmark-only, horizontal, vertical, on-light, app icon @ 1024, home-screen mock, wordmark scale stack)
   - [x] Brand page: 4 alternate app icons (Default H / Focus ring / Posture figure / Health heart) + 80px home-screen comparison strip
   - [ ] PNG + SVG exports of mark, wordmark, full lockup, and 5 app-icon variants (asset production task; deferred to Asset production stage)
-  - [ ] Components page: 7 existing components mirrored from code (`components/`)
+  - [x] Components page: 7 existing components mirrored from code (`components/`)
     - [x] ProgressDots — atomic `dot` component set with past/current/future variants, 3 usage examples, spec card
     - [x] PhaseLabel — `phaseLabel` set with 6 variants (prep/squeeze/hold/release/rest/done), color-coded via semantic aliases, session-sequence strip, spec table
     - [x] PacerRing — `pacerRing` set with 5 progress variants (0/25/50/75/100), 4 phase-color examples (Squeeze/Hold/Release/Rest), round line caps
     - [x] IndexTrendChart — `indexTrendChart` set with 4 state variants (empty/single/short/full); sparkline drawn as line segments + dots, dashed midline @ composite=50
     - [x] StreakHeatmap — `streakHeatmap` set, 4 density variants (empty/sparse/active/heavy), 12 × 7 grid of 14 px cells with 4 px gaps, Less→More legend
     - [x] QuestionCard — `questionCard` set, 3 state variants (default/selected/with-help) with numbered circle badges; selected state inverts the row to interactive/primary and the badge to interactive/primary-pressed
-    - [ ] ErrorBoundary
+    - [x] ErrorBoundary — single `errorBoundary` component, 390 × 800 full-screen fallback; overridable `message` text layer; centered title + message + "Try again" CTA
   - [ ] Components page: 12+ new primitives (Button, Input, Toggle, ListRow, Sheet, Modal, Toast, EmptyState, ErrorState, TimePicker, Slider, RatingPrompt, CoachmarkOverlay, BiometricLockScreen, LiveActivityCard, IconPickerTile)
   - [ ] Iconography decision: Lucide-restyled vs bespoke 24px line set
   - [ ] Screens page: 16 existing routes mocked at new fidelity
