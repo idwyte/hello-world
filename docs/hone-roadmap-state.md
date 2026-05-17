@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Build the 4 alternate app icons (default Hone violet H is done; remaining: Focus / Posture / Health).
+**Next action:** Components page — start by mirroring the 7 existing code components (PacerRing, PhaseLabel, IndexTrendChart, StreakHeatmap, ProgressDots, QuestionCard, ErrorBoundary).
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -23,7 +23,7 @@
   - [x] Foundations page: visual display frames (brand swatches, alias swatches, type spec, spacing ruler, radius ruler, elevation, motion table — 1600×3837 overview)
   - [x] Brand page: 6 Monogram H exploration variants laid out (Solid block / Condensed / Stencil / Chunky / Outlined / Inset)
   - [x] Brand page: **Inset** picked; wordmark + 8-card lockup set built (mark-only, wordmark-only, horizontal, vertical, on-light, app icon @ 1024, home-screen mock, wordmark scale stack)
-  - [ ] Brand page: 4 alternate app icons (Focus / Posture / Health) — default already done via Inset
+  - [x] Brand page: 4 alternate app icons (Default H / Focus ring / Posture figure / Health heart) + 80px home-screen comparison strip
   - [ ] PNG + SVG exports of mark, wordmark, full lockup, and 5 app-icon variants (asset production task; deferred to Asset production stage)
   - [ ] Components page: 7 existing components mirrored from code (`components/`)
   - [ ] Components page: 12+ new primitives (Button, Input, Toggle, ListRow, Sheet, Modal, Toast, EmptyState, ErrorState, TimePicker, Slider, RatingPrompt, CoachmarkOverlay, BiometricLockScreen, LiveActivityCard, IconPickerTile)
