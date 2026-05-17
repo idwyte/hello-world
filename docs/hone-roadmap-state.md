@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Components page — RatingPrompt (post-session 5-star rating; last of 12 new primitives).
+**Next action:** Components page: 12 new primitives are done. Next milestone — Iconography decision (Lucide-restyled vs bespoke 24 px line set) before composing screens that need any icons. After that → Screens page (16 existing routes mocked at new fidelity).
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -33,7 +33,7 @@
     - [x] StreakHeatmap — `streakHeatmap` set, 4 density variants (empty/sparse/active/heavy), 12 × 7 grid of 14 px cells with 4 px gaps, Less→More legend
     - [x] QuestionCard — `questionCard` set, 3 state variants (default/selected/with-help) with numbered circle badges; selected state inverts the row to interactive/primary and the badge to interactive/primary-pressed
     - [x] ErrorBoundary — single `errorBoundary` component, 390 × 800 full-screen fallback; overridable `message` text layer; centered title + message + "Try again" CTA
-  - [ ] Components page: 12+ new primitives (Button, Input, Toggle, ListRow, Sheet, Modal, Toast, EmptyState, ErrorState, TimePicker, Slider, RatingPrompt, CoachmarkOverlay, BiometricLockScreen, LiveActivityCard, IconPickerTile)
+  - [x] Components page: 12 new primitives shipped (Button, Input, Toggle, ListRow, Sheet, Modal, Toast, EmptyState, ErrorState, TimePicker, Slider, RatingPrompt); deferred to Phase 2/3 — CoachmarkOverlay, BiometricLockScreen, LiveActivityCard, IconPickerTile
     - [x] Button — `button` set, 4 variants × 3 states = 12 (primary/secondary/ghost/destructive × default/pressed/disabled); destructive uses existing `feedback/danger` token (no Foundations changes needed — alias was already in place); padding 16 / 32, radius 12, 56 px tall
     - [x] Input — `input` set, 5 state variants (default/focused/filled/error/disabled); label above + field + conditional error helper; field 52 px tall, radius 12; focused gets 2 px accent stroke + caret, filled gets 2 px success stroke (valid signal), error gets 2 px danger stroke + helper
     - [x] Toggle — `toggle` set, 3 state variants (off/on/disabled); iOS-style 51 × 31 track + 27 px white thumb with subtle drop shadow
@@ -45,6 +45,7 @@
     - [x] ErrorState — `errorState` set, 2 kind variants (retry 320 × 292 / dismiss-only 320 × 218); same scaffolding as EmptyState but inner disc is feedback/danger with a white cross
     - [x] TimePicker — `timePicker` set, 2 state variants (closed 360 × 56 / open 360 × 298); closed is a settings row with accent value, open is a 3-column wheel (hour / minute / AM-PM) with a centered selection strip and fading neighbour values
     - [x] Slider — `slider` set, 2 kind variants (continuous 45 % / discrete RPE 7/10), both 320 × 56; 6 px track with accent fill + 24 px white thumb (2 px accent border, drop shadow); discrete overlays 10 tick marks
+    - [x] RatingPrompt — `ratingPrompt` set, 3 value variants (0 / 3 / 5) at 320 × {190, 170, 308}; 5 × 36 px vector stars (accent fill when on, muted stroke when off); 4+ stars unlocks accent "Rate on App Store" CTA + "Maybe later" link — completes 12/12 new primitives
   - [ ] Iconography decision: Lucide-restyled vs bespoke 24px line set
   - [ ] Screens page: 16 existing routes mocked at new fidelity
   - [ ] Screens page: 12 already-roadmapped Phase 2/3 screens mocked
