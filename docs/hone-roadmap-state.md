@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Screens page — `09 · program` (Plan tab; week-by-week calendar of the 8-week program). Will use the new `tabBar` (active=plan) and `screenHeader` (kind=large-title) instances.
+**Next action:** Screens page — `10 · progress` (Progress tab; streak heatmap + Index trend chart + Retest button).
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -56,6 +56,7 @@
     - [x] 06 · plan-preview — composite hero card (62 / 100 + Intermediate pill + adaptive context line) · Week 1 header (5 min · daily) · 4 day cards (M / T / W / T-rest) + "more days" hint · Start training CTA
     - [x] 07 · paywall — close × · 64 px Inset-H monogram · "Unlock Hone" + "One payment. Everything included." · 4 success-checked features · $4.79 one-time price card (accentSoft border) · Continue CTA · Restore / Terms / Privacy footer
     - [x] 08 · home — Today tab · `screenHeader` instance (kind=greeting) · pill streak chip via trailing slot · hero session card (kicker / title / 3-bullet exercise list / Start CTA with play glyph) · 2-up stat cards (This week, Latest index) · `tabBar` instance (active=today)
+    - [x] 09 · program — Plan tab · `screenHeader` (kind=large-title, "Plan", back chev hidden) · 4 week sections (current / upcoming / 2 locked) · day cells with 5 states (done / today / rest / upcoming / locked) and completion chip per week · `tabBar` (active=plan)
   - [ ] Screens page: 12 already-roadmapped Phase 2/3 screens mocked
   - [ ] Screens page: 14 competitor-gap screens mocked (education, end-of-session, coachmarks, legal viewers, empty/error, onboarding bail-out, voice picker, HealthKit connect, reverse-Kegel intro, maintenance, challenge cycle, RPE slider, rating prompt, restore-purchase)
   - [ ] Photography page: hybrid abstract + lifestyle mood board, composition rules, do/don't pairs, ≥4 Midjourney prompt templates
