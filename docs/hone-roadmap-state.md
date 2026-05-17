@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Screens page — `03 · assessment` (3-question micro-quiz using the QuestionCard component + ProgressDots).
+**Next action:** Screens page — `09 · program` (Plan tab; week-by-week calendar of the 8-week program).
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -50,6 +50,12 @@
   - [ ] Screens page: 16 existing routes mocked at new fidelity
     - [x] 01 · welcome — 390 × 844 splash with Inset-H monogram, "Hone" wordmark, USP tagline, primary "Get started" CTA, secondary sign-in, deferred-guest link; notes column documents structure, components, copy decisions, and flow
     - [x] 02 · sign-in — back chevron + title + Apple/Google OAuth (white bg, black label, colored glyph placeholder) + "or" divider + focused email Input + Send-magic-link CTA + terms footer
+    - [x] 03 · assessment — back chevron + ProgressDots (1/3) + Skip · instanced `questionCard` (state=selected, Q1 goal) · Continue CTA at bottom
+    - [x] 04 · index-test — cancel × + "Test 2 of 3" · "Endurance hold" title · 260 × 260 `pacerRing` instance (progress=50) with "15.0 OF 30 SECONDS" timer inside · oversized 68 px Release CTA for held-muscle ergonomics
+    - [x] 05 · generating — 260 × 260 `pacerRing` (progress=75) loading visual with 3-dot pulse inside · "Building your program" headline · 3-stage checklist (done / active / pending) reflecting scoreIndex → recommendLevel → buildProgram pipeline
+    - [x] 06 · plan-preview — composite hero card (62 / 100 + Intermediate pill + adaptive context line) · Week 1 header (5 min · daily) · 4 day cards (M / T / W / T-rest) + "more days" hint · Start training CTA
+    - [x] 07 · paywall — close × · 64 px Inset-H monogram · "Unlock Hone" + "One payment. Everything included." · 4 success-checked features · $4.79 one-time price card (accentSoft border) · Continue CTA · Restore / Terms / Privacy footer
+    - [x] 08 · home — Today tab · time-aware greeting + name · pill streak chip · hero session card (kicker / title / 3-bullet exercise list / Start CTA with play glyph) · 2-up stat cards (This week, Latest index) · 4-tab tab bar (Today active in accent)
   - [ ] Screens page: 12 already-roadmapped Phase 2/3 screens mocked
   - [ ] Screens page: 14 competitor-gap screens mocked (education, end-of-session, coachmarks, legal viewers, empty/error, onboarding bail-out, voice picker, HealthKit connect, reverse-Kegel intro, maintenance, challenge cycle, RPE slider, rating prompt, restore-purchase)
   - [ ] Photography page: hybrid abstract + lifestyle mood board, composition rules, do/don't pairs, ≥4 Midjourney prompt templates
