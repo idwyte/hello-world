@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Components page — next component to mirror. ProgressDots done; remaining 6: PhaseLabel, PacerRing, IndexTrendChart, StreakHeatmap, QuestionCard, ErrorBoundary.
+**Next action:** Components page — PacerRing (the animated session ring; the visual centerpiece). Remaining after that: IndexTrendChart, StreakHeatmap, QuestionCard, ErrorBoundary.
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -27,7 +27,7 @@
   - [ ] PNG + SVG exports of mark, wordmark, full lockup, and 5 app-icon variants (asset production task; deferred to Asset production stage)
   - [ ] Components page: 7 existing components mirrored from code (`components/`)
     - [x] ProgressDots — atomic `dot` component set with past/current/future variants, 3 usage examples, spec card
-    - [ ] PhaseLabel
+    - [x] PhaseLabel — `phaseLabel` set with 6 variants (prep/squeeze/hold/release/rest/done), color-coded via semantic aliases, session-sequence strip, spec table
     - [ ] PacerRing
     - [ ] IndexTrendChart
     - [ ] StreakHeatmap
