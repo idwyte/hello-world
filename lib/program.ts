@@ -1,4 +1,5 @@
 import { EXERCISES } from './exercises';
+import { levelFromComposite, type PelvicFloorIndex } from './pelvic-floor-index';
 import type {
   AssessmentAnswers,
   ExerciseTemplate,
@@ -7,27 +8,11 @@ import type {
   ProgramDay,
 } from './types';
 
-export function recommendLevel(a: AssessmentAnswers): Level {
-  const expScore =
-    a.priorExperience === 'regularly' ? 2 : a.priorExperience === 'tried' ? 1 : 0;
-  const holdScore =
-    a.holdDuration === '>10s'
-      ? 2
-      : a.holdDuration === '5-10s'
-        ? 1
-        : a.holdDuration === '3-5s'
-          ? 0
-          : -1;
-  const score = a.currentStrength + expScore + holdScore;
-  if (score <= 3) return 'beginner';
-  if (score <= 6) return 'intermediate';
-  return 'advanced';
+export function recommendLevel(index: PelvicFloorIndex): Level {
+  return levelFromComposite(index.composite);
 }
 
 function pickExercisesFor(level: Level, goal: Goal): string[] {
-  // Returns an ordered exercise pool. Goal weights the mix; beginners get
-  // long_holds added when their goal is strength/stamina even though the
-  // default beginner pool is shorter.
   const pool: string[] = [];
   if (level === 'beginner') {
     pool.push('short_holds', 'quick_flicks');
@@ -51,6 +36,37 @@ function pickExercisesFor(level: Level, goal: Goal): string[] {
   return pool;
 }
 
+// Retest-adaptive bias. If the most recent Index improved by >10 points
+// over the prior, bring endurance work to the front. If it regressed by
+// >10, fall back one level so progressive overload doesn't reinforce a
+// plateau.
+function applyTrendBias(
+  pool: string[],
+  level: Level,
+  history: PelvicFloorIndex[],
+): { pool: string[]; level: Level } {
+  if (history.length < 2) return { pool, level };
+  const latest = history[history.length - 1].composite;
+  const prior = history[history.length - 2].composite;
+  const delta = latest - prior;
+
+  if (delta > 10) {
+    const front = pool.filter(
+      (e) => e === 'endurance_ladder' || e === 'long_holds',
+    );
+    const rest = pool.filter(
+      (e) => e !== 'endurance_ladder' && e !== 'long_holds',
+    );
+    return { pool: [...front, ...rest], level };
+  }
+  if (delta < -10) {
+    const downshift: Level =
+      level === 'advanced' ? 'intermediate' : level === 'intermediate' ? 'beginner' : 'beginner';
+    return { pool, level: downshift };
+  }
+  return { pool, level };
+}
+
 function estimateExerciseDurationS(ex: ExerciseTemplate): number {
   const perRepMs = ex.phases.reduce((acc, p) => acc + p.durationMs, 0);
   const setMs = ex.reps * perRepMs;
@@ -63,7 +79,6 @@ function buildDay(
   pool: string[],
   targetSeconds: number,
 ): ProgramDay {
-  // Greedy: include exercises in order until target hit.
   const chosen: ExerciseTemplate[] = [];
   let acc = 0;
   for (const slug of pool) {
@@ -85,13 +100,17 @@ export function buildProgram(
   level: Level,
   dailyMinutes: 3 | 5 | 8,
   goal: Goal,
+  indexHistory: PelvicFloorIndex[] = [],
   weeks = 8,
 ): ProgramDay[] {
-  const pool = pickExercisesFor(level, goal);
+  const initialPool = pickExercisesFor(level, goal);
+  const adjusted = applyTrendBias(initialPool, level, indexHistory);
+  const effectivePool =
+    adjusted.level !== level ? pickExercisesFor(adjusted.level, goal) : adjusted.pool;
   const targetSeconds = dailyMinutes * 60;
   const days: ProgramDay[] = [];
   for (let d = 0; d < weeks * 7; d++) {
-    days.push(buildDay(d, pool, targetSeconds));
+    days.push(buildDay(d, effectivePool, targetSeconds));
   }
   return days;
 }

@@ -65,6 +65,7 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen name="session" options={{ href: null }} />
+      <Tabs.Screen name="index-retest" options={{ href: null }} />
     </Tabs>
   );
 }

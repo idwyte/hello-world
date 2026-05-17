@@ -4,10 +4,7 @@ import { ActivityIndicator, Alert, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { isAssessmentComplete } from '@/lib/assessment-questions';
-import {
-  rawAssessmentScore,
-  saveAssessmentAndProgram,
-} from '@/lib/persistence';
+import { saveAssessmentAndProgram } from '@/lib/persistence';
 import {
   buildProgram,
   defaultStealthFromAnswers,
@@ -16,25 +13,25 @@ import {
 import { useOnboardingStore } from '@/stores/onboarding';
 
 /**
- * Generates the program locally, persists it to Supabase (when configured),
- * then navigates to plan-preview.
+ * Generates the program locally from the Pelvic Floor Index + answers,
+ * persists to Supabase (when configured), then navigates to plan-preview.
  */
 export default function Generating() {
   const router = useRouter();
   const draft = useOnboardingStore((s) => s.draft);
+  const index = useOnboardingStore((s) => s.index);
   const setGenerated = useOnboardingStore((s) => s.setGenerated);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    if (!isAssessmentComplete(draft)) {
+    if (!isAssessmentComplete(draft) || !index) {
       router.replace('/welcome');
       return;
     }
-    const level = recommendLevel(draft);
+    const level = recommendLevel(index);
     const program = buildProgram(level, draft.dailyMinutes, draft.goal);
     const stealthDefault = defaultStealthFromAnswers(draft);
-    const rawScore = rawAssessmentScore(draft);
     setGenerated({ level, program, stealthDefault });
 
     (async () => {
@@ -43,8 +40,8 @@ export default function Generating() {
         await Promise.all([
           saveAssessmentAndProgram({
             answers: draft,
+            index,
             level,
-            rawScore,
             program,
           }),
           minDelay,
@@ -68,7 +65,7 @@ export default function Generating() {
     return () => {
       cancelled = true;
     };
-  }, [draft, router, setGenerated]);
+  }, [draft, index, router, setGenerated]);
 
   return (
     <SafeAreaView className="flex-1 bg-bg">
@@ -78,7 +75,7 @@ export default function Generating() {
           Building your plan…
         </Text>
         <Text className="text-muted text-center mt-2 leading-5">
-          Tuning eight weeks of sessions to your strength, goal, and daily time.
+          Tuning eight weeks of sessions to your Index, goal, and daily time.
         </Text>
         {error ? (
           <Text className="text-danger text-sm mt-6 text-center">{error}</Text>

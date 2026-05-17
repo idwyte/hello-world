@@ -1,14 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
-import { ScrollView, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { IndexTrendChart } from '@/components/charts/IndexTrendChart';
 import { StreakHeatmap } from '@/components/charts/StreakHeatmap';
 import { hasSupabaseConfig } from '@/lib/env';
-import { fetchRecentSessions, fetchStreak } from '@/lib/sessions';
+import {
+  fetchIndexHistory,
+  fetchRecentSessions,
+  fetchStreak,
+} from '@/lib/sessions';
 import { useSessionStore } from '@/stores/session';
 
 export default function Progress() {
-  // Local store as fallback when no backend.
+  const router = useRouter();
   const local = useSessionStore();
 
   const streakQuery = useQuery({
@@ -21,6 +27,11 @@ export default function Progress() {
     enabled: hasSupabaseConfig(),
     queryFn: () => fetchRecentSessions(60),
   });
+  const indexQuery = useQuery({
+    queryKey: ['index', 'history'],
+    enabled: hasSupabaseConfig(),
+    queryFn: () => fetchIndexHistory(12),
+  });
 
   const streak = streakQuery.data ?? {
     current: local.streak.current,
@@ -32,6 +43,8 @@ export default function Progress() {
     local.history
       .filter((h) => h.completed)
       .map((h) => new Date(h.endedAt).toISOString());
+
+  const indexHistory = indexQuery.data ?? [];
 
   return (
     <SafeAreaView className="flex-1 bg-bg">
@@ -58,6 +71,26 @@ export default function Progress() {
             <Text className="text-ink text-3xl font-semibold mt-1">
               {streak.longest}d
             </Text>
+          </View>
+        </View>
+
+        <View className="mt-6 bg-surface rounded-2xl p-4 border border-border">
+          <View className="flex-row items-center justify-between">
+            <Text className="text-muted text-xs uppercase tracking-wider">
+              Pelvic Floor Index
+            </Text>
+            <Pressable
+              onPress={() => router.push('/index-retest')}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Retest your Pelvic Floor Index"
+              className="active:opacity-60"
+            >
+              <Text className="text-accent text-xs font-semibold">Retest →</Text>
+            </Pressable>
+          </View>
+          <View className="mt-3">
+            <IndexTrendChart history={indexHistory} />
           </View>
         </View>
 

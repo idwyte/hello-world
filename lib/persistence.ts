@@ -3,29 +3,23 @@ import type {
   Level,
   ProgramDay,
 } from './types';
+import type { PelvicFloorIndex } from './pelvic-floor-index';
 import { hasSupabaseConfig } from './env';
 import { getSupabase } from './supabase';
 
-export type AssessmentScore = {
-  level: Level;
-  rawScore: number;
-};
-
 /**
- * Persist a completed assessment + generated program in one logical step.
+ * Persist a completed assessment + Pelvic Floor Index + generated program
+ * in one logical step. Five sequential writes (assessment, index,
+ * deactivate prior programs, new program, program_days); wrap in an
+ * Edge Function later if we need transactional guarantees.
  *
- * Returns the new program id on success. If Supabase isn't configured this
- * is a no-op (local-only dev mode) and returns `null`.
- *
- * NOTE: This issues four sequential writes (assessment, program, program_days,
- * profile update). Wrap in an Edge Function later if we need transactional
- * guarantees; for v1 the failure mode (orphan rows) is recoverable on next
- * onboarding attempt.
+ * Returns the new program id on success. No-op when Supabase isn't
+ * configured.
  */
 export async function saveAssessmentAndProgram(input: {
   answers: AssessmentAnswers;
+  index: PelvicFloorIndex;
   level: Level;
-  rawScore: number;
   program: ProgramDay[];
 }): Promise<string | null> {
   if (!hasSupabaseConfig()) return null;
@@ -35,24 +29,36 @@ export async function saveAssessmentAndProgram(input: {
   const userId = userData.user?.id;
   if (!userId) throw new Error('Not signed in.');
 
-  // 1. assessment
+  // 1. survey answers (slim 3-question version)
   const { error: aErr } = await supabase.from('assessments').insert({
     user_id: userId,
     answers: input.answers,
-    score: input.rawScore,
+    score: null,
     recommended_level: input.level,
   });
   if (aErr) throw aErr;
 
-  // 2. deactivate any prior active program (partial unique index allows
-  //    only one active per user)
+  // 2. pelvic floor index
+  const { error: iErr } = await supabase
+    .from('pelvic_floor_assessments')
+    .insert({
+      user_id: userId,
+      reaction_ms: Math.round(input.index.reactionMs),
+      endurance_s: input.index.enduranceS,
+      rapid_reps_10s: input.index.rapidReps10s,
+      composite: input.index.composite,
+      level: input.index.level,
+    });
+  if (iErr) throw iErr;
+
+  // 3. deactivate prior active program
   await supabase
     .from('programs')
     .update({ active: false })
     .eq('user_id', userId)
     .eq('active', true);
 
-  // 3. new active program
+  // 4. new active program
   const { data: programRow, error: pErr } = await supabase
     .from('programs')
     .insert({
@@ -65,7 +71,7 @@ export async function saveAssessmentAndProgram(input: {
     .single();
   if (pErr) throw pErr;
 
-  // 4. program_days
+  // 5. program_days
   const dayRows = input.program.map((d) => ({
     program_id: programRow.id,
     user_id: userId,
@@ -93,20 +99,24 @@ export async function markOnboarded(): Promise<void> {
   if (upErr) throw upErr;
 }
 
-/**
- * Compute the raw score used to derive the recommended level. Kept here for
- * persistence symmetry; the level itself is computed by `lib/program.recommendLevel`.
- */
-export function rawAssessmentScore(a: AssessmentAnswers): number {
-  const exp =
-    a.priorExperience === 'regularly' ? 2 : a.priorExperience === 'tried' ? 1 : 0;
-  const hold =
-    a.holdDuration === '>10s'
-      ? 2
-      : a.holdDuration === '5-10s'
-        ? 1
-        : a.holdDuration === '3-5s'
-          ? 0
-          : -1;
-  return a.currentStrength + exp + hold;
+export async function saveIndexRetest(
+  index: PelvicFloorIndex,
+): Promise<void> {
+  if (!hasSupabaseConfig()) return;
+  const supabase = getSupabase();
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  const userId = data.user?.id;
+  if (!userId) throw new Error('Not signed in.');
+  const { error: iErr } = await supabase
+    .from('pelvic_floor_assessments')
+    .insert({
+      user_id: userId,
+      reaction_ms: Math.round(index.reactionMs),
+      endurance_s: index.enduranceS,
+      rapid_reps_10s: index.rapidReps10s,
+      composite: index.composite,
+      level: index.level,
+    });
+  if (iErr) throw iErr;
 }

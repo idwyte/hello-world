@@ -1,6 +1,7 @@
 import { hasSupabaseConfig } from './env';
+import type { PelvicFloorIndex } from './pelvic-floor-index';
 import { getSupabase } from './supabase';
-import type { SessionMode } from './types';
+import type { Level, SessionMode } from './types';
 
 export type CompletedSessionPayload = {
   programDayId: string | null;
@@ -98,6 +99,36 @@ export async function fetchStreak(): Promise<{
     longest: (data?.longest as number) ?? 0,
     lastDate: (data?.last_session_date as string | null) ?? null,
   };
+}
+
+export type FetchedIndex = PelvicFloorIndex & {
+  createdAt: string;
+};
+
+export async function fetchIndexHistory(
+  limit = 12,
+): Promise<FetchedIndex[]> {
+  if (!hasSupabaseConfig()) return [];
+  const supabase = getSupabase();
+  const { data: user } = await supabase.auth.getUser();
+  if (!user.user) return [];
+  const { data, error } = await supabase
+    .from('pelvic_floor_assessments')
+    .select('reaction_ms, endurance_s, rapid_reps_10s, composite, level, created_at')
+    .eq('user_id', user.user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? [])
+    .map((r) => ({
+      reactionMs: Number(r.reaction_ms),
+      enduranceS: Number(r.endurance_s),
+      rapidReps10s: Number(r.rapid_reps_10s),
+      composite: Number(r.composite),
+      level: r.level as Level,
+      createdAt: r.created_at as string,
+    }))
+    .reverse();
 }
 
 export async function fetchTodayProgramDay(): Promise<{

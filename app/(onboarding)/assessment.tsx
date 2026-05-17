@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ProgressDots } from '@/components/assessment/ProgressDots';
@@ -20,28 +20,10 @@ export default function Assessment() {
 
   function handleNext() {
     if (!hasValue) return;
-    if (question.id === 'recentMedical' && value === true) {
-      Alert.alert(
-        'Medical note',
-        'Pelvic surgery, prolapse, or related conditions need clinician oversight. Continue only if you have been cleared to train. This app is not medical advice.',
-        [
-          { text: 'Go back', style: 'cancel' },
-          {
-            text: 'I understand',
-            onPress: () => proceed(),
-          },
-        ],
-      );
-      return;
-    }
-    proceed();
-  }
-
-  function proceed() {
     if (step < QUESTIONS.length - 1) {
       next();
     } else {
-      router.replace('/generating');
+      router.replace('/index-test');
     }
   }
 
@@ -84,7 +66,7 @@ export default function Assessment() {
           disabled={!hasValue}
           accessibilityRole="button"
           accessibilityLabel={
-            step === QUESTIONS.length - 1 ? 'Finish assessment' : 'Next question'
+            step === QUESTIONS.length - 1 ? 'Begin Index test' : 'Next question'
           }
           accessibilityState={{ disabled: !hasValue }}
           className={`rounded-xl py-4 items-center active:opacity-80 ${
@@ -92,7 +74,7 @@ export default function Assessment() {
           }`}
         >
           <Text className="text-ink font-semibold">
-            {step === QUESTIONS.length - 1 ? 'See my plan' : 'Continue'}
+            {step === QUESTIONS.length - 1 ? 'Take the Index test' : 'Continue'}
           </Text>
         </Pressable>
       </View>

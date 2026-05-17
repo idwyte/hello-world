@@ -4,6 +4,7 @@
  * and `markOnboarded` without touching a real backend.
  */
 
+import { scoreIndex } from '@/lib/pelvic-floor-index';
 import type { AssessmentAnswers } from '@/lib/types';
 
 jest.mock('@/lib/env', () => ({
@@ -64,41 +65,20 @@ jest.mock('@/lib/supabase', () => ({
 
 import {
   markOnboarded,
-  rawAssessmentScore,
   saveAssessmentAndProgram,
+  saveIndexRetest,
 } from '@/lib/persistence';
 
 const sampleAnswers: AssessmentAnswers = {
-  ageBand: '25-34',
-  currentStrength: 3,
-  symptoms: ['none'],
-  priorExperience: 'tried',
-  holdDuration: '3-5s',
   goal: 'control',
   dailyMinutes: 5,
-  preferredTime: 'evening',
   trainingEnvironment: 'private',
-  recentMedical: false,
 };
 
-describe('rawAssessmentScore', () => {
-  it('handles all priorExperience and holdDuration values', () => {
-    expect(rawAssessmentScore(sampleAnswers)).toBe(3 + 1 + 0);
-    expect(
-      rawAssessmentScore({
-        ...sampleAnswers,
-        priorExperience: 'regularly',
-        holdDuration: '>10s',
-      }),
-    ).toBe(3 + 2 + 2);
-    expect(
-      rawAssessmentScore({
-        ...sampleAnswers,
-        priorExperience: 'never',
-        holdDuration: '<3s',
-      }),
-    ).toBe(3 + 0 - 1);
-  });
+const sampleIndex = scoreIndex({
+  reactionMs: 500,
+  enduranceS: 18,
+  rapidReps10s: 12,
 });
 
 describe('saveAssessmentAndProgram', () => {
@@ -106,11 +86,11 @@ describe('saveAssessmentAndProgram', () => {
     calls.length = 0;
   });
 
-  it('writes assessment, deactivates prior programs, inserts program + days', async () => {
+  it('writes assessment, index, deactivates prior programs, inserts program + days', async () => {
     const id = await saveAssessmentAndProgram({
       answers: sampleAnswers,
-      level: 'beginner',
-      rawScore: 4,
+      index: sampleIndex,
+      level: 'intermediate',
       program: [
         { dayIndex: 0, exercises: [], targetDurationS: 240 },
         { dayIndex: 1, exercises: [], targetDurationS: 240 },
@@ -120,6 +100,7 @@ describe('saveAssessmentAndProgram', () => {
 
     expect(calls.map((c) => `${c.table}.${c.op}`)).toEqual([
       'assessments.insert',
+      'pelvic_floor_assessments.insert',
       'programs.update',
       'programs.insert',
       'program_days.insert',
@@ -129,11 +110,21 @@ describe('saveAssessmentAndProgram', () => {
     expect(assessment.payload).toMatchObject({
       user_id: 'user-uuid-fake',
       answers: sampleAnswers,
-      score: 4,
-      recommended_level: 'beginner',
+      score: null,
+      recommended_level: 'intermediate',
     });
 
-    const deactivate = calls[1];
+    const index = calls[1];
+    expect(index.payload).toMatchObject({
+      user_id: 'user-uuid-fake',
+      reaction_ms: Math.round(sampleIndex.reactionMs),
+      endurance_s: sampleIndex.enduranceS,
+      rapid_reps_10s: sampleIndex.rapidReps10s,
+      composite: sampleIndex.composite,
+      level: sampleIndex.level,
+    });
+
+    const deactivate = calls[2];
     expect(deactivate.payload).toEqual({ active: false });
     expect(deactivate.eq).toEqual(
       expect.arrayContaining([
@@ -142,16 +133,34 @@ describe('saveAssessmentAndProgram', () => {
       ]),
     );
 
-    const program = calls[2];
+    const program = calls[3];
     expect(program.payload).toMatchObject({
       user_id: 'user-uuid-fake',
-      level: 'beginner',
+      level: 'intermediate',
       active: true,
     });
 
-    const days = calls[3];
+    const days = calls[4];
     expect(Array.isArray(days.payload)).toBe(true);
     expect((days.payload as unknown[]).length).toBe(2);
+  });
+});
+
+describe('saveIndexRetest', () => {
+  beforeEach(() => {
+    calls.length = 0;
+  });
+
+  it('inserts a single row to pelvic_floor_assessments', async () => {
+    await saveIndexRetest(sampleIndex);
+    expect(calls).toHaveLength(1);
+    expect(calls[0].table).toBe('pelvic_floor_assessments');
+    expect(calls[0].op).toBe('insert');
+    expect(calls[0].payload).toMatchObject({
+      user_id: 'user-uuid-fake',
+      composite: sampleIndex.composite,
+      level: sampleIndex.level,
+    });
   });
 });
 
