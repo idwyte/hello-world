@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Screens page — start mocking the 16 existing routes (welcome, sign-in, assessment, index-test, generating, plan-preview, paywall, home, program, progress, settings, index-retest, session/active, session/complete, session/stealth, sign-up). Use the now-locked-in component library + iconography direction A.
+**Next action:** Screens page — `02 · sign-in` (Sign in with Apple + Google + email magic-link, using the Input + Button primitives in their final context).
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -48,6 +48,7 @@
     - [x] RatingPrompt — `ratingPrompt` set, 3 value variants (0 / 3 / 5) at 320 × {190, 170, 308}; 5 × 36 px vector stars (accent fill when on, muted stroke when off); 4+ stars unlocks accent "Rate on App Store" CTA + "Maybe later" link — completes 12/12 new primitives
   - [x] Iconography decision — **A (Lucide-restyled)** chosen. Implementation via `lucide-react-native` (MIT). Stroke 2 px, round caps + joins, brand/ink. Tab-bar + session icons may be redrawn in Hone's house style as a v1.1 polish pass once telemetry shows the 6–8 most-viewed icons.
   - [ ] Screens page: 16 existing routes mocked at new fidelity
+    - [x] 01 · welcome — 390 × 844 splash with Inset-H monogram, "Hone" wordmark, USP tagline, primary "Get started" CTA, secondary sign-in, deferred-guest link; notes column documents structure, components, copy decisions, and flow
   - [ ] Screens page: 12 already-roadmapped Phase 2/3 screens mocked
   - [ ] Screens page: 14 competitor-gap screens mocked (education, end-of-session, coachmarks, legal viewers, empty/error, onboarding bail-out, voice picker, HealthKit connect, reverse-Kegel intro, maintenance, challenge cycle, RPE slider, rating prompt, restore-purchase)
   - [ ] Photography page: hybrid abstract + lifestyle mood board, composition rules, do/don't pairs, ≥4 Midjourney prompt templates
