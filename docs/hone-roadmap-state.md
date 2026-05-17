@@ -2,10 +2,12 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Build the Foundations page (color, type, spacing, radius, motion variables).
+**Next action:** Brand page — explore 4–6 logo + wordmark directions, pick one.
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
+**Pages:** Foundations `0:1` · Brand `2:2` · Components `2:3` · Screens `2:4` · Photography `2:5`
+**Foundations root frame:** `4:2` (1600×3837)
 
 > This file is the source of truth for "where are we right now" in the Hone v1.1 → launch journey. The `@hone-coach` subagent reads it at the start of every invocation and writes it after each verified step. Read freely; let the coach write.
 
@@ -16,7 +18,9 @@
 - [x] **Phase 1 — Pelvic Floor Index** *(PR #2, commit `0ee461a`)*
 - [ ] **Phase 1.5 — Brand Identity (Figma only, ~3 weeks)**
   - [x] Create the Figma file (file key `qgY3Qcf7gP7w5V5A6uQTL4`, user created manually)
-  - [ ] Foundations page: color, type, spacing, radius, motion variables seeded from `tailwind.config.js`
+  - [x] Set up 5 pages (Foundations, Brand, Components, Screens, Photography)
+  - [x] Foundations page: 21 color vars (10 brand + 11 semantic aliases), 10 spacing, 6 radius, 4 duration + 3 easing, 10 Inter text styles, 4 elevation effect styles
+  - [x] Foundations page: visual display frames (brand swatches, alias swatches, type spec, spacing ruler, radius ruler, elevation, motion table — 1600×3837 overview)
   - [ ] Brand page: logo + wordmark direction picked; lockup set built
   - [ ] Brand page: app icon — default + 4 alt variants (Focus / Posture / Health / default), 1024 PNG + SVG exports
   - [ ] Components page: 7 existing components mirrored from code (`components/`)
