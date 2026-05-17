@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Components page — EmptyState (illustration + message + optional CTA).
+**Next action:** Components page — ErrorState (failure variant of EmptyState).
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -41,6 +41,7 @@
     - [x] Sheet — `sheet` set, 3 size variants (compact 280 / medium 480 / full 720); 390 wide, top-corner-rounded 24, grabber + title + subtitle + body slot + bottom CTA; usage cards show sheet over a dimmed (45% black) scrim
     - [x] Modal — `modal` set, 3 kind variants (info / confirm / destructive); 320 × 196, radius 20, title + body + actions row (1 button for info, 50/50 split for confirm + destructive)
     - [x] Toast — `toast` set, 3 kind variants (success / info / error); 342 × 68, surface/sunken bg + 24 px shadow, 24 px round icon + title + description
+    - [x] EmptyState — `emptyState` set, 2 kind variants (with-action 320 × 292 / no-action 320 × 218); abstract 120 px illustration (3 concentric circles, dashed outer ring) + title + body + optional CTA
   - [ ] Iconography decision: Lucide-restyled vs bespoke 24px line set
   - [ ] Screens page: 16 existing routes mocked at new fidelity
   - [ ] Screens page: 12 already-roadmapped Phase 2/3 screens mocked
