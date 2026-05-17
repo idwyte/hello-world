@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Screens page — `12 · index-retest` (modal-style index test re-runner, opened from the Retest button on Progress).
+**Next action:** Screens page — `13 · session/active` (live session with the PacerRing + PhaseLabel in motion).
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -59,6 +59,7 @@
     - [x] 09 · program — Plan tab · `screenHeader` (kind=large-title, "Plan", back chev hidden) · 4 week sections (current / upcoming / 2 locked) · day cells with 5 states (done / today / rest / upcoming / locked) and completion chip per week · `tabBar` (active=plan)
     - [x] 10 · progress — Progress tab · `screenHeader` (kind=title, "Progress" + Retest pill) · Index card (composite 62 + Intermediate pill + +7 success delta + `indexTrendChart` instance state=full) · Streak card (12 days + `streakHeatmap` instance state=active + best=15) · `tabBar` (active=progress) — 4 library instances, 0 inlined visuals
     - [x] 11 · settings — Settings tab · `screenHeader` (kind=large-title, "Settings", back hidden) · 5 grouped lists (Account / Training / Subscription / About / destructive) · custom "Lifetime · Purchased Feb 14, 2026" row with success badge · `tabBar` (active=settings). Rows inlined at exact 358 px (vs listRow component's 360) — TODO: resize listRow primitive to 358 to unify
+    - [x] 12 · index-retest — modal sheet from y=70 with scrim + dimmed bg hint · 24 px top corners · grabber + close × · "Retest your index" headline · 3 step cards (Reaction / Endurance / Rapid with time chips) · "Last test: 8 days ago" hint · I'm ready CTA · returns a new measurement that invalidates the `['index','history']` cache
   - [ ] Screens page: 12 already-roadmapped Phase 2/3 screens mocked
   - [ ] Screens page: 14 competitor-gap screens mocked (education, end-of-session, coachmarks, legal viewers, empty/error, onboarding bail-out, voice picker, HealthKit connect, reverse-Kegel intro, maintenance, challenge cycle, RPE slider, rating prompt, restore-purchase)
   - [ ] Photography page: hybrid abstract + lifestyle mood board, composition rules, do/don't pairs, ≥4 Midjourney prompt templates
