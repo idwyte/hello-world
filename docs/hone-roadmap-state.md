@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Screens page (16 existing routes) is complete. Three follow-ups before Phase 1.5 closes — Phase 2/3 screens (~12 forward-looking), competitor-gap screens (~14), and the Photography page (mood board + Midjourney templates).
+**Next action:** Phase 1.5 closing items — Phase 2/3 forward-looking screens (~12), the remaining 8 competitor-gap screens, and the Photography page (mood board + Midjourney prompt templates).
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -65,7 +65,13 @@
     - [x] 15 · session/stealth — Phase 3 preview · disguised ambient-player chrome · concentric-ring decoy art · generic track + show name · scrubber bar · prev / play-pause / next transport · output-device pill · small "STEALTH" pill in nav · "Tap and hold to exit Stealth" hint
     - [x] 16 · sign-up — back chev + "Get started" · 3 success-checked value props (personalised program / measured Index / Stealth Mode) · Apple / Google OAuth (relabeled "Sign up") · or divider · default email Input · Continue CTA · "Already have an account? Sign in" link
   - [ ] Screens page: 12 already-roadmapped Phase 2/3 screens mocked
-  - [ ] Screens page: 14 competitor-gap screens mocked (education, end-of-session, coachmarks, legal viewers, empty/error, onboarding bail-out, voice picker, HealthKit connect, reverse-Kegel intro, maintenance, challenge cycle, RPE slider, rating prompt, restore-purchase)
+  - [ ] Screens page: 14 competitor-gap screens mocked — 6 of 14 built (legal viewer, error state, HealthKit connect, restore-purchase, maintenance, voice picker); deferred: education, end-of-session review, coachmarks, onboarding bail-out, reverse-Kegel intro, challenge cycle, RPE slider, contextual rating prompt
+    - [x] 17 · legal viewer — generic detail-header sub-page · "Last updated" line + 4 numbered sections (Acceptance · Account · Purchases · Medical disclaimer) · parameterised route serves Terms / Privacy / Licenses
+    - [x] 18 · error state — detail-header "Couldn\'t load program" + `errorState` instance (kind=retry) + "Contact support" muted text · escalation pattern for data-load failures
+    - [x] 19 · healthkit connect — close-X with Skip · 96 px heart glyph in surface card · "Connect to Apple Health" + 3 success-checked value props · Connect CTA + privacy note · iOS-only, deferred on Android until Phase 4
+    - [x] 20 · restore purchase — 3 sub-states side-by-side: looking (3-dot accent loader on accentSoft disc) · restored (success badge + Continue) · not-found (?-glyph + Try different Apple ID + Contact support)
+    - [x] 21 · maintenance — 120 px medal hero with halo · 8-week complete celebration · before/after stats (50 → 78 in green) · 3 next-up cards with the RECOMMENDED maintenance option getting an accent stroke
+    - [x] 22 · voice picker — 4 voice cards (Calm = default selected · Firm · Whisper · Silent/haptics-only) · per-card play preview · accent stroke + check on selection · Stealth Mode pairing hint
   - [ ] Photography page: hybrid abstract + lifestyle mood board, composition rules, do/don't pairs, ≥4 Midjourney prompt templates
   - [ ] Brand book frame in the Brand page exported as PDF
 - [ ] **Phase 2 — Habit-stacking (~1.5 weeks)**
