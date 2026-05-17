@@ -1,0 +1,111 @@
+# Hone — Deployment Roadmap State
+
+**Last updated:** 2026-05-17
+**Current stage:** Phase 1.5 — Brand Identity (Figma only)
+**Next action:** Create the Hone Figma file via the Figma MCP.
+
+> This file is the source of truth for "where are we right now" in the Hone v1.1 → launch journey. The `@hone-coach` subagent reads it at the start of every invocation and writes it after each verified step. Read freely; let the coach write.
+
+---
+
+## Sequence
+
+- [x] **Phase 1 — Pelvic Floor Index** *(PR #2, commit `0ee461a`)*
+- [ ] **Phase 1.5 — Brand Identity (Figma only, ~3 weeks)**
+  - [ ] Create the Figma file via MCP (`mcp__figma__create_new_file` with name "Hone — Design System v1")
+  - [ ] Foundations page: color, type, spacing, radius, motion variables seeded from `tailwind.config.js`
+  - [ ] Brand page: logo + wordmark direction picked; lockup set built
+  - [ ] Brand page: app icon — default + 4 alt variants (Focus / Posture / Health / default), 1024 PNG + SVG exports
+  - [ ] Components page: 7 existing components mirrored from code (`components/`)
+  - [ ] Components page: 12+ new primitives (Button, Input, Toggle, ListRow, Sheet, Modal, Toast, EmptyState, ErrorState, TimePicker, Slider, RatingPrompt, CoachmarkOverlay, BiometricLockScreen, LiveActivityCard, IconPickerTile)
+  - [ ] Iconography decision: Lucide-restyled vs bespoke 24px line set
+  - [ ] Screens page: 16 existing routes mocked at new fidelity
+  - [ ] Screens page: 12 already-roadmapped Phase 2/3 screens mocked
+  - [ ] Screens page: 14 competitor-gap screens mocked (education, end-of-session, coachmarks, legal viewers, empty/error, onboarding bail-out, voice picker, HealthKit connect, reverse-Kegel intro, maintenance, challenge cycle, RPE slider, rating prompt, restore-purchase)
+  - [ ] Photography page: hybrid abstract + lifestyle mood board, composition rules, do/don't pairs, ≥4 Midjourney prompt templates
+  - [ ] Brand book frame in the Brand page exported as PDF
+- [ ] **Phase 2 — Habit-stacking (~1.5 weeks)**
+  - [ ] Migration `0004_streak_freezes.sql` applied to staging
+  - [ ] `modules/app-intents/` Swift implementation + 4 AppIntent types
+  - [ ] `modules/focus-filter/` Swift INFocusStatusCenter listener
+  - [ ] `modules/calendar-gaps/` EventKit free-time detector
+  - [ ] `plugins/withAppIntents.ts` config plugin
+  - [ ] `lib/streak.ts` client-side freeze logic
+  - [ ] `app/(app)/settings/reminders.tsx` UI
+  - [ ] `lib/notifications.ts` schedule/cancel reminder
+  - [ ] `lib/exercises.ts` `quick_discreet` preset
+  - [ ] `app/(app)/session/today.tsx` `?preset=` deep-link handling
+  - [ ] Acceptance criteria pass (5 items in plan §Phase 2)
+- [ ] **Phase 3 — Stealth productized (~3 weeks)**
+  - [ ] `modules/live-activity/` Swift ActivityKit wrapper
+  - [ ] `ios/HoneLiveActivity/` widget extension target
+  - [ ] `plugins/withLiveActivity.ts` config plugin
+  - [ ] Live Activity wiring in `lib/audio/decoy-track.ts` + `app/(app)/session/stealth.tsx`
+  - [ ] `MPMediaItemArtwork` Now Playing wiring in stealth-haptics module
+  - [ ] Anonymous-first sign-in in `lib/auth.ts` + `app/(auth)/sign-in.tsx`
+  - [ ] `lib/biometric-gate.tsx` + `app/(app)/settings/security.tsx`
+  - [ ] Alternate app icons via `expo-alternate-app-icons` or `plugins/withAlternateIcons.ts`
+  - [ ] `app/(app)/settings/app-icon.tsx`
+  - [ ] Acceptance criteria pass (5 items in plan §Phase 3)
+- [ ] **Asset production**
+  - [ ] ElevenLabs — decoy ambient loop `assets/audio/focus-session.m4a`
+  - [ ] ElevenLabs — 6 cue clips `assets/audio/cues/<style>_<phase>.m4a`
+  - [ ] Midjourney — 3 decoy cover art `assets/audio/covers/<key>.png`
+  - [ ] Midjourney — app icon set `assets/icon.png`, `adaptive-icon.png`, `splash-icon.png`
+  - [ ] Midjourney — hero/lifestyle imagery for marketing + in-app surfaces
+  - [ ] Asset-dependent code edits (plan §C, items 1–5)
+- [ ] **Service configuration**
+  - [ ] Supabase: project, env vars, migrations 0001–0004 applied, auth providers configured, `delete-account` Edge Function deployed, RLS tests passing
+  - [ ] RevenueCat: project, `hone_lifetime` non-consumable at $4.79 created in App Store Connect + Play, entitlement `pro` attached, offering `default` configured
+  - [ ] Apple Developer: enrolled, App ID with Sign in with Apple, App Store Connect record with privacy questionnaire
+  - [ ] Google OAuth: web client + iOS client, Supabase Google provider configured
+  - [ ] Play Console: app record, internal testing track, mirrored product
+- [ ] **Build pipeline**
+  - [ ] `eas init`, EAS project ID created
+  - [ ] `ascAppId` filled in `eas.json`
+  - [ ] All `EXPO_PUBLIC_*` secrets set via `eas secret:create`
+  - [ ] Apple App-Specific Password + Google service account JSON set
+  - [ ] `npx expo prebuild --clean` succeeds
+  - [ ] Dev-client iOS build succeeds + installed on real iPhone
+  - [ ] Dev-client Android build succeeds + installed on real Pixel
+  - [ ] Smoke tests pass (plan §E3)
+- [ ] **TestFlight / Play internal**
+  - [ ] Production iOS build via EAS
+  - [ ] Production Android build via EAS
+  - [ ] `eas submit --platform ios` succeeds
+  - [ ] `eas submit --platform android` succeeds
+  - [ ] 5 internal testers verify happy path on TestFlight
+- [ ] **App Store / Play submission**
+  - [ ] iOS submitted for review
+  - [ ] Android submitted for review
+  - [ ] Review feedback addressed (loop until approved)
+- [ ] **Launch**
+  - [ ] iOS public release
+  - [ ] Android public release
+  - [ ] Sentry / PostHog ingestion live (deferred per Pending Actions §F)
+  - [ ] Support inbox / response template in place
+
+---
+
+## Known debt
+
+_Skipped steps or deferred polish — added by `@hone-coach` when the user explicitly skips a step._
+
+(empty)
+
+---
+
+## Blockers
+
+_External dependencies not yet resolved — added by `@hone-coach` when prerequisite credentials, services, or assets are missing._
+
+(empty)
+
+---
+
+## Notes
+
+- Plan source of truth: `/root/.claude/plans/i-want-to-build-stateless-turtle.md`
+- Project context: `/home/user/hello-world/CLAUDE.md`
+- Phase 1.5 deliverable: a single Figma file with 5 pages (Foundations, Brand, Components, Screens, Photography). No code changes in this phase.
+- Monetization: one-off purchase $4.79 (`hone_lifetime` non-consumable). No subscriptions, no trial.
