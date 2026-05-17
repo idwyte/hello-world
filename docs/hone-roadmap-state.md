@@ -35,7 +35,7 @@
     - [x] ErrorBoundary — single `errorBoundary` component, 390 × 800 full-screen fallback; overridable `message` text layer; centered title + message + "Try again" CTA
   - [ ] Components page: 12+ new primitives (Button, Input, Toggle, ListRow, Sheet, Modal, Toast, EmptyState, ErrorState, TimePicker, Slider, RatingPrompt, CoachmarkOverlay, BiometricLockScreen, LiveActivityCard, IconPickerTile)
     - [x] Button — `button` set, 4 variants × 3 states = 12 (primary/secondary/ghost/destructive × default/pressed/disabled); destructive uses existing `feedback/danger` token (no Foundations changes needed — alias was already in place); padding 16 / 32, radius 12, 56 px tall
-    - [x] Input — `input` set, 5 state variants (default/focused/filled/error/disabled); label above + field + conditional error helper; field 52 px tall, radius 12, focused/error get 2 px stroke
+    - [x] Input — `input` set, 5 state variants (default/focused/filled/error/disabled); label above + field + conditional error helper; field 52 px tall, radius 12; focused gets 2 px accent stroke + caret, filled gets 2 px success stroke (valid signal), error gets 2 px danger stroke + helper
     - [x] Toggle — `toggle` set, 3 state variants (off/on/disabled); iOS-style 51 × 31 track + 27 px white thumb with subtle drop shadow
   - [ ] Iconography decision: Lucide-restyled vs bespoke 24px line set
   - [ ] Screens page: 16 existing routes mocked at new fidelity
