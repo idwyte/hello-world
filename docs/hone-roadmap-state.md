@@ -2,11 +2,11 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Components page: 12 new primitives are done. Next milestone — Iconography decision (Lucide-restyled vs bespoke 24 px line set) before composing screens that need any icons. After that → Screens page (16 existing routes mocked at new fidelity).
+**Next action:** Pick an iconography direction on the new Iconography page (A — Lucide-restyled, or B — bespoke geometric). Once chosen, Screens page can start.
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
-**Pages:** Foundations `0:1` · Brand `2:2` · Components `2:3` · Screens `2:4` · Photography `2:5`
+**Pages:** Foundations `0:1` · Brand `2:2` · Components `2:3` · Iconography `58:2` · Screens `2:4` · Photography `2:5`
 **Foundations root frame:** `4:2` (1600×3837)
 
 > This file is the source of truth for "where are we right now" in the Hone v1.1 → launch journey. The `@hone-coach` subagent reads it at the start of every invocation and writes it after each verified step. Read freely; let the coach write.
@@ -46,7 +46,7 @@
     - [x] TimePicker — `timePicker` set, 2 state variants (closed 360 × 56 / open 360 × 298); closed is a settings row with accent value, open is a 3-column wheel (hour / minute / AM-PM) with a centered selection strip and fading neighbour values
     - [x] Slider — `slider` set, 2 kind variants (continuous 45 % / discrete RPE 7/10), both 320 × 56; 6 px track with accent fill + 24 px white thumb (2 px accent border, drop shadow); discrete overlays 10 tick marks
     - [x] RatingPrompt — `ratingPrompt` set, 3 value variants (0 / 3 / 5) at 320 × {190, 170, 308}; 5 × 36 px vector stars (accent fill when on, muted stroke when off); 4+ stars unlocks accent "Rate on App Store" CTA + "Maybe later" link — completes 12/12 new primitives
-  - [ ] Iconography decision: Lucide-restyled vs bespoke 24px line set
+  - [ ] Iconography decision: Lucide-restyled vs bespoke 24px line set (proposed on new Iconography page; recommendation = ship Lucide-restyled v1, redraw 6–8 prominent icons in v1.1)
   - [ ] Screens page: 16 existing routes mocked at new fidelity
   - [ ] Screens page: 12 already-roadmapped Phase 2/3 screens mocked
   - [ ] Screens page: 14 competitor-gap screens mocked (education, end-of-session, coachmarks, legal viewers, empty/error, onboarding bail-out, voice picker, HealthKit connect, reverse-Kegel intro, maintenance, challenge cycle, RPE slider, rating prompt, restore-purchase)
