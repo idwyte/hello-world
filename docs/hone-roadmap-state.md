@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Screens page — `13 · session/active` (live session with the PacerRing + PhaseLabel in motion).
+**Next action:** Screens page (16 existing routes) is complete. Three follow-ups before Phase 1.5 closes — Phase 2/3 screens (~12 forward-looking), competitor-gap screens (~14), and the Photography page (mood board + Midjourney templates).
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -47,7 +47,7 @@
     - [x] Slider — `slider` set, 2 kind variants (continuous 45 % / discrete RPE 7/10), both 320 × 56; 6 px track with accent fill + 24 px white thumb (2 px accent border, drop shadow); discrete overlays 10 tick marks
     - [x] RatingPrompt — `ratingPrompt` set, 3 value variants (0 / 3 / 5) at 320 × {190, 170, 308}; 5 × 36 px vector stars (accent fill when on, muted stroke when off); 4+ stars unlocks accent "Rate on App Store" CTA + "Maybe later" link — completes 12/12 new primitives
   - [x] Iconography decision — **A (Lucide-restyled)** chosen. Implementation via `lucide-react-native` (MIT). Stroke 2 px, round caps + joins, brand/ink. Tab-bar + session icons may be redrawn in Hone's house style as a v1.1 polish pass once telemetry shows the 6–8 most-viewed icons.
-  - [ ] Screens page: 16 existing routes mocked at new fidelity
+  - [x] Screens page: 16 existing routes mocked at new fidelity
     - [x] 01 · welcome — 390 × 844 splash with Inset-H monogram, "Hone" wordmark, USP tagline, primary "Get started" CTA, secondary sign-in, deferred-guest link; notes column documents structure, components, copy decisions, and flow
     - [x] 02 · sign-in — back chevron + title + Apple/Google OAuth (white bg, black label, colored glyph placeholder) + "or" divider + focused email Input + Send-magic-link CTA + terms footer
     - [x] 03 · assessment — back chevron + ProgressDots (1/3) + Skip · instanced `questionCard` (state=selected, Q1 goal) · Continue CTA at bottom
@@ -62,6 +62,8 @@
     - [x] 12 · index-retest — modal sheet from y=70 with scrim + dimmed bg hint · 24 px top corners · grabber + close × · "Retest your index" headline · 3 step cards (Reaction / Endurance / Rapid with time chips) · "Last test: 8 days ago" hint · I'm ready CTA · returns a new measurement that invalidates the `['index','history']` cache
     - [x] 13 · session/active — immersive mode (no tabBar) · cancel × + "Day 3 · Coordination" muted center · `phaseLabel` instance (hold) + 260 px `pacerRing` (progress=50) with 112 / 120 "3 SECONDS" timer inside · meta row SET 2/3 · REP 5/10 · TIME 2:14 · 72 px round Pause CTA + muted "End session" link
     - [x] 14 · session/complete — celebration · 96 px success-check badge with 120 px ring halo · "Nice work, Jamie" + day subhead · 3-up stats (DURATION 5:12 · REPS 30 · STREAK +1 in green) · `ratingPrompt` instance (value=0) · Done CTA
+    - [x] 15 · session/stealth — Phase 3 preview · disguised ambient-player chrome · concentric-ring decoy art · generic track + show name · scrubber bar · prev / play-pause / next transport · output-device pill · small "STEALTH" pill in nav · "Tap and hold to exit Stealth" hint
+    - [x] 16 · sign-up — back chev + "Get started" · 3 success-checked value props (personalised program / measured Index / Stealth Mode) · Apple / Google OAuth (relabeled "Sign up") · or divider · default email Input · Continue CTA · "Already have an account? Sign in" link
   - [ ] Screens page: 12 already-roadmapped Phase 2/3 screens mocked
   - [ ] Screens page: 14 competitor-gap screens mocked (education, end-of-session, coachmarks, legal viewers, empty/error, onboarding bail-out, voice picker, HealthKit connect, reverse-Kegel intro, maintenance, challenge cycle, RPE slider, rating prompt, restore-purchase)
   - [ ] Photography page: hybrid abstract + lifestyle mood board, composition rules, do/don't pairs, ≥4 Midjourney prompt templates
