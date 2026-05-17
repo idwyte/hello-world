@@ -2,7 +2,10 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Create the Hone Figma file via the Figma MCP.
+**Next action:** Build the Foundations page (color, type, spacing, radius, motion variables).
+
+**Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
+**File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
 
 > This file is the source of truth for "where are we right now" in the Hone v1.1 → launch journey. The `@hone-coach` subagent reads it at the start of every invocation and writes it after each verified step. Read freely; let the coach write.
 
@@ -12,7 +15,7 @@
 
 - [x] **Phase 1 — Pelvic Floor Index** *(PR #2, commit `0ee461a`)*
 - [ ] **Phase 1.5 — Brand Identity (Figma only, ~3 weeks)**
-  - [ ] Create the Figma file via MCP (`mcp__figma__create_new_file` with name "Hone — Design System v1")
+  - [x] Create the Figma file (file key `qgY3Qcf7gP7w5V5A6uQTL4`, user created manually)
   - [ ] Foundations page: color, type, spacing, radius, motion variables seeded from `tailwind.config.js`
   - [ ] Brand page: logo + wordmark direction picked; lockup set built
   - [ ] Brand page: app icon — default + 4 alt variants (Focus / Posture / Health / default), 1024 PNG + SVG exports
