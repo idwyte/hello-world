@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Components page — Input (text field with default / focused / filled / error / disabled states).
+**Next action:** Components page — Toggle (iOS-style boolean switch; on / off / disabled).
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -35,6 +35,7 @@
     - [x] ErrorBoundary — single `errorBoundary` component, 390 × 800 full-screen fallback; overridable `message` text layer; centered title + message + "Try again" CTA
   - [ ] Components page: 12+ new primitives (Button, Input, Toggle, ListRow, Sheet, Modal, Toast, EmptyState, ErrorState, TimePicker, Slider, RatingPrompt, CoachmarkOverlay, BiometricLockScreen, LiveActivityCard, IconPickerTile)
     - [x] Button — `button` set, 4 variants × 3 states = 12 (primary/secondary/ghost/destructive × default/pressed/disabled); destructive uses existing `feedback/danger` token (no Foundations changes needed — alias was already in place); padding 16 / 32, radius 12, 56 px tall
+    - [x] Input — `input` set, 5 state variants (default/focused/filled/error/disabled); label above + field + conditional error helper; field 52 px tall, radius 12, focused/error get 2 px stroke
   - [ ] Iconography decision: Lucide-restyled vs bespoke 24px line set
   - [ ] Screens page: 16 existing routes mocked at new fidelity
   - [ ] Screens page: 12 already-roadmapped Phase 2/3 screens mocked
