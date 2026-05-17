@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Components page — Slider (RPE / volume / continuous value picker).
+**Next action:** Components page — RatingPrompt (post-session 5-star rating; last of 12 new primitives).
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -44,6 +44,7 @@
     - [x] EmptyState — `emptyState` set, 2 kind variants (with-action 320 × 292 / no-action 320 × 218); abstract 120 px illustration (3 concentric circles, dashed outer ring) + title + body + optional CTA
     - [x] ErrorState — `errorState` set, 2 kind variants (retry 320 × 292 / dismiss-only 320 × 218); same scaffolding as EmptyState but inner disc is feedback/danger with a white cross
     - [x] TimePicker — `timePicker` set, 2 state variants (closed 360 × 56 / open 360 × 298); closed is a settings row with accent value, open is a 3-column wheel (hour / minute / AM-PM) with a centered selection strip and fading neighbour values
+    - [x] Slider — `slider` set, 2 kind variants (continuous 45 % / discrete RPE 7/10), both 320 × 56; 6 px track with accent fill + 24 px white thumb (2 px accent border, drop shadow); discrete overlays 10 tick marks
   - [ ] Iconography decision: Lucide-restyled vs bespoke 24px line set
   - [ ] Screens page: 16 existing routes mocked at new fidelity
   - [ ] Screens page: 12 already-roadmapped Phase 2/3 screens mocked
