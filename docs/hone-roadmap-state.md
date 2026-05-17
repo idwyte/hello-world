@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Components page — ListRow (settings-style row: title + optional value/chevron/toggle).
+**Next action:** Components page — Sheet (bottom-sheet container; compact / medium / full).
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -37,6 +37,7 @@
     - [x] Button — `button` set, 4 variants × 3 states = 12 (primary/secondary/ghost/destructive × default/pressed/disabled); destructive uses existing `feedback/danger` token (no Foundations changes needed — alias was already in place); padding 16 / 32, radius 12, 56 px tall
     - [x] Input — `input` set, 5 state variants (default/focused/filled/error/disabled); label above + field + conditional error helper; field 52 px tall, radius 12; focused gets 2 px accent stroke + caret, filled gets 2 px success stroke (valid signal), error gets 2 px danger stroke + helper
     - [x] Toggle — `toggle` set, 3 state variants (off/on/disabled); iOS-style 51 × 31 track + 27 px white thumb with subtle drop shadow
+    - [x] ListRow — `listRow` set, 5 trailing-slot variants (chevron/value/value-chevron/toggle/none); 360 × 56 (toggle row 63 to fit control); destructive title via `trailing=none`; composed 4-row "Settings group" example included
   - [ ] Iconography decision: Lucide-restyled vs bespoke 24px line set
   - [ ] Screens page: 16 existing routes mocked at new fidelity
   - [ ] Screens page: 12 already-roadmapped Phase 2/3 screens mocked
