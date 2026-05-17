@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Components page is complete (7/7). Next milestone — Screens page: compose full-app frames (welcome, assessment, index-test, generating, plan-preview, home, program, progress, settings, index-retest) using the now-finished tokens + components library.
+**Next action:** Components page — QuestionCard (with numbered choices; user wants legibility verified before moving on).
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -30,9 +30,9 @@
     - [x] PhaseLabel — `phaseLabel` set with 6 variants (prep/squeeze/hold/release/rest/done), color-coded via semantic aliases, session-sequence strip, spec table
     - [x] PacerRing — `pacerRing` set with 5 progress variants (0/25/50/75/100), 4 phase-color examples (Squeeze/Hold/Release/Rest), round line caps
     - [x] IndexTrendChart — `indexTrendChart` set with 4 state variants (empty/single/short/full); sparkline drawn as line segments + dots, dashed midline @ composite=50
-    - [x] StreakHeatmap — `streakHeatmap` set with 4 density variants (empty/sparse/active/heavy); 12 × 7 grid, 14 px cells, accent/surface tokens, plus Less→More legend
-    - [x] QuestionCard — `questionCard` set with 3 state variants (default/selected/with-help) using numbered circle badges (Layout A); alternates B (inline prefix) and C (keycap) shown side-by-side in the section for layout review
-    - [x] ErrorBoundary — single `errorBoundary` component; full-screen 390 × 800 with centered title + message + "Try again" CTA
+    - [x] StreakHeatmap — `streakHeatmap` set, 4 density variants (empty/sparse/active/heavy), 12 × 7 grid of 14 px cells with 4 px gaps, Less→More legend
+    - [ ] QuestionCard
+    - [ ] ErrorBoundary
   - [ ] Components page: 12+ new primitives (Button, Input, Toggle, ListRow, Sheet, Modal, Toast, EmptyState, ErrorState, TimePicker, Slider, RatingPrompt, CoachmarkOverlay, BiometricLockScreen, LiveActivityCard, IconPickerTile)
   - [ ] Iconography decision: Lucide-restyled vs bespoke 24px line set
   - [ ] Screens page: 16 existing routes mocked at new fidelity
