@@ -1,8 +1,8 @@
 # Hone — Deployment Roadmap State
 
 **Last updated:** 2026-05-18
-**Current stage:** Phase 1.5 — Brand Identity (Figma only) · **~95 % complete** · all 41 screens shipped, all components built, pricing locked, Brand-page alt icons refreshed. Only Photography mood board + Brand-book PDF export remain before Phase 1.5 closes.
-**Next action:** Final 11-screen sprint complete (31 – 41). Two deliverables left for Phase 1.5: **Photography page** (mood board + composition rules + ≥ 4 Midjourney prompt templates) and **Brand-book PDF export** (consolidates the Brand page into a shareable doc). After those, Phase 1.5 ships and Phase 2 (code: Habit-stacking) starts.
+**Current stage:** Phase 1.5 — Brand Identity (Figma only) · **~98 % complete** · all 41 screens, all components, pricing, alt icons, and the Photography page all done. Only the Brand-book PDF export remains before Phase 1.5 closes.
+**Next action:** Photography page shipped. Final deliverable for Phase 1.5: **Brand-book PDF export** — consolidates the Brand page into a single shareable PDF (mark, wordmark, lockups, alt icons, color tokens, type spec) for use in pitch decks, App Store assets, and dev handoff. After that, Phase 1.5 ships and Phase 2 (code: Habit-stacking) starts.
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -28,10 +28,10 @@
 | Screens — 6 of 6 Batch 3 forward-looking screens (36 – 41) | ✅ |
 | Brand-page alt icons refreshed to match the App icon picker (large + 80 px strip) | ✅ |
 | Pricing locked in — `hone_lifetime` non-consumable at **$8.99** | ✅ |
-| Photography page (mood board + Midjourney templates) | ⬜ |
+| Photography page — mission · 12-tile mood board · 4 rules · 4 do/don\'t pairs · 4 Midjourney prompts · handoff card | ✅ |
 | Brand book PDF export | ⬜ |
 
-**By the numbers:** 5 Figma pages · 22 components / ~80 variants · **41 screens mocked** · 12 icons drawn · only 2 deliverables (Photography + Brand-book PDF) remain for Phase 1.5 completion.
+**By the numbers:** **6 Figma pages** · 22 components / ~80 variants · 41 screens mocked · 12 icons drawn · 30 photography slots specified for asset production · only **1 deliverable** (Brand-book PDF) remains for Phase 1.5 completion.
 
 ---
 
@@ -114,7 +114,7 @@
     - [x] 39 · biometric lock — centred hero: 48 px Inset-H monogram + 120 px Face-ID glyph (4 accent corner brackets + muted eyes + smile curve) · "Hone is locked" + tap hint · "Use passcode" accent text + muted Sign out near the bottom
     - [x] 40 · app icon picker — detail header · 2 × 2 grid of 4 alternate icons (Default H selected with check badge · Focus ring · Posture figure · Health heart) · accent-soft iOS-notification info card · Apply CTA · Brand-page alt icons refreshed to match
     - [x] 41 · Live Activity widget — lock-screen mockup (Dynamic Island pill + "9:41" big time) with full-width 360 × 116 Live Activity banner (Inset-H + Hone / Hold · 3 s / Set 2 of 3 · Rep 5 of 10 + 52 px mini-ring at 42 %) plus Dynamic Island MINIMAL / COMPACT / EXPANDED variants at Apple-documented sizes
-  - [ ] Photography page: hybrid abstract + lifestyle mood board, composition rules, do/don't pairs, ≥4 Midjourney prompt templates
+  - [x] Photography page — header + 4-sentence mission · 12-tile hybrid mood board (60 % abstract, 40 % lifestyle, captioned placeholders) · 4 numbered composition rules · 4 Do/Don\'t split-pair cards · 4 Midjourney prompt templates (Hero portrait · Lifestyle context · Abstract cover art · Discreet environment) with `--ar` + `--style raw` flags · handoff card spec\'ing ~30 base images in 5 categories
   - [ ] Brand book frame in the Brand page exported as PDF
 - [ ] **Phase 2 — Habit-stacking (~1.5 weeks)**
   - [ ] Migration `0004_streak_freezes.sql` applied to staging
