@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-05-17
 **Current stage:** Phase 1.5 — Brand Identity (Figma only)
-**Next action:** Phase 1.5 closing items — Phase 2/3 forward-looking screens (~12), the remaining 8 competitor-gap screens, and the Photography page (mood board + Midjourney prompt templates).
+**Next action:** Batch 1 of the v1-launch screen sweep is complete (7 screens, 24–30). Batch 2 — competitor-gap polish (end-of-session review · reverse-Kegel intro · education · RPE slider · coachmark overlay). Batch 3 — Phase 2/3 forward-looking (reminder time wheel · streak-freeze · anonymous/guest · biometric lock · app icon picker · Live Activity widget).
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -73,6 +73,13 @@
     - [x] 21 · maintenance — 120 px medal hero with halo · 8-week complete celebration · before/after stats (50 → 78 in green) · 3 next-up cards with the RECOMMENDED maintenance option getting an accent stroke
     - [x] 22 · voice picker — 4 voice cards (Calm = default selected · Firm · Whisper · Silent/haptics-only) · per-card play preview · accent stroke + check on selection · Stealth Mode pairing hint
     - [x] 23 · onboarding bail-out — resume screen for mid-funnel drop-offs · "Welcome back, Jamie" + 5-step vertical timeline (3 done success-green / 1 current accent / 1 upcoming muted) · connecting line acts as a progress bar · Resume primary CTA routes to first incomplete step + Start over (destructive-confirm)
+    - [x] 24 · day detail — detail header "Day 3" · accent kicker + "Coordination" 30/38 + meta chips (5 min · 3 exercises · 30 reps) · 3-exercise list with accent-soft badges · Start session CTA
+    - [x] 25 · exercise detail — detail header "Quick flicks" · 7-dot tempo visualisation card + "1s ON · 1s OFF" label + description · HOW IT WORKS 3 numbered steps · TIPS 3 bullets · Practice solo · 1 min CTA
+    - [x] 26 · reminders — detail header · 3 grouped lists (Enabled toggle, Schedule with time + 7 day chips + cadence, Tone with sound + vibration) · accent-soft preview pill "Next reminder: Tomorrow at 8:30 AM"
+    - [x] 27 · edit profile — custom nav (back / centred Profile / Save pill) · 96 px avatar with initials JP + pencil edit badge · 4 fields (Name focused, Email locked, Goal + Birthday value-chevrons) · muted Sign out
+    - [x] 28 · check email — back chev · 96 px envelope tile with notification ping · "Check your email" + inline-bolded email address · Open Mail CTA · 30 s resend cooldown + Use different email link
+    - [x] 29 · delete account — detail header · 72 px danger badge + halo + exclamation · WHAT\'S DELETED bullet card (4 danger × items) · purchase-preservation reassurance · type-to-confirm Input showing DELETE with danger stroke · 50/50 Cancel/Delete forever buttons
+    - [x] 30 · session pause — bg hint of ring + dimmed HOLD phase label · 55 % scrim · 440 px sheet with grabber · PAUSED kicker + 64/72 elapsed 2:14 · 3-stat row (SET 2/3 · REP 5/10 · PHASE Hold) · oversized Resume CTA + muted End session link
   - [ ] Photography page: hybrid abstract + lifestyle mood board, composition rules, do/don't pairs, ≥4 Midjourney prompt templates
   - [ ] Brand book frame in the Brand page exported as PDF
 - [ ] **Phase 2 — Habit-stacking (~1.5 weeks)**
