@@ -3,15 +3,27 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useEntitlement } from '@/lib/revenuecat';
+import { useSettingsStore } from '@/stores/settings';
 
 type Row = {
   label: string;
-  href: '/settings/account' | '/settings/subscription' | '/settings/privacy' | '/settings/stealth';
+  href:
+    | '/settings/account'
+    | '/settings/subscription'
+    | '/settings/privacy'
+    | '/settings/stealth'
+    | '/settings/reminders';
   hint?: string;
 };
 
 export default function SettingsIndex() {
   const { entitlement } = useEntitlement();
+  const { settings, hydrated } = useSettingsStore();
+  const reminderHint = !hydrated
+    ? 'Daily nudge'
+    : settings.reminderEnabled
+      ? `Daily · ${formatLabel(settings.reminderTime)}`
+      : 'Off';
 
   const rows: Row[] = [
     {
@@ -27,6 +39,11 @@ export default function SettingsIndex() {
           ? 'Trial'
           : 'Active'
         : 'Free',
+    },
+    {
+      label: 'Reminders',
+      href: '/settings/reminders',
+      hint: reminderHint,
     },
     {
       label: 'Privacy',
@@ -68,4 +85,15 @@ export default function SettingsIndex() {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function formatLabel(hhmm: string | null): string {
+  if (!hhmm) return 'Set a time';
+  const [hStr, mStr] = hhmm.split(':');
+  const h = Number(hStr);
+  const m = Number(mStr);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return hhmm;
+  const period = h < 12 ? 'AM' : 'PM';
+  const h12 = ((h + 11) % 12) + 1;
+  return `${h12}:${String(m).padStart(2, '0')} ${period}`;
 }

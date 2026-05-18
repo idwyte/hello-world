@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,17 +9,32 @@ import { hasRevenueCatConfig, useEntitlement } from '@/lib/revenuecat';
 import { fetchTodayProgramDay } from '@/lib/sessions';
 import { useSettingsStore } from '@/stores/settings';
 
+const VALID_PRESETS = new Set(['quick_discreet']);
+
 export default function SessionPreview() {
   const router = useRouter();
   const { entitlement } = useEntitlement();
   const blockedBySubscription = hasRevenueCatConfig() && !entitlement.isPro;
   const { settings, hydrated, hydrate } = useSettingsStore();
+  const params = useLocalSearchParams<{ preset?: string }>();
+  const preset =
+    typeof params.preset === 'string' && VALID_PRESETS.has(params.preset)
+      ? params.preset
+      : null;
 
   // Hydrate so we can honor `defaultMode` and pre-select the user's chosen
   // entry point.
   useEffect(() => {
     if (!hydrated) void hydrate();
   }, [hydrate, hydrated]);
+
+  // ?preset=quick_discreet — deep-linked from the Siri/AppIntents "Quick
+  // discreet" shortcut. Skip the mode picker; route straight to stealth.
+  // Subscription gate still applies (paywall, not the player).
+  useEffect(() => {
+    if (!preset || blockedBySubscription) return;
+    router.replace(`/session/stealth?preset=${preset}`);
+  }, [preset, blockedBySubscription, router]);
 
   const todayQuery = useQuery({
     queryKey: ['program-day', 'today'],
