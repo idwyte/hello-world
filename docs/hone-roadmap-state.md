@@ -54,7 +54,7 @@
     - [x] 04 · index-test — cancel × + "Test 2 of 3" · "Endurance hold" title · 260 × 260 `pacerRing` instance (progress=50) with "15.0 OF 30 SECONDS" timer inside · oversized 68 px Release CTA for held-muscle ergonomics
     - [x] 05 · generating — 260 × 260 `pacerRing` (progress=75) loading visual with 3-dot pulse inside · "Building your program" headline · 3-stage checklist (done / active / pending) reflecting scoreIndex → recommendLevel → buildProgram pipeline
     - [x] 06 · plan-preview — composite hero card (62 / 100 + Intermediate pill + adaptive context line) · Week 1 header (5 min · daily) · 4 day cards (M / T / W / T-rest) + "more days" hint · Start training CTA
-    - [x] 07 · paywall — close × · 64 px Inset-H monogram · "Unlock Hone" + "One payment. Everything included." · 4 success-checked features · $4.79 one-time price card (accentSoft border) · Continue CTA · Restore / Terms / Privacy footer
+    - [x] 07 · paywall — close × · 64 px Inset-H monogram · "Unlock Hone" + "One payment. Everything included." · 4 success-checked features · $8.99 one-time price card (accentSoft border) · Continue CTA · Restore / Terms / Privacy footer
     - [x] 08 · home — Today tab · `screenHeader` instance (kind=greeting) · pill streak chip via trailing slot · hero session card (kicker / title / 3-bullet exercise list / Start CTA with play glyph) · 2-up stat cards (This week, Latest index) · `tabBar` instance (active=today)
     - [x] 09 · program — Plan tab · `screenHeader` (kind=large-title, "Plan", back chev hidden) · 4 week sections (current / upcoming / 2 locked) · day cells with 5 states (done / today / rest / upcoming / locked) and completion chip per week · `tabBar` (active=plan)
     - [x] 10 · progress — Progress tab · `screenHeader` (kind=title, "Progress" + Retest pill) · Index card (composite 62 + Intermediate pill + +7 success delta + `indexTrendChart` instance state=full) · Streak card (12 days + `streakHeatmap` instance state=active + best=15) · `tabBar` (active=progress) — 4 library instances, 0 inlined visuals
@@ -114,7 +114,7 @@
   - [ ] Asset-dependent code edits (plan §C, items 1–5)
 - [ ] **Service configuration**
   - [ ] Supabase: project, env vars, migrations 0001–0004 applied, auth providers configured, `delete-account` Edge Function deployed, RLS tests passing
-  - [ ] RevenueCat: project, `hone_lifetime` non-consumable at $4.79 created in App Store Connect + Play, entitlement `pro` attached, offering `default` configured
+  - [ ] RevenueCat: project, `hone_lifetime` non-consumable at $8.99 created in App Store Connect + Play, entitlement `pro` attached, offering `default` configured
   - [ ] Apple Developer: enrolled, App ID with Sign in with Apple, App Store Connect record with privacy questionnaire
   - [ ] Google OAuth: web client + iOS client, Supabase Google provider configured
   - [ ] Play Console: app record, internal testing track, mirrored product
@@ -166,4 +166,4 @@ _External dependencies not yet resolved — added by `@hone-coach` when prerequi
 - Plan source of truth: `/root/.claude/plans/i-want-to-build-stateless-turtle.md`
 - Project context: `/home/user/hello-world/CLAUDE.md`
 - Phase 1.5 deliverable: a single Figma file with 5 pages (Foundations, Brand, Components, Screens, Photography). No code changes in this phase.
-- Monetization: one-off purchase $4.79 (`hone_lifetime` non-consumable). No subscriptions, no trial.
+- Monetization: one-off purchase $8.99 (`hone_lifetime` non-consumable). No subscriptions, no trial.

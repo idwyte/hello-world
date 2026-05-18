@@ -59,7 +59,7 @@ The tracker mirrors the plan at `/root/.claude/plans/i-want-to-build-stateless-t
 3. ⬜ **Phase 2: Habit-stacking (~1.5 weeks)** — iOS App Intents, Focus filters, Calendar gap detection, streak freezes, reminders UI, `quick_discreet` preset, migration 0004.
 4. ⬜ **Phase 3: Stealth productized (~3 weeks)** — Live Activity widget, Now Playing polish, anonymous-first sign-in + biometric gate, alternate app icons.
 5. ⬜ **Asset production** — ElevenLabs audio (decoy ambient loop + 6 cue clips), Midjourney visuals (logo, app icons, 3 cover art variants, hero/lifestyle imagery), iOS asset catalog.
-6. ⬜ **Service configuration** — Supabase project + migrations + Edge Function, RevenueCat with one-off `hone_lifetime` non-consumable at $4.79, Apple Developer enrolment + App Store Connect record, Google OAuth credentials, Play Console record.
+6. ⬜ **Service configuration** — Supabase project + migrations + Edge Function, RevenueCat with one-off `hone_lifetime` non-consumable at $8.99, Apple Developer enrolment + App Store Connect record, Google OAuth credentials, Play Console record.
 7. ⬜ **Build pipeline** — EAS config (`eas init`, secrets, `ascAppId`), dev-client builds, real-device smoke tests on iPhone + Pixel.
 8. ⬜ **TestFlight / Play internal** — production builds + submit + internal testers verify.
 9. ⬜ **App Store / Play submission** — review + response loop.
