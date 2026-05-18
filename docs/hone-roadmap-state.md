@@ -1,8 +1,11 @@
 # Hone — Deployment Roadmap State
 
-**Last updated:** 2026-05-18
-**Current stage:** Phase 1.5 — Brand Identity (Figma only) · **~98 % complete** · all 41 screens, all components, pricing, alt icons, and the Photography page all done. Only the Brand-book PDF export remains before Phase 1.5 closes.
-**Next action:** Photography page shipped. Final deliverable for Phase 1.5: **Brand-book PDF export** — consolidates the Brand page into a single shareable PDF (mark, wordmark, lockups, alt icons, color tokens, type spec) for use in pitch decks, App Store assets, and dev handoff. After that, Phase 1.5 ships and Phase 2 (code: Habit-stacking) starts.
+**Last updated:** 2026-05-18 (session close)
+**Current stage:** Phase 1.5 — Brand Identity (Figma only) · **~98 % complete** · all 41 screens, all components, pricing, alt icons, and the Photography page structure done. Photography prompts need a rework pass, then the Brand-book PDF export ships and Phase 1.5 closes.
+**Next session pick-up (in order):**
+1. **Photography prompt rework** — current "Lifestyle context" prompt reads plain / tech-bro-sedentary. Replace with a tighter prompt that lands the brand's active-but-discreet tone while still passing the page's own composition rules (side lighting only, anonymous framing, muted everyday clothing, calm domestic spaces, lived-in not staged). Candidate prompts already drafted in chat (chopping wood at a cabin, café table with a friend, morning mobility by a window) — pick one or two, swap into the page via `use_figma`. May also expand from 4 → 5 prompts if a "social" slot is added alongside the existing lifestyle / abstract / hero / discreet-environment slots.
+2. **Brand-book PDF export** — consolidate the Brand page into a single shareable PDF (mark, wordmark, lockups, alt icons, colour tokens, type spec, motion + photography rules) for pitch decks, App Store assets, dev handoff.
+3. **Phase 1.5 ships.** Move to Phase 2 (code: Habit-stacking).
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -114,7 +117,8 @@
     - [x] 39 · biometric lock — centred hero: 48 px Inset-H monogram + 120 px Face-ID glyph (4 accent corner brackets + muted eyes + smile curve) · "Hone is locked" + tap hint · "Use passcode" accent text + muted Sign out near the bottom
     - [x] 40 · app icon picker — detail header · 2 × 2 grid of 4 alternate icons (Default H selected with check badge · Focus ring · Posture figure · Health heart) · accent-soft iOS-notification info card · Apply CTA · Brand-page alt icons refreshed to match
     - [x] 41 · Live Activity widget — lock-screen mockup (Dynamic Island pill + "9:41" big time) with full-width 360 × 116 Live Activity banner (Inset-H + Hone / Hold · 3 s / Set 2 of 3 · Rep 5 of 10 + 52 px mini-ring at 42 %) plus Dynamic Island MINIMAL / COMPACT / EXPANDED variants at Apple-documented sizes
-  - [x] Photography page — header + 4-sentence mission · 12-tile hybrid mood board (60 % abstract, 40 % lifestyle, captioned placeholders) · 4 numbered composition rules · 4 Do/Don\'t split-pair cards · 4 Midjourney prompt templates (Hero portrait · Lifestyle context · Abstract cover art · Discreet environment) with `--ar` + `--style raw` flags · handoff card spec\'ing ~30 base images in 5 categories
+  - [x] Photography page structure — header + 4-sentence mission · 12-tile hybrid mood board (60 % abstract, 40 % lifestyle, captioned placeholders) · 4 numbered composition rules (rule body copy constrained to 300 px so it wraps to 3 lines) · 4 Do/Don\'t split-pair cards · 4 Midjourney prompt templates (Hero portrait · Lifestyle context · Abstract cover art · Discreet environment) with `--ar` + `--style raw` flags, prompt boxes 1392 wide and text wrapping at 1360 in JetBrains Mono Regular · handoff card spec\'ing ~30 base images in 5 categories
+  - [ ] Photography prompt rework — "Lifestyle context" reads plain; candidate replacements drafted (see session-close notes); may add a "social" slot bringing prompt count 4 → 5
   - [ ] Brand book frame in the Brand page exported as PDF
 - [ ] **Phase 2 — Habit-stacking (~1.5 weeks)**
   - [ ] Migration `0004_streak_freezes.sql` applied to staging
@@ -183,7 +187,8 @@
 
 _Skipped steps or deferred polish — added by `@hone-coach` when the user explicitly skips a step._
 
-(empty)
+- Photography page — "Lifestyle context" Midjourney prompt currently reads plain. Needs swap (see session-close notes); rest of the page is solid.
+- ListRow primitive width — rows on the Settings screen were inlined at 358 px while the `listRow` component is 360 px. Either shrink the primitive to 358 or accept the inline pattern in grouped lists. Tracked for the post-Phase-3 design-system handoff sweep.
 
 ---
 
@@ -199,5 +204,57 @@ _External dependencies not yet resolved — added by `@hone-coach` when prerequi
 
 - Plan source of truth: `/root/.claude/plans/i-want-to-build-stateless-turtle.md`
 - Project context: `/home/user/hello-world/CLAUDE.md`
-- Phase 1.5 deliverable: a single Figma file with 5 pages (Foundations, Brand, Components, Screens, Photography). No code changes in this phase.
+- Phase 1.5 deliverable: a single Figma file with 6 pages (Foundations, Brand, Iconography, Components, Screens, Photography). No code changes in this phase.
 - Monetization: one-off purchase $8.99 (`hone_lifetime` non-consumable). No subscriptions, no trial.
+
+---
+
+## Session-close notes · 2026-05-18
+
+**What shipped today**
+- Photography page final polish: rule-card body copy reflowed to 3 lines at 300 px (was overflowing on a single 700 px line); Midjourney prompt boxes resized to 1392 wide with text wrapping at 1360 in JetBrains Mono Regular (were stuck at 52 px wide with text overflowing to 2581).
+- Phase 1.5 closed all the way out except the Photography prompt rework and the Brand-book PDF export.
+
+**Where we stopped**
+- The current "Lifestyle context" prompt on the Photography page reads plain. We riffed on two replacement angles — social (café, dinner, walk-with-friend) and active (chopping wood, morning mobility, dawn run) — then locked back to the page's own rules to filter. Final candidates below.
+- No prompt swap was committed; the page is in its shipped state, the rework happens tomorrow.
+
+**Tomorrow — first move**
+1. Pick one or two candidate prompts from the list below.
+2. Open the Photography page (file key `qgY3Qcf7gP7w5V5A6uQTL4`, page id `2:5`) and swap the chosen prompt(s) into the "Lifestyle context" slot via `use_figma`. If adding a fifth prompt, extend the prompt-templates frame to add a "Social context" or "Active context" slot before the handoff card.
+3. Then build the Brand-book PDF export frame on the Brand page (consolidates mark / wordmark / lockups / alt icons / colour tokens / type spec / motion + photography rules into a 1–2 page exportable frame).
+4. Phase 1.5 ships → move to Phase 2 (code: Habit-stacking).
+
+### Candidate prompts (drafted, not yet committed)
+
+All pass the page's rules: side lighting only · anonymous framing · muted everyday clothing (wool, dark cotton, knitwear — no athletic gear) · calm domestic spaces · lived-in not staged.
+
+**Active angle (recommended primary: C — chopping wood):**
+
+A. *Pre-dawn forest run* — `documentary photograph of a figure mid-stride on a misty forest path at dawn, shot from behind, breath visible in cold air, dark merino base layer and dark wool beanie (no visible logos, no athletic branding), low golden side-light filtering through trees from camera left, deep shadows, anonymous framing, cinematic film still, --ar 4:5 --style raw`
+
+B. *Cold-water swim emerge* — `photograph of a man emerging from a cold open-water swim at dawn, wet shoulders catching low side-light from a single horizon, dark muted swim trunks (no logos), deep navy water, anonymous framing with face turned away and eyes in shadow, lived-in towel draped on a rock nearby, cinematic film still, --ar 4:5 --style raw`
+
+C. *Chopping wood outside a cabin* — `photograph of a man chopping wood outside a cabin at dawn, shot from behind and to the side, dark wool jumper with rolled sleeves, hands visible on an axe handle, low golden side-light from the horizon camera-right, breath visible in cold air, deep shadows, lived-in worn boots, no logos, no text, --ar 4:5 --style raw`
+
+D. *Cycle commute, dusk* — `documentary photograph of a man riding a steel-framed city bicycle along an empty cobbled street at dusk, shot from behind, dark wool overcoat and trousers (no athletic gear), single shop window providing warm side light to one side, deep shadows, anonymous framing, lived-in canvas pannier bag, no logos, --ar 4:5 --style raw`
+
+E. *Empty hotel pool, single lap* — `overhead photograph of a man swimming a single lap in an empty hotel pool at dawn, single tall window casting warm side light across the water, deep shadows below the surface, anonymous framing with head down, no athletic branding, calm composition, lived-in towel folded on a chair at the pool edge, no logos, --ar 4:5 --style raw`
+
+F. *Morning mobility by a window* — `photograph of a man performing a slow morning stretch in a dim bedroom at dawn, shot from behind, single tall window providing soft side light from camera left, deep shadows on the opposite wall, dark wool sleep shirt and loose dark cotton trousers, anonymous framing with head bowed, lived-in unmade bed in soft focus, no logos, --ar 4:5 --style raw`
+
+**Social angle (recommended primary: A — café):**
+
+A. *Café table with a friend* — `photograph of two men in dark wool sweaters at a wooden café table by a tall window, hands cradling mugs, anonymous framing with faces cut at the chin and eyes in shadow, warm side light from the window camera-left, deep shadows, wrinkled newspaper and a half-finished pastry on the table, shallow depth of field, no logos, no text, --ar 4:5 --style raw`
+
+B. *Long-table dinner, candlelight* — `overhead photograph of a long wooden dinner table at night, multiple hands reaching for wine glasses and shared plates, single side-positioned candle as the only light source, deep shadows falling across the table, neutral dark knitwear at the frame edges, wrinkled linen napkins, lived-in, no faces, no logos, --ar 4:5 --style raw`
+
+C. *Friends walking, back of shot* — `documentary-style photograph of two figures in dark wool coats walking down a quiet cobbled street at dusk, shot from behind, hands in pockets, soft side light from a shop window glowing warmly to one side, deep shadows, lived-in worn shoes, no faces, no logos, --ar 4:5 --style raw`
+
+D. *Vinyl listen at home* — `photograph of two men sitting in a dim living room listening to a vinyl record, both shot from behind in mismatched armchairs, single warm lamp as the side light source, dark wool jumpers, low warm light pooling on the rug, a half-finished glass of wine on a side table, lived-in not staged, no faces, no logos, --ar 4:5 --style raw`
+
+E. *Reading nook with a friend* — `photograph of two men reading at opposite ends of a worn linen sofa, single window providing side light from camera left, deep shadows, dark muted knitwear, books open across laps, hands visible, faces cut by framing, lived-in cushions, no logos, no text, --ar 4:5 --style raw`
+
+F. *Sunday kitchen, cooking together* — `photograph of two men cooking together in a quiet kitchen at dawn, side light from a small window, hands working with vegetables on a wooden board, anonymous framing cut at the shoulders, muted dark linen aprons over wool jumpers, steam rising from a pot, lived-in, no logos, no text, --ar 4:5 --style raw`
+
+**Suggested final composition:** keep Hero portrait + Abstract cover art + Discreet environment as-is, replace plain Lifestyle with **C — chopping wood** (active, rule-perfect, masculine-ritual), and optionally add **Social A — café** as a fifth slot so the mood board covers solo public · solo private · solo active · two-together private without overlap.
