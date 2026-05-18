@@ -1,8 +1,8 @@
 # Hone — Deployment Roadmap State
 
 **Last updated:** 2026-05-18
-**Current stage:** Phase 1.5 — Brand Identity (Figma only) · ~85 % complete · all foundational design work done, only forward-looking + Photography + Brand-book export outstanding
-**Next action:** Pricing bumped 4.79 → 8.99 across spec + paywall mock (commit `7959d43`). Three open paths next: **Batch 2** — 5 competitor-gap polish screens (end-of-session review · reverse-Kegel intro · education · RPE slider · coachmark overlay) · **Batch 3** — 6 Phase 2/3 forward-looking screens (reminder time wheel · streak-freeze · anonymous/guest · biometric lock · app icon picker · Live Activity widget) · **Photography page** (mood board + Midjourney prompt templates) · or a **holistic mid-build review** before resuming.
+**Current stage:** Phase 1.5 — Brand Identity (Figma only) · **~95 % complete** · all 41 screens shipped, all components built, pricing locked, Brand-page alt icons refreshed. Only Photography mood board + Brand-book PDF export remain before Phase 1.5 closes.
+**Next action:** Final 11-screen sprint complete (31 – 41). Two deliverables left for Phase 1.5: **Photography page** (mood board + composition rules + ≥ 4 Midjourney prompt templates) and **Brand-book PDF export** (consolidates the Brand page into a shareable doc). After those, Phase 1.5 ships and Phase 2 (code: Habit-stacking) starts.
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -23,15 +23,15 @@
 | Components — 7 originals mirrored from code (ProgressDots, PhaseLabel, PacerRing, IndexTrendChart, StreakHeatmap, QuestionCard, ErrorBoundary) | ✅ |
 | Components — 12 new primitives + 2 nav primitives (tabBar, screenHeader) | ✅ |
 | Screens — 16 main routes | ✅ |
-| Screens — 7 of 14 competitor-gap screens built (17 – 23) | 🟡 |
+| Screens — 14 of 14 competitor-gap screens built | ✅ |
 | Screens — 7 v1-launch sub-pages built (24 – 30: Batch 1 of v1 sweep) | ✅ |
-| Screens — 0 of 6 Batch 3 forward-looking screens | ⬜ |
-| Screens — 0 of 5 Batch 2 polish screens | ⬜ |
+| Screens — 6 of 6 Batch 3 forward-looking screens (36 – 41) | ✅ |
+| Brand-page alt icons refreshed to match the App icon picker (large + 80 px strip) | ✅ |
 | Pricing locked in — `hone_lifetime` non-consumable at **$8.99** | ✅ |
 | Photography page (mood board + Midjourney templates) | ⬜ |
 | Brand book PDF export | ⬜ |
 
-**By the numbers:** 5 Figma pages · 22 components / ~80 variants · 30 screens mocked · 12 icons drawn · 11 screens still on the runway for v1 launch fidelity.
+**By the numbers:** 5 Figma pages · 22 components / ~80 variants · **41 screens mocked** · 12 icons drawn · only 2 deliverables (Photography + Brand-book PDF) remain for Phase 1.5 completion.
 
 ---
 
@@ -86,7 +86,7 @@
     - [x] 14 · session/complete — celebration · 96 px success-check badge with 120 px ring halo · "Nice work, Jamie" + day subhead · 3-up stats (DURATION 5:12 · REPS 30 · STREAK +1 in green) · `ratingPrompt` instance (value=0) · Done CTA
     - [x] 15 · session/stealth — Phase 3 preview · disguised ambient-player chrome · concentric-ring decoy art · generic track + show name · scrubber bar · prev / play-pause / next transport · output-device pill · small "STEALTH" pill in nav · "Tap and hold to exit Stealth" hint
     - [x] 16 · sign-up — back chev + "Get started" · 3 success-checked value props (personalised program / measured Index / Stealth Mode) · Apple / Google OAuth (relabeled "Sign up") · or divider · default email Input · Continue CTA · "Already have an account? Sign in" link
-  - [~] Screens page: 14 competitor-gap screens — **7 of 14 built**; 7 deferred to Batch 2 (education · end-of-session review · coachmarks · reverse-Kegel intro · challenge cycle · RPE slider · contextual rating prompt)
+  - [x] Screens page: 14 competitor-gap screens — **14 of 14 built**
     - [x] 17 · legal viewer — generic detail-header sub-page · "Last updated" line + 4 numbered sections (Acceptance · Account · Purchases · Medical disclaimer) · parameterised route serves Terms / Privacy / Licenses
     - [x] 18 · error state — detail-header "Couldn\'t load program" + `errorState` instance (kind=retry) + "Contact support" muted text · escalation pattern for data-load failures
     - [x] 19 · healthkit connect — close-X with Skip · 96 px heart glyph in surface card · "Connect to Apple Health" + 3 success-checked value props · Connect CTA + privacy note · iOS-only, deferred on Android until Phase 4
@@ -94,6 +94,11 @@
     - [x] 21 · maintenance — 120 px medal hero with halo · 8-week complete celebration · before/after stats (50 → 78 in green) · 3 next-up cards with the RECOMMENDED maintenance option getting an accent stroke
     - [x] 22 · voice picker — 4 voice cards (Calm = default selected · Firm · Whisper · Silent/haptics-only) · per-card play preview · accent stroke + check on selection · Stealth Mode pairing hint
     - [x] 23 · onboarding bail-out — resume screen for mid-funnel drop-offs · "Welcome back, Jamie" + 5-step vertical timeline (3 done success-green / 1 current accent / 1 upcoming muted) · connecting line acts as a progress bar · Resume primary CTA routes to first incomplete step + Start over (destructive-confirm)
+    - [x] 31 · session review — detail header "Day 3 review" · success-green completion kicker + summary banner with meta pills · PER EXERCISE list with checked badges and per-set status dots · accent-soft retest nudge card · Back to today CTA + muted Repeat session secondary
+    - [x] 32 · reverse-Kegel intro — detail header "New exercise" · hero card with NEW IN YOUR PROGRAM accent kicker + Reverse Kegel title + inverse 7-dot tempo + RELEASE · EXPAND label · WHY IT MATTERS body · HOW TO DO IT 3 steps (warning folded into step 3) · I get it · let\'s try CTA
+    - [x] 33 · education — detail header "Pelvic floor 101" · accent kicker "EDUCATION · 3 MIN READ" + 26 / 32 article title · 2 article sections with 17 / 24 heading + 14 / 22 body · accent-soft "1 in 4" key-fact callout between them · Got it · keep training CTA · parameterised shell for the whole education catalog
+    - [x] 34 · RPE slider — faint success halo + 55 % scrim + 460 px sheet · EFFORT CHECK accent kicker · "How hard was that?" + 96 / 104 big "7" with "/10" suffix · 326 px discrete slider at 70 % with 10 ticks · Easy / All-out anchor labels · Submit + Skip CTAs
+    - [x] 35 · coachmark overlay — home-screen context behind · 75 % scrim drawn as 4 surrounding rectangles cutting a spotlight around the streak chip · 2 px accent ring on the target · tooltip card with up-pointing pointer aligned to chip centre · 3-dot step indicator (current widened to 20 × 6 pill) + Skip tour link · in-card accent Next CTA
   - [x] Screens page: 7 v1-launch sub-pages (Batch 1 of v1-launch screen sweep — referenced by the 16 main routes but not yet mocked at the time)
     - [x] 24 · day detail — detail header "Day 3" · accent kicker + "Coordination" 30/38 + meta chips (5 min · 3 exercises · 30 reps) · 3-exercise list with accent-soft badges · Start session CTA
     - [x] 25 · exercise detail — detail header "Quick flicks" · 7-dot tempo visualisation card + "1s ON · 1s OFF" label + description · HOW IT WORKS 3 numbered steps · TIPS 3 bullets · Practice solo · 1 min CTA
@@ -102,7 +107,13 @@
     - [x] 28 · check email — back chev · 96 px envelope tile with notification ping · "Check your email" + inline-bolded email address · Open Mail CTA · 30 s resend cooldown + Use different email link
     - [x] 29 · delete account — detail header · 72 px danger badge + halo + exclamation · WHAT\'S DELETED bullet card (4 danger × items) · purchase-preservation reassurance · type-to-confirm Input showing DELETE with danger stroke · 50/50 Cancel/Delete forever buttons
     - [x] 30 · session pause — bg hint of ring + dimmed HOLD phase label · 55 % scrim · 440 px sheet with grabber · PAUSED kicker + 64/72 elapsed 2:14 · 3-stat row (SET 2/3 · REP 5/10 · PHASE Hold) · oversized Resume CTA + muted End session link
-  - [ ] Screens page: 12 already-roadmapped Phase 2/3 forward-looking screens mocked (Batch 3) — 0 of 6 representative screens built (reminder time wheel · streak-freeze · anonymous/guest · biometric lock · app icon picker · Live Activity widget)
+  - [x] Screens page: 6 of 6 Batch 3 forward-looking screens built
+    - [x] 36 · reminder time wheel — dimmed reminders row hint, 55 % scrim, 472 px sheet, Cancel / Reminder time / Done iOS row, instanced `timePicker.state=open` wheel, 4 quick-preset chips (7 AM · 8:30 AM selected · Noon · Evening)
+    - [x] 37 · streak-freeze — 540 px sheet with 72 px accent-soft pause-icon badge, 22 / 30 title + 14 / 20 muted subtitle, 2-up stat cards (FREEZES LEFT 2 of 3 accent · CURRENT STREAK 12 days), missed-day row with surface2 day badge, Use freeze accent CTA + Maybe later (all content normalised to 322 × x=34 inside the sheet)
+    - [x] 38 · anonymous sign-up — back chev · 96 px surface2 hero with masked-silhouette glyph · "Train without an account" title · 3 success-checked explainer rows · trade-off info card · Start training accent CTA + accent "I\'ll sign up instead" text link
+    - [x] 39 · biometric lock — centred hero: 48 px Inset-H monogram + 120 px Face-ID glyph (4 accent corner brackets + muted eyes + smile curve) · "Hone is locked" + tap hint · "Use passcode" accent text + muted Sign out near the bottom
+    - [x] 40 · app icon picker — detail header · 2 × 2 grid of 4 alternate icons (Default H selected with check badge · Focus ring · Posture figure · Health heart) · accent-soft iOS-notification info card · Apply CTA · Brand-page alt icons refreshed to match
+    - [x] 41 · Live Activity widget — lock-screen mockup (Dynamic Island pill + "9:41" big time) with full-width 360 × 116 Live Activity banner (Inset-H + Hone / Hold · 3 s / Set 2 of 3 · Rep 5 of 10 + 52 px mini-ring at 42 %) plus Dynamic Island MINIMAL / COMPACT / EXPANDED variants at Apple-documented sizes
   - [ ] Photography page: hybrid abstract + lifestyle mood board, composition rules, do/don't pairs, ≥4 Midjourney prompt templates
   - [ ] Brand book frame in the Brand page exported as PDF
 - [ ] **Phase 2 — Habit-stacking (~1.5 weeks)**
