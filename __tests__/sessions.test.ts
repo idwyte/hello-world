@@ -20,7 +20,13 @@ const fakeSessions = [
   { id: 's1', started_at: '2024-01-03T08:00:00Z', ended_at: '2024-01-03T08:04:00Z', mode: 'normal', completed: true },
   { id: 's2', started_at: '2024-01-02T08:00:00Z', ended_at: '2024-01-02T08:04:00Z', mode: 'stealth', completed: true },
 ];
-const fakeStreak = { current: 5, longest: 9, last_session_date: '2024-01-03' };
+const fakeStreak = {
+  current: 5,
+  longest: 9,
+  last_session_date: '2024-01-03',
+  freezes: 1,
+  last_freeze_earned_at: '2024-01-01',
+};
 
 function makeChain(table: string) {
   const filters: Array<[string, unknown]> = [];
@@ -145,12 +151,14 @@ describe('fetchRecentSessions', () => {
 });
 
 describe('fetchStreak', () => {
-  it('returns the streak row when present', async () => {
+  it('returns the streak row when present, including freezes', async () => {
     const s = await fetchStreak();
     expect(s).toEqual({
       current: 5,
       longest: 9,
       lastDate: '2024-01-03',
+      freezes: 1,
+      lastFreezeEarnedAt: '2024-01-01',
     });
   });
 });

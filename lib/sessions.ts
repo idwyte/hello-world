@@ -75,22 +75,29 @@ export async function fetchRecentSessions(
   }));
 }
 
-export async function fetchStreak(): Promise<{
+export type FetchedStreak = {
   current: number;
   longest: number;
   lastDate: string | null;
-}> {
-  if (!hasSupabaseConfig()) {
-    return { current: 0, longest: 0, lastDate: null };
-  }
+  freezes: number;
+  lastFreezeEarnedAt: string | null;
+};
+
+export async function fetchStreak(): Promise<FetchedStreak> {
+  const zero: FetchedStreak = {
+    current: 0,
+    longest: 0,
+    lastDate: null,
+    freezes: 0,
+    lastFreezeEarnedAt: null,
+  };
+  if (!hasSupabaseConfig()) return zero;
   const supabase = getSupabase();
   const { data: user } = await supabase.auth.getUser();
-  if (!user.user) {
-    return { current: 0, longest: 0, lastDate: null };
-  }
+  if (!user.user) return zero;
   const { data, error } = await supabase
     .from('streaks')
-    .select('current, longest, last_session_date')
+    .select('current, longest, last_session_date, freezes, last_freeze_earned_at')
     .eq('user_id', user.user.id)
     .maybeSingle();
   if (error) throw error;
@@ -98,6 +105,9 @@ export async function fetchStreak(): Promise<{
     current: (data?.current as number) ?? 0,
     longest: (data?.longest as number) ?? 0,
     lastDate: (data?.last_session_date as string | null) ?? null,
+    freezes: (data?.freezes as number) ?? 0,
+    lastFreezeEarnedAt:
+      (data?.last_freeze_earned_at as string | null) ?? null,
   };
 }
 

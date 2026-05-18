@@ -11,6 +11,13 @@ export type StealthSettings = {
   decoyCover: DecoyCover;
   bluetoothOnly: boolean;
   defaultMode: 'normal' | 'stealth';
+  // Phase 2 — reminders
+  reminderEnabled: boolean;
+  /** "HH:mm" 24h, or null when disabled. */
+  reminderTime: string | null;
+  // Phase 3 — security & icon
+  biometricLocked: boolean;
+  appIconVariant: 'default' | 'focus' | 'posture' | 'health';
 };
 
 const DEFAULTS: StealthSettings = {
@@ -19,6 +26,10 @@ const DEFAULTS: StealthSettings = {
   decoyCover: 'minimal_violet',
   bluetoothOnly: true,
   defaultMode: 'normal',
+  reminderEnabled: false,
+  reminderTime: null,
+  biometricLocked: false,
+  appIconVariant: 'default',
 };
 
 const STORAGE_KEY = 'hone_stealth_settings_v1';
