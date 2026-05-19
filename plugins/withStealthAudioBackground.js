@@ -19,7 +19,7 @@ const withStealthAudioBackground = (config) => {
   });
 
   config = withAndroidManifest(config, (c) => {
-    const manifest = c.modResults;
+    const manifest = c.modResults.manifest;
     manifest['uses-permission'] = manifest['uses-permission'] ?? [];
     const perms = manifest['uses-permission'];
     const wanted = [
