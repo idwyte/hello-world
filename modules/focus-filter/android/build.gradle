@@ -1,0 +1,23 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'expo-module-gradle-plugin'
+
+group = 'expo.modules.focusfilter'
+version = '0.0.1'
+
+expoModule {}
+
+android {
+  namespace 'expo.modules.focusfilter'
+  defaultConfig {
+    versionCode 1
+    versionName '0.0.1'
+    minSdkVersion rootProject.hasProperty('minSdkVersion') ? rootProject.minSdkVersion : 24
+    compileSdkVersion rootProject.hasProperty('compileSdkVersion') ? rootProject.compileSdkVersion : 34
+    targetSdkVersion rootProject.hasProperty('targetSdkVersion') ? rootProject.targetSdkVersion : 34
+  }
+}
+
+dependencies {
+  implementation project(':expo-modules-core')
+}
