@@ -1,0 +1,11 @@
+{
+  "name": "live-activity",
+  "version": "0.0.1",
+  "description": "Hone ActivityKit wrapper — Live Activity / Dynamic Island for Stealth sessions.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "echo skip"
+  },
+  "private": true
+}
