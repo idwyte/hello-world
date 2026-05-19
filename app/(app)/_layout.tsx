@@ -1,18 +1,34 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
+import { CalendarDays, LineChart, Settings, Sparkles } from 'lucide-react-native';
 
-function TabIcon({ label, focused }: { label: string; focused: boolean }) {
-  return (
-    <Text
-      style={{
-        color: focused ? '#F5F5F7' : '#8A8A95',
-        fontSize: 11,
-        fontWeight: focused ? '600' : '400',
-      }}
-    >
-      {label}
-    </Text>
-  );
+import { Body } from '@/components/ui';
+import { semantic } from '@/lib/theme';
+
+type IconProps = { color: string; size: number };
+
+function tabIcon(
+  Icon: React.ComponentType<{ color?: string; size?: number }>,
+) {
+  // Stable component reference; React Navigation re-renders on focus change.
+  function TabBarIcon({ color, size }: IconProps) {
+    return <Icon color={color} size={size} />;
+  }
+  return TabBarIcon;
+}
+
+function tabLabel(text: string) {
+  function TabBarLabel({ focused }: { focused: boolean }) {
+    return (
+      <Body
+        size="xs"
+        weight={focused ? 'semibold' : 'medium'}
+        color={focused ? 'primary' : 'muted'}
+      >
+        {text}
+      </Body>
+    );
+  }
+  return TabBarLabel;
 }
 
 export default function AppLayout() {
@@ -20,50 +36,57 @@ export default function AppLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: false,
+        tabBarActiveTintColor: semantic.interactivePrimary,
+        tabBarInactiveTintColor: semantic.textMuted,
         tabBarStyle: {
-          backgroundColor: '#0B0B0F',
-          borderTopColor: '#2A2A36',
+          backgroundColor: semantic.surfaceRaised,
+          borderTopColor: semantic.borderDefault,
+          borderTopWidth: 1,
           height: 64,
           paddingTop: 8,
+          paddingBottom: 8,
         },
-        sceneStyle: { backgroundColor: '#0B0B0F' },
+        sceneStyle: { backgroundColor: semantic.surfaceCanvas },
       }}
     >
       <Tabs.Screen
         name="home"
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon label="Today" focused={focused} />,
+          tabBarIcon: tabIcon(Sparkles),
+          tabBarLabel: tabLabel('Today'),
           tabBarAccessibilityLabel: 'Today',
         }}
       />
       <Tabs.Screen
         name="program"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon label="Plan" focused={focused} />
-          ),
+          tabBarIcon: tabIcon(CalendarDays),
+          tabBarLabel: tabLabel('Plan'),
           tabBarAccessibilityLabel: 'Plan',
         }}
       />
       <Tabs.Screen
         name="progress"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon label="Progress" focused={focused} />
-          ),
+          tabBarIcon: tabIcon(LineChart),
+          tabBarLabel: tabLabel('Progress'),
           tabBarAccessibilityLabel: 'Progress',
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon label="Settings" focused={focused} />
-          ),
+          tabBarIcon: tabIcon(Settings),
+          tabBarLabel: tabLabel('Settings'),
           tabBarAccessibilityLabel: 'Settings',
         }}
       />
+      {/*
+        Routes below are reachable via direct navigation (router.push or deep
+        link) but must NOT appear in the tab bar. expo-router auto-registers
+        every file under (app)/, so each non-tab route needs an explicit
+        `href: null` slot.
+      */}
       <Tabs.Screen name="session" options={{ href: null }} />
       <Tabs.Screen name="index-retest" options={{ href: null }} />
     </Tabs>

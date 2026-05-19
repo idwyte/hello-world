@@ -1,24 +1,30 @@
-import { Link } from 'expo-router';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import {
+  Body,
+  Card,
+  Heading,
+  ListRow,
+  SectionLabel,
+} from '@/components/ui';
+import { semantic } from '@/lib/theme';
 import { useEntitlement } from '@/lib/revenuecat';
 import { useSettingsStore } from '@/stores/settings';
 
-type Row = {
+type Group = {
   label: string;
-  href:
-    | '/settings/account'
-    | '/settings/subscription'
-    | '/settings/privacy'
-    | '/settings/stealth'
-    | '/settings/reminders'
-    | '/settings/security'
-    | '/settings/app-icon';
-  hint?: string;
+  rows: Array<{
+    label: string;
+    href: string;
+    sublabel?: string;
+    destructive?: boolean;
+  }>;
 };
 
 export default function SettingsIndex() {
+  const router = useRouter();
   const { entitlement } = useEntitlement();
   const { settings, hydrated } = useSettingsStore();
   const reminderHint = !hydrated
@@ -27,77 +33,108 @@ export default function SettingsIndex() {
       ? `Daily · ${formatLabel(settings.reminderTime)}`
       : 'Off';
 
-  const rows: Row[] = [
+  const groups: Group[] = [
     {
       label: 'Account',
-      href: '/settings/account',
-      hint: 'Email, sign out, delete account',
+      rows: [
+        {
+          label: 'Account',
+          href: '/settings/account',
+          sublabel: 'Email, sign out, delete account',
+        },
+      ],
+    },
+    {
+      label: 'Training',
+      rows: [
+        { label: 'Reminders', href: '/settings/reminders', sublabel: reminderHint },
+        {
+          label: 'Stealth Mode',
+          href: '/settings/stealth',
+          sublabel: 'Haptic intensity, AirPods cues',
+        },
+        {
+          label: 'App icon',
+          href: '/settings/app-icon',
+          sublabel:
+            settings.appIconVariant === 'default'
+              ? 'Default'
+              : settings.appIconVariant.charAt(0).toUpperCase() +
+                settings.appIconVariant.slice(1),
+        },
+      ],
     },
     {
       label: 'Subscription',
-      href: '/settings/subscription',
-      hint: entitlement.isPro
-        ? entitlement.isInTrial
-          ? 'Trial'
-          : 'Active'
-        : 'Free',
+      rows: [
+        {
+          label: 'Subscription',
+          href: '/settings/subscription',
+          sublabel: entitlement.isPro
+            ? entitlement.isInTrial
+              ? 'Trial'
+              : 'Active'
+            : 'Free',
+        },
+      ],
     },
     {
-      label: 'Reminders',
-      href: '/settings/reminders',
-      hint: reminderHint,
-    },
-    {
-      label: 'Privacy',
-      href: '/settings/privacy',
-      hint: 'Analytics, data export, deletion',
-    },
-    {
-      label: 'Stealth Mode',
-      href: '/settings/stealth',
-      hint: 'Haptic intensity, AirPods cues, lockscreen cover',
-    },
-    {
-      label: 'Security',
-      href: '/settings/security',
-      hint: settings.biometricLocked ? 'Face ID lock on' : 'Face ID lock, account linking',
-    },
-    {
-      label: 'App icon',
-      href: '/settings/app-icon',
-      hint:
-        settings.appIconVariant === 'default'
-          ? 'Default'
-          : settings.appIconVariant.charAt(0).toUpperCase() +
-            settings.appIconVariant.slice(1),
+      label: 'About',
+      rows: [
+        {
+          label: 'Privacy',
+          href: '/settings/privacy',
+          sublabel: 'Analytics, data export, deletion',
+        },
+        {
+          label: 'Security',
+          href: '/settings/security',
+          sublabel: settings.biometricLocked ? 'Face ID lock on' : 'Face ID lock',
+        },
+      ],
     },
   ];
 
   return (
-    <SafeAreaView className="flex-1 bg-bg">
-      <ScrollView className="flex-1 px-6 pt-6" contentContainerClassName="pb-12">
-        <Text className="text-muted text-sm">Settings</Text>
-        <Text className="text-ink text-3xl font-semibold mt-1">Preferences</Text>
+    <SafeAreaView className="flex-1 bg-surface-canvas">
+      <ScrollView className="flex-1 px-4 pt-3" contentContainerClassName="pb-12">
+        <View>
+          <SectionLabel>Settings</SectionLabel>
+          <Heading level="heading-lg" className="mt-1">
+            Preferences
+          </Heading>
+        </View>
 
-        <View className="mt-6 gap-2">
-          {rows.map((r) => (
-            <Link key={r.href} href={r.href} asChild>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${r.label}, ${r.hint ?? ''}`}
-                className="bg-surface border border-border rounded-xl px-4 py-4 flex-row items-center justify-between active:opacity-80"
-              >
-                <View>
-                  <Text className="text-ink text-base">{r.label}</Text>
-                  {r.hint ? (
-                    <Text className="text-muted text-xs mt-0.5">{r.hint}</Text>
-                  ) : null}
-                </View>
-                <Text className="text-muted">›</Text>
-              </Pressable>
-            </Link>
+        <View className="mt-6 gap-6">
+          {groups.map((g) => (
+            <View key={g.label} className="gap-2">
+              <SectionLabel className="px-1">{g.label}</SectionLabel>
+              <Card padding="none" radius="xl" bordered>
+                {g.rows.map((r, i) => (
+                  <View key={r.href}>
+                    <ListRow
+                      label={r.label}
+                      sublabel={r.sublabel}
+                      destructive={r.destructive}
+                      showChevron
+                      onPress={() => router.push(r.href as never)}
+                    />
+                    {i < g.rows.length - 1 ? (
+                      <View
+                        className="h-px ml-4"
+                        style={{ backgroundColor: semantic.borderDefault }}
+                      />
+                    ) : null}
+                  </View>
+                ))}
+              </Card>
+            </View>
           ))}
         </View>
+
+        <Body size="xs" color="muted" className="mt-8 text-center">
+          Hone v0.1.0
+        </Body>
       </ScrollView>
     </SafeAreaView>
   );

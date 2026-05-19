@@ -4,13 +4,17 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
-  Pressable,
-  Text,
-  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import {
+  Body,
+  Button,
+  Card,
+  Heading,
+  TextField,
+} from '@/components/ui';
 import {
   sendMagicLink,
   signInAnonymously,
@@ -18,6 +22,7 @@ import {
   signInWithGoogle,
 } from '@/lib/auth';
 import { hasGoogleConfig, hasSupabaseConfig } from '@/lib/env';
+import { semantic } from '@/lib/theme';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -46,46 +51,39 @@ export default function SignIn() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-bg">
+    <SafeAreaView className="flex-1 bg-surface-canvas">
       <View className="flex-1 px-6 pt-10 pb-8">
         <View className="flex-1 justify-center">
-          <Text className="text-ink text-4xl font-semibold">Hone</Text>
-          <Text className="text-muted mt-2">
+          <Heading level="display-lg">Hone</Heading>
+          <Body size="lg" color="muted" className="mt-3">
             Train pelvic floor strength in a few minutes a day.
-          </Text>
+          </Body>
         </View>
 
         <View className="gap-3">
           {!configured ? (
-            <View className="bg-surface2 rounded-xl p-3 border border-border">
-              <Text className="text-muted text-xs">
+            <Card padding="sm" bordered surface="sunken">
+              <Body size="xs" color="muted">
                 Auth backend not configured yet. Set EXPO_PUBLIC_SUPABASE_URL
                 and EXPO_PUBLIC_SUPABASE_ANON_KEY to enable sign-in.
-              </Text>
-            </View>
+              </Body>
+            </Card>
           ) : null}
 
           {configured ? (
-            <Pressable
+            <Button
+              label={busy === 'guest' ? '…' : 'Skip sign-in — start training'}
+              variant="primary"
+              size="lg"
               disabled={busy !== null}
               onPress={() => withBusy('guest', signInAnonymously)}
-              accessibilityRole="button"
-              accessibilityLabel="Continue without signing in. Your data stays private to this device until you choose to sync."
-              className="bg-accent rounded-xl py-4 items-center active:opacity-80"
-            >
-              {busy === 'guest' ? (
-                <ActivityIndicator color="#F5F5F7" />
-              ) : (
-                <Text className="text-ink font-semibold">
-                  Skip sign-in — start training
-                </Text>
-              )}
-            </Pressable>
+              accessibilityLabel="Continue without signing in"
+            />
           ) : null}
 
-          <Text className="text-muted text-xs text-center mt-1 mb-1">
+          <Body size="xs" color="muted" className="text-center my-1">
             Sync across devices (optional)
-          </Text>
+          </Body>
 
           {Platform.OS === 'ios' && configured ? (
             <AppleAuthentication.AppleAuthenticationButton
@@ -102,32 +100,25 @@ export default function SignIn() {
           ) : null}
 
           {hasGoogleConfig() ? (
-            <Pressable
+            <Button
+              label={busy === 'google' ? '…' : 'Continue with Google'}
+              variant="secondary"
+              size="lg"
               disabled={busy !== null || !configured}
               onPress={() => withBusy('google', signInWithGoogle)}
-              accessibilityRole="button"
-              accessibilityLabel="Sign in with Google"
-              className="bg-ink rounded-xl py-3 items-center active:opacity-80"
-            >
-              {busy === 'google' ? (
-                <ActivityIndicator color="#0B0B0F" />
-              ) : (
-                <Text className="text-bg font-semibold">
-                  Continue with Google
-                </Text>
-              )}
-            </Pressable>
+            />
           ) : null}
 
-          <View className="flex-row items-center my-2">
-            <View className="flex-1 h-px bg-border" />
-            <Text className="text-muted text-xs mx-3">or</Text>
-            <View className="flex-1 h-px bg-border" />
+          <View className="flex-row items-center my-2 gap-3">
+            <View className="flex-1 h-px bg-border-default" />
+            <Body size="xs" color="muted">
+              or
+            </Body>
+            <View className="flex-1 h-px bg-border-default" />
           </View>
 
-          <TextInput
+          <TextField
             placeholder="you@example.com"
-            placeholderTextColor="#8A8A95"
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -136,10 +127,20 @@ export default function SignIn() {
             editable={!busy && configured}
             onChangeText={setEmail}
             accessibilityLabel="Email address"
-            className="bg-surface text-ink rounded-xl px-4 py-3 border border-border"
           />
 
-          <Pressable
+          <Button
+            label={
+              busy === 'email'
+                ? '…'
+                : emailSent
+                  ? 'Check your inbox'
+                  : 'Send magic link'
+            }
+            variant={
+              busy || !configured || email.length === 0 ? 'secondary' : 'primary'
+            }
+            size="lg"
             disabled={busy !== null || !configured || email.length === 0}
             onPress={() =>
               withBusy('email', async () => {
@@ -147,28 +148,19 @@ export default function SignIn() {
                 setEmailSent(true);
               })
             }
-            accessibilityRole="button"
-            accessibilityLabel="Send magic link to email"
-            className={`rounded-xl py-3 items-center active:opacity-80 ${
-              busy || !configured || email.length === 0
-                ? 'bg-surface2'
-                : 'bg-accent'
-            }`}
-          >
-            {busy === 'email' ? (
-              <ActivityIndicator color="#F5F5F7" />
-            ) : (
-              <Text className="text-ink font-semibold">
-                {emailSent ? 'Check your inbox' : 'Send magic link'}
-              </Text>
-            )}
-          </Pressable>
+          />
 
-          <Text className="text-muted text-xs text-center mt-4 px-2">
+          {busy ? (
+            <View className="items-center mt-2">
+              <ActivityIndicator color={semantic.interactivePrimary} />
+            </View>
+          ) : null}
+
+          <Body size="xs" color="muted" className="text-center mt-4 px-2">
             By continuing you agree that pelvic floor training is general
             wellness, not medical advice. Consult a clinician for any
             pelvic-floor condition.
-          </Text>
+          </Body>
         </View>
       </View>
     </SafeAreaView>
