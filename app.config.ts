@@ -53,6 +53,12 @@ const config: ExpoConfig = {
   experiments: {
     typedRoutes: true,
   },
+  updates: {
+    url: 'https://u.expo.dev/002c8bd4-ddd2-4e48-8b3a-14fde3ca41d2',
+  },
+  runtimeVersion: {
+    policy: 'appVersion',
+  },
   extra: {
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? '',
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
