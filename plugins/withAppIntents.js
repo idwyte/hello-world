@@ -1,4 +1,4 @@
-import { type ConfigPlugin, withInfoPlist } from 'expo/config-plugins';
+const { withInfoPlist } = require('expo/config-plugins');
 
 /**
  * Wires the three Phase 2 native iOS modules into Info.plist:
@@ -16,21 +16,15 @@ import { type ConfigPlugin, withInfoPlist } from 'expo/config-plugins';
  * Apply by adding `'./plugins/withAppIntents'` to the `plugins` array in
  * `app.config.ts`.
  */
-const withAppIntents: ConfigPlugin = (config) => {
+const withAppIntents = (config) => {
   return withInfoPlist(config, (c) => {
-    type Plist = Record<string, unknown>;
-    const plist = c.modResults as Plist;
+    const plist = c.modResults;
 
-    // Focus status usage description (iOS 15+).
     if (typeof plist.NSFocusStatusUsageDescription !== 'string') {
       plist.NSFocusStatusUsageDescription =
         'Hone uses your Focus status to surface a discreet session when you’re heads-down.';
     }
 
-    // EventKit usage descriptions. iOS 17 added the `FullAccess` key for the
-    // new `requestFullAccessToEvents` API; the legacy key still applies to
-    // older OSes and to `requestAccess(to: .event)`. Both are needed for a
-    // build that supports iOS 15.1 through 17+.
     const calendarsCopy =
       'Hone looks for a quiet few minutes between your calendar events. It never reads event titles.';
     if (typeof plist.NSCalendarsUsageDescription !== 'string') {
@@ -44,4 +38,4 @@ const withAppIntents: ConfigPlugin = (config) => {
   });
 };
 
-export default withAppIntents;
+module.exports = withAppIntents;

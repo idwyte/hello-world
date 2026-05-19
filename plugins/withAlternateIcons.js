@@ -1,4 +1,4 @@
-import { type ConfigPlugin, withInfoPlist } from 'expo/config-plugins';
+const { withInfoPlist } = require('expo/config-plugins');
 
 /**
  * Registers alternate iOS app icons. The icon images must be in the iOS
@@ -28,29 +28,17 @@ import { type ConfigPlugin, withInfoPlist } from 'expo/config-plugins';
  * which passes the dictionary key (e.g. "focus") to
  * `UIApplication.setAlternateIconName:completionHandler:`.
  */
-const ICON_VARIANTS = ['focus', 'posture', 'health'] as const;
+const ICON_VARIANTS = ['focus', 'posture', 'health'];
 
-type IconEntry = {
-  CFBundleIconFiles: string[];
-  UIPrerenderedIcon: boolean;
-};
-
-const withAlternateIcons: ConfigPlugin = (config) => {
+const withAlternateIcons = (config) => {
   return withInfoPlist(config, (c) => {
-    type Plist = Record<string, unknown> & {
-      CFBundleIcons?: { CFBundleAlternateIcons?: Record<string, IconEntry> };
-      'CFBundleIcons~ipad'?: { CFBundleAlternateIcons?: Record<string, IconEntry> };
-    };
-    const plist = c.modResults as Plist;
+    const plist = c.modResults;
 
     plist.CFBundleIcons = plist.CFBundleIcons ?? {};
-    const alt: Record<string, IconEntry> =
-      plist.CFBundleIcons.CFBundleAlternateIcons ?? {};
+    const alt = plist.CFBundleIcons.CFBundleAlternateIcons ?? {};
     for (const variant of ICON_VARIANTS) {
       if (alt[variant]) continue;
       alt[variant] = {
-        // Icon-file basenames; the matching PNGs (1x/2x/3x) are dropped
-        // into the asset catalog during prebuild.
         CFBundleIconFiles: [`AppIcon-${variant}`],
         UIPrerenderedIcon: false,
       };
@@ -61,4 +49,4 @@ const withAlternateIcons: ConfigPlugin = (config) => {
   });
 };
 
-export default withAlternateIcons;
+module.exports = withAlternateIcons;

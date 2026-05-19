@@ -1,4 +1,4 @@
-import { type ConfigPlugin, withInfoPlist } from 'expo/config-plugins';
+const { withInfoPlist } = require('expo/config-plugins');
 
 /**
  * Enables Live Activities in the host app's Info.plist.
@@ -11,15 +11,12 @@ import { type ConfigPlugin, withInfoPlist } from 'expo/config-plugins';
  * Apply by adding `'./plugins/withLiveActivity'` to the `plugins` array in
  * `app.config.ts`.
  */
-const withLiveActivity: ConfigPlugin = (config) => {
+const withLiveActivity = (config) => {
   return withInfoPlist(config, (c) => {
-    type Plist = Record<string, unknown>;
-    const plist = c.modResults as Plist;
+    const plist = c.modResults;
     if (plist.NSSupportsLiveActivities !== true) {
       plist.NSSupportsLiveActivities = true;
     }
-    // Frequent updates can drain battery; opting out keeps Hone within the
-    // standard ActivityKit budgets (sufficient for our second-tick UI).
     if (typeof plist.NSSupportsLiveActivitiesFrequentUpdates !== 'boolean') {
       plist.NSSupportsLiveActivitiesFrequentUpdates = false;
     }
@@ -27,4 +24,4 @@ const withLiveActivity: ConfigPlugin = (config) => {
   });
 };
 
-export default withLiveActivity;
+module.exports = withLiveActivity;

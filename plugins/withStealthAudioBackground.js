@@ -1,8 +1,4 @@
-import {
-  type ConfigPlugin,
-  withInfoPlist,
-  withAndroidManifest,
-} from 'expo/config-plugins';
+const { withInfoPlist, withAndroidManifest } = require('expo/config-plugins');
 
 /**
  * Adds the iOS `UIBackgroundModes: ['audio']` entry and the Android
@@ -12,9 +8,9 @@ import {
  * Apply by adding `'./plugins/withStealthAudioBackground'` to the
  * `plugins` array in `app.config.ts`.
  */
-const withStealthAudioBackground: ConfigPlugin = (config) => {
+const withStealthAudioBackground = (config) => {
   config = withInfoPlist(config, (c) => {
-    const existing: string[] = (c.modResults.UIBackgroundModes as string[]) ?? [];
+    const existing = c.modResults.UIBackgroundModes ?? [];
     if (!existing.includes('audio')) {
       existing.push('audio');
     }
@@ -23,10 +19,7 @@ const withStealthAudioBackground: ConfigPlugin = (config) => {
   });
 
   config = withAndroidManifest(config, (c) => {
-    type PermEntry = { $: { 'android:name': string } };
-    const manifest = c.modResults as unknown as {
-      'uses-permission'?: PermEntry[];
-    };
+    const manifest = c.modResults;
     manifest['uses-permission'] = manifest['uses-permission'] ?? [];
     const perms = manifest['uses-permission'];
     const wanted = [
@@ -44,4 +37,4 @@ const withStealthAudioBackground: ConfigPlugin = (config) => {
   return config;
 };
 
-export default withStealthAudioBackground;
+module.exports = withStealthAudioBackground;
