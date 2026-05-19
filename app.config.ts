@@ -37,6 +37,7 @@ const config: ExpoConfig = {
   plugins: [
     'expo-router',
     './plugins/withStealthAudioBackground',
+    './plugins/withAppIntents',
     [
       'expo-notifications',
       {

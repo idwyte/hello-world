@@ -1,0 +1,11 @@
+{
+  "name": "focus-filter",
+  "version": "0.0.1",
+  "description": "Hone iOS Focus mode listener — auto-promote Stealth when the user is heads-down.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "echo skip"
+  },
+  "private": true
+}

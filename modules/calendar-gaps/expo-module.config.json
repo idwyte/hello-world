@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["HoneCalendarGapsModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.calendargaps.CalendarGapsModule"]
+  }
+}
