@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { hasSupabaseConfig } from '@/lib/env';
+import { getFocusStatus, subscribeFocus } from '@/lib/focus';
 import { hasRevenueCatConfig, useEntitlement } from '@/lib/revenuecat';
 import { fetchTodayProgramDay } from '@/lib/sessions';
 import { useSettingsStore } from '@/stores/settings';
@@ -35,6 +36,28 @@ export default function SessionPreview() {
     if (!preset || blockedBySubscription) return;
     router.replace(`/session/stealth?preset=${preset}`);
   }, [preset, blockedBySubscription, router]);
+
+  // Focus-mode awareness: if the user has a Focus filter active (Do Not
+  // Disturb, Work, Sleep…) auto-promote the Stealth card to primary. The
+  // subscription is best-effort — silently disabled when the native module
+  // isn't linked or the user hasn't granted permission.
+  const [focusActive, setFocusActive] = useState(false);
+  useEffect(() => {
+    let removed = false;
+    let unsub: (() => void) | null = null;
+    (async () => {
+      const status = await getFocusStatus();
+      if (removed) return;
+      setFocusActive(status.isFocus);
+      unsub = await subscribeFocus((isFocus) => {
+        if (!removed) setFocusActive(isFocus);
+      });
+    })();
+    return () => {
+      removed = true;
+      unsub?.();
+    };
+  }, []);
 
   const todayQuery = useQuery({
     queryKey: ['program-day', 'today'],
@@ -91,9 +114,19 @@ export default function SessionPreview() {
               </Pressable>
             </View>
           ) : (
-            <ModePicker
-              stealthFirst={hydrated && settings.defaultMode === 'stealth'}
-            />
+            <>
+              <ModePicker
+                stealthFirst={
+                  focusActive ||
+                  (hydrated && settings.defaultMode === 'stealth')
+                }
+              />
+              {focusActive ? (
+                <Text className="text-muted text-xs mt-3 leading-5">
+                  Focus mode is on — Stealth is a quieter fit.
+                </Text>
+              ) : null}
+            </>
           )}
         </View>
       </View>
