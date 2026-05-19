@@ -1,5 +1,11 @@
 import '../global.css';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+} from '@expo-google-fonts/inter';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo } from 'react';
@@ -16,6 +22,11 @@ export default function RootLayout() {
   const queryClient = useMemo(() => createQueryClient(), []);
   const hydrate = useSettingsStore((s) => s.hydrate);
   const hydrated = useSettingsStore((s) => s.hydrated);
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+  });
 
   // Register Siri / Spotlight shortcuts on cold start. The helper itself
   // no-ops on web, Expo Go, and any platform where AppIntents isn't
@@ -30,6 +41,8 @@ export default function RootLayout() {
   useEffect(() => {
     if (!hydrated) void hydrate();
   }, [hydrate, hydrated]);
+
+  if (!fontsLoaded) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#0B0B0F' }}>
