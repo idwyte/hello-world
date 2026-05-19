@@ -29,7 +29,7 @@ import SwiftUI
 import WidgetKit
 import ActivityKit
 
-@available(iOS 16.1, *)
+@available(iOS 16.2, *)
 struct HoneLiveActivityWidget: Widget {
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: HoneSessionActivityAttributes.self) { context in
@@ -79,7 +79,7 @@ struct HoneLiveActivityWidget: Widget {
   }
 }
 
-@available(iOS 16.1, *)
+@available(iOS 16.2, *)
 private struct LockScreenView: View {
   let context: ActivityViewContext<HoneSessionActivityAttributes>
 
@@ -120,7 +120,7 @@ private struct LockScreenView: View {
   }
 }
 
-@available(iOS 16.1, *)
+@available(iOS 16.2, *)
 private struct ProgressBar: View {
   let elapsedS: Int
   let totalS: Int
@@ -149,7 +149,7 @@ private struct ProgressBar: View {
   }
 }
 
-@available(iOS 16.1, *)
+@available(iOS 16.2, *)
 private func timerString(_ seconds: Int) -> String {
   let s = max(0, seconds)
   let m = s / 60

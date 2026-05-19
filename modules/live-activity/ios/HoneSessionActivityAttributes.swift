@@ -10,7 +10,7 @@ import ActivityKit
 /// `totalSeconds` is the immutable session duration (used by the progress
 /// bar). `ContentState.elapsedS` ticks up via `updateActivity` from
 /// `app/(app)/session/stealth.tsx`.
-@available(iOS 16.1, *)
+@available(iOS 16.2, *)
 public struct HoneSessionActivityAttributes: ActivityAttributes {
   public typealias HoneSessionStatus = ContentState
 

@@ -10,7 +10,7 @@ public class HoneLiveActivityModule: Module {
     Name("HoneLiveActivityModule")
 
     Function("isAvailable") { () -> Bool in
-      if #available(iOS 16.1, *) {
+      if #available(iOS 16.2, *) {
         #if canImport(ActivityKit)
         return ActivityAuthorizationInfo().areActivitiesEnabled
         #else
@@ -21,7 +21,7 @@ public class HoneLiveActivityModule: Module {
     }
 
     AsyncFunction("startActivity") { (input: [String: Any], promise: Promise) in
-      if #available(iOS 16.1, *) {
+      if #available(iOS 16.2, *) {
         #if canImport(ActivityKit)
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
           promise.resolve(nil)
@@ -53,7 +53,7 @@ public class HoneLiveActivityModule: Module {
     }
 
     AsyncFunction("updateActivity") { (activityId: String, update: [String: Any], promise: Promise) in
-      if #available(iOS 16.1, *) {
+      if #available(iOS 16.2, *) {
         #if canImport(ActivityKit)
         Task {
           let elapsedS = (update["elapsedS"] as? NSNumber)?.intValue ?? 0
@@ -78,7 +78,7 @@ public class HoneLiveActivityModule: Module {
     }
 
     AsyncFunction("endActivity") { (activityId: String, promise: Promise) in
-      if #available(iOS 16.1, *) {
+      if #available(iOS 16.2, *) {
         #if canImport(ActivityKit)
         Task {
           for activity in Activity<HoneSessionActivityAttributes>.activities

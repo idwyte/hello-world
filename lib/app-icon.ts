@@ -26,8 +26,10 @@ export async function setAlternateAppIcon(
     NativeModules as Record<string, AltIconNativeModule | undefined>
   ).RCTAlternateIconName;
   if (!native?.setAlternateIconName) return false;
-  // iOS naming: pass the variant name (matching plist) or null for default.
-  const name = variant === 'default' ? null : `AppIcon-${variant}`;
+  // iOS expects the CFBundleAlternateIcons *dictionary key* (e.g. "focus"),
+  // not the underlying icon-file basename. plugins/withAlternateIcons.ts
+  // registers the variants under those bare keys.
+  const name = variant === 'default' ? null : variant;
   return new Promise((resolve) => {
     try {
       native.setAlternateIconName(name, (err) => {

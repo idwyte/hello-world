@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, AppState, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -11,7 +11,11 @@ import { useSettingsStore } from '@/stores/settings';
  *
  * Lazy-imports `expo-local-authentication` so this file is safe to require
  * from web / Jest. On platforms where the module isn't linked or biometrics
- * aren't enrolled, the gate falls open after a single bypass (with a hint).
+ * aren't enrolled, the gate falls open after a single bypass.
+ *
+ * Hydration contract: while the settings store is hydrating we render a
+ * neutral splash. This prevents a brief unprotected paint of `children`
+ * between mount and hydration completion.
  */
 
 async function loadAuthModule() {
@@ -41,37 +45,70 @@ async function attemptAuth(): Promise<boolean> {
   }
 }
 
+function Splash() {
+  return (
+    <View
+      className="flex-1 bg-bg items-center justify-center"
+      accessibilityLabel="Loading"
+      accessibilityRole="progressbar"
+    >
+      <ActivityIndicator color="#7C5CFF" />
+    </View>
+  );
+}
+
 export function BiometricGate({ children }: { children: ReactNode }) {
   const { settings, hydrated } = useSettingsStore();
-  const locked = hydrated && settings.biometricLocked;
+  const locked = settings.biometricLocked;
   const [unlocked, setUnlocked] = useState(false);
   const [checking, setChecking] = useState(false);
+  const mountedRef = useRef(true);
 
-  // Cold-launch prompt: when the gate first mounts in a locked state.
   useEffect(() => {
-    if (!locked || unlocked) return;
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  // Cold-launch prompt: fires once hydration completes and the gate is
+  // armed. The hydrated flip drives the effect re-run so children never
+  // paint before the lock screen.
+  useEffect(() => {
+    if (!hydrated || !locked || unlocked) return;
     let cancelled = false;
     setChecking(true);
     void attemptAuth().then((ok) => {
-      if (cancelled) return;
+      if (cancelled || !mountedRef.current) return;
       setUnlocked(ok);
       setChecking(false);
     });
     return () => {
       cancelled = true;
     };
-  }, [locked, unlocked]);
+  }, [hydrated, locked, unlocked]);
 
-  // Re-lock on background → foreground transitions.
+  // Re-lock when the app goes to background. We deliberately ignore the
+  // `inactive` AppState — iOS dispatches it for Control Center / Notification
+  // Center pulls and brief incoming-call drawers, and re-prompting Face ID
+  // every time the user swipes from the top would be hostile.
   useEffect(() => {
     if (!locked) return;
     const sub = AppState.addEventListener('change', (next) => {
-      if (next === 'background' || next === 'inactive') {
+      if (next === 'background') {
         setUnlocked(false);
       }
     });
     return () => sub.remove();
   }, [locked]);
+
+  if (!hydrated) {
+    return (
+      <SafeAreaView className="flex-1 bg-bg">
+        <Splash />
+      </SafeAreaView>
+    );
+  }
 
   if (!locked || unlocked) {
     return <>{children}</>;
@@ -88,6 +125,7 @@ export function BiometricGate({ children }: { children: ReactNode }) {
           onPress={async () => {
             setChecking(true);
             const ok = await attemptAuth();
+            if (!mountedRef.current) return;
             setUnlocked(ok);
             setChecking(false);
           }}

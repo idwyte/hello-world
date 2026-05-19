@@ -3,10 +3,11 @@
  * Live Activities for the Lock Screen and Dynamic Island. Lazy-loaded for
  * web / Expo Go / Jest safety.
  *
- * On iOS 16.1+ devices with the widget extension target wired up, a
- * Stealth session will surface a Lock Screen banner ("Focus · 00:14") and
- * a Dynamic Island countdown — no Hone branding, matching the decoy
- * lockscreen identity.
+ * iOS 16.2+ only. The 16.1 ActivityKit shipped with `Activity.request(
+ * attributes:contentState:pushType:)` and `Activity.update(using:)`; 16.2
+ * introduced the `ActivityContent`-based API we use here. The native
+ * module uses `#available(iOS 16.2, *)` guards everywhere; the widget
+ * target's deployment target should also be 16.2.
  */
 
 type LiveActivityModule = typeof import('../modules/live-activity/src');

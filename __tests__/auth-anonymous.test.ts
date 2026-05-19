@@ -62,7 +62,7 @@ describe('linkIdentityToCurrent', () => {
     });
   });
 
-  it('rewrites the "already" Supabase error into friendlier copy', async () => {
+  it('rewrites the "already linked" Supabase message into friendlier copy', async () => {
     linkIdentity.mockResolvedValue({
       error: new Error('Identity is already linked to another user'),
     });
@@ -71,7 +71,25 @@ describe('linkIdentityToCurrent', () => {
     );
   });
 
-  it('passes through non-already errors verbatim', async () => {
+  it('rewrites by AuthApiError.code when present', async () => {
+    const err = new Error('whatever');
+    (err as Error & { code?: string }).code = 'identity_already_exists';
+    linkIdentity.mockResolvedValue({ error: err });
+    await expect(linkIdentityToCurrent('apple')).rejects.toThrow(
+      /already linked to another Hone profile/,
+    );
+  });
+
+  it('rewrites by HTTP 422 status when present', async () => {
+    const err = new Error('Unprocessable entity');
+    (err as Error & { status?: number }).status = 422;
+    linkIdentity.mockResolvedValue({ error: err });
+    await expect(linkIdentityToCurrent('apple')).rejects.toThrow(
+      /already linked to another Hone profile/,
+    );
+  });
+
+  it('passes through unrelated errors verbatim', async () => {
     linkIdentity.mockResolvedValue({ error: new Error('network timeout') });
     await expect(linkIdentityToCurrent('google')).rejects.toThrow(
       'network timeout',

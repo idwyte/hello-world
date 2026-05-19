@@ -139,11 +139,19 @@ export async function startDecoy(
     started = true;
 
     // Start a Live Activity if a session duration was provided. Lazy-loaded
-    // and best-effort — the wrapper is no-op on web / pre-iOS 16.1 / when
+    // and best-effort — the wrapper is no-op on web / pre-iOS 16.2 / when
     // the widget extension target isn't wired up yet.
     if (final.totalSeconds && final.totalSeconds > 0) {
       try {
         const la = await import('../live-activity');
+        // Defensive cleanup: if a prior partial start left a stale id on
+        // the module-level singleton (e.g. TP.play succeeded then we
+        // threw before setting `started`), end that activity before
+        // overwriting the reference.
+        if (liveActivityId) {
+          await la.endLiveActivity(liveActivityId);
+          liveActivityId = null;
+        }
         const handle = await la.startLiveActivity({
           totalSeconds: final.totalSeconds,
         });

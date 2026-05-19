@@ -16,12 +16,10 @@ export type AuthState = {
 
 function deriveIsAnonymous(user: User | null): boolean {
   if (!user) return false;
-  // Supabase 2.x sets `user.is_anonymous` directly; defence-in-depth fall
-  // back on the app_metadata provider for older SDKs.
+  // Supabase 2.x sets `is_anonymous: true` on anonymous users. No need for
+  // a provider-name fallback — the SDK has never used 'anonymous' there.
   type UserWithAnon = User & { is_anonymous?: boolean };
-  const flag = (user as UserWithAnon).is_anonymous;
-  if (typeof flag === 'boolean') return flag;
-  return user.app_metadata?.provider === 'anonymous';
+  return (user as UserWithAnon).is_anonymous === true;
 }
 
 /**
@@ -206,7 +204,15 @@ export async function linkIdentityToCurrent(
     options: { redirectTo: 'hone://auth/callback' },
   });
   if (error) {
-    if (error.message?.toLowerCase().includes('already')) {
+    // Prefer the AuthApiError.code (Supabase v2.45+) or status; the substring
+    // match on the human-readable message is a last-resort fallback.
+    type CodedError = Error & { code?: string; status?: number };
+    const e = error as CodedError;
+    const isAlreadyLinked =
+      e.code === 'identity_already_exists' ||
+      e.status === 422 ||
+      /already linked/i.test(error.message ?? '');
+    if (isAlreadyLinked) {
       throw new Error(
         'That account is already linked to another Hone profile. Sign out and sign in to the existing profile instead.',
       );
