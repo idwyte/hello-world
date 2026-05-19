@@ -8,6 +8,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 
+import { semantic } from '@/lib/theme';
+
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 type Props = {
@@ -49,7 +51,7 @@ export function PacerRing({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="#2A2A36"
+          stroke={semantic.borderDefault}
           strokeWidth={strokeWidth}
           fill="transparent"
         />

@@ -1,4 +1,7 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+
+import { Body } from '@/components/ui';
+import { semantic } from '@/lib/theme';
 
 const WEEKS = 12;
 const DAYS_PER_WEEK = 7;
@@ -46,7 +49,9 @@ export function StreakHeatmap({ dates }: { dates: string[] }) {
                   width: 14,
                   height: 14,
                   borderRadius: 3,
-                  backgroundColor: cell.filled ? '#7C5CFF' : '#1E1E27',
+                  backgroundColor: cell.filled
+                    ? semantic.interactivePrimary
+                    : semantic.surfaceSunken,
                 }}
               />
             ))}
@@ -54,13 +59,15 @@ export function StreakHeatmap({ dates }: { dates: string[] }) {
         ))}
       </View>
       <View className="flex-row items-center gap-2 mt-3">
-        <Text className="text-muted text-xs">Less</Text>
+        <Body size="xs" color="muted">
+          Less
+        </Body>
         <View
           style={{
             width: 10,
             height: 10,
             borderRadius: 2,
-            backgroundColor: '#1E1E27',
+            backgroundColor: semantic.surfaceSunken,
           }}
         />
         <View
@@ -68,10 +75,12 @@ export function StreakHeatmap({ dates }: { dates: string[] }) {
             width: 10,
             height: 10,
             borderRadius: 2,
-            backgroundColor: '#7C5CFF',
+            backgroundColor: semantic.interactivePrimary,
           }}
         />
-        <Text className="text-muted text-xs">More</Text>
+        <Body size="xs" color="muted">
+          More
+        </Body>
       </View>
     </View>
   );

@@ -1,7 +1,9 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import Svg, { Circle, Line, Polyline } from 'react-native-svg';
 
+import { Body, Heading, SectionLabel } from '@/components/ui';
 import type { FetchedIndex } from '@/lib/sessions';
+import { semantic } from '@/lib/theme';
 
 const W = 280;
 const H = 96;
@@ -15,9 +17,9 @@ const PAD_Y = 12;
 export function IndexTrendChart({ history }: { history: FetchedIndex[] }) {
   if (history.length === 0) {
     return (
-      <Text className="text-muted text-sm">
+      <Body size="sm" color="muted">
         Take your first retest to start a trend.
-      </Text>
+      </Body>
     );
   }
 
@@ -38,12 +40,8 @@ export function IndexTrendChart({ history }: { history: FetchedIndex[] }) {
   return (
     <View accessibilityRole="image" accessibilityLabel="Pelvic Floor Index trend">
       <View className="flex-row items-baseline justify-between">
-        <Text className="text-ink text-3xl font-semibold">
-          {latest.composite.toFixed(0)}
-        </Text>
-        <Text className="text-muted text-xs uppercase tracking-wider">
-          {latest.level}
-        </Text>
+        <Heading level="heading-lg">{latest.composite.toFixed(0)}</Heading>
+        <SectionLabel>{latest.level}</SectionLabel>
       </View>
       <View className="mt-3">
         <Svg width={W} height={H}>
@@ -52,28 +50,34 @@ export function IndexTrendChart({ history }: { history: FetchedIndex[] }) {
             y1={PAD_Y + innerH / 2}
             x2={W - PAD_X}
             y2={PAD_Y + innerH / 2}
-            stroke="#2A2A33"
+            stroke={semantic.borderDefault}
             strokeDasharray="2,4"
             strokeWidth={1}
           />
           {usable.length > 1 ? (
             <Polyline
               points={polyline}
-              stroke="#7C5CFF"
+              stroke={semantic.interactivePrimary}
               strokeWidth={2}
               fill="none"
             />
           ) : null}
           {points.map((p, i) => (
-            <Circle key={i} cx={p.x} cy={p.y} r={3.5} fill="#7C5CFF" />
+            <Circle
+              key={i}
+              cx={p.x}
+              cy={p.y}
+              r={3.5}
+              fill={semantic.interactivePrimary}
+            />
           ))}
         </Svg>
       </View>
-      <Text className="text-muted text-xs mt-2">
+      <Body size="xs" color="muted" className="mt-2">
         {usable.length === 1
           ? '1 measurement'
           : `Last ${usable.length} measurements`}
-      </Text>
+      </Body>
     </View>
   );
 }
