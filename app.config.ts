@@ -60,7 +60,11 @@ const config: ExpoConfig = {
     revenuecatAndroidKey: process.env.EXPO_PUBLIC_RC_ANDROID_KEY ?? '',
     googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '',
     googleIosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? '',
+    eas: {
+      projectId: '002c8bd4-ddd2-4e48-8b3a-14fde3ca41d2',
+    },
   },
+  owner: 'dwytejs',
 };
 
 export default config;
