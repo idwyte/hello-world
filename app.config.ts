@@ -39,6 +39,7 @@ const config: ExpoConfig = {
     './plugins/withStealthAudioBackground',
     './plugins/withAppIntents',
     './plugins/withLiveActivity',
+    './plugins/withAlternateIcons',
     [
       'expo-notifications',
       {

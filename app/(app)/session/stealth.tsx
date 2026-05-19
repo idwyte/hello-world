@@ -13,7 +13,12 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { playCue, preloadCues, unloadCues } from '@/lib/audio/cues';
-import { COVER_ARTWORK, startDecoy, stopDecoy } from '@/lib/audio/decoy-track';
+import {
+  COVER_ARTWORK,
+  startDecoy,
+  stopDecoy,
+  tickLiveActivity,
+} from '@/lib/audio/decoy-track';
 import { currentAudioRoute, type AudioRouteKind } from '@/lib/audio/routing';
 import { hasSupabaseConfig } from '@/lib/env';
 import { EXERCISES, getExercise } from '@/lib/exercises';
@@ -104,9 +109,16 @@ export default function StealthSession() {
     startedAtRef.current = Date.now();
     setHapticsIntensity(settings.hapticIntensity);
 
+    const totalSeconds = Math.round(
+      timeline.reduce((acc, p) => acc + p.durationMs, 0) / 1000,
+    );
+
     (async () => {
       await enableNativeHaptics();
-      const decoyStarted = await startDecoy({ cover: settings.decoyCover });
+      const decoyStarted = await startDecoy({
+        cover: settings.decoyCover,
+        totalSeconds,
+      });
       if (!decoyStarted) {
         AccessibilityInfo.announceForAccessibility(
           'Lockscreen audio not available. Keep the screen on for the best result.',
@@ -174,6 +186,15 @@ export default function StealthSession() {
       setTick((t) => t + 1);
     }, 100);
 
+    // Live Activity ticks at 1 Hz — high enough to look smooth on the Lock
+    // Screen, low enough to stay inside the ActivityKit budget without
+    // requesting frequent-updates entitlement.
+    const liveActivityId = setInterval(() => {
+      const s = runner.getState();
+      const elapsedS = Math.floor(s.totalElapsedMs / 1000);
+      void tickLiveActivity(elapsedS, s.status === 'paused');
+    }, 1000);
+
     // Poll the audio route every second so we can update the speaker-hint
     // banner and fire a 'reconnect' haptic when the user re-pairs AirPods
     // mid-session. The native module exposes a snapshot but not an event
@@ -209,6 +230,7 @@ export default function StealthSession() {
       cancelled = true;
       clearInterval(tickId);
       clearInterval(routeId);
+      clearInterval(liveActivityId);
       appStateSub.remove();
       runner.stop();
       void stopDecoy();

@@ -1,11 +1,11 @@
 # Hone — Deployment Roadmap State
 
-**Last updated:** 2026-05-18 (session close)
-**Current stage:** Phase 1.5 — Brand Identity (Figma only) · **~98 % complete** · all 41 screens, all components, pricing, alt icons, and the Photography page structure done. Photography prompts need a rework pass, then the Brand-book PDF export ships and Phase 1.5 closes.
+**Last updated:** 2026-05-19 (overnight build — Phase 2 shipped)
+**Current stage:** Phase 2 — Habit-stacking · code complete on `claude/app-clone-with-usp-9qV0N`. Migration 0004, freeze logic, reminders screen, 3 native modules (app-intents, focus-filter, calendar-gaps), config plugin all built and tested. Awaiting code-review sign-off and a Mac-side `expo prebuild` / dev-client build for real-device QA.
 **Next session pick-up (in order):**
-1. **Photography prompt rework** — current "Lifestyle context" prompt reads plain / tech-bro-sedentary. Replace with a tighter prompt that lands the brand's active-but-discreet tone while still passing the page's own composition rules (side lighting only, anonymous framing, muted everyday clothing, calm domestic spaces, lived-in not staged). Candidate prompts already drafted in chat (chopping wood at a cabin, café table with a friend, morning mobility by a window) — pick one or two, swap into the page via `use_figma`. May also expand from 4 → 5 prompts if a "social" slot is added alongside the existing lifestyle / abstract / hero / discreet-environment slots.
-2. **Brand-book PDF export** — consolidate the Brand page into a single shareable PDF (mark, wordmark, lockups, alt icons, colour tokens, type spec, motion + photography rules) for pitch decks, App Store assets, dev handoff.
-3. **Phase 1.5 ships.** Move to Phase 2 (code: Habit-stacking).
+1. **Review the overnight build** — read the 5 commits between `e5fefbc` and `HEAD` (b343075, 49866bf, 694e383, 50f90f0, 4ebddc4). Code-review findings from the autonomous run are captured in the commit at HEAD if any required follow-up; otherwise the build is ready for hardware verification.
+2. **Outstanding Phase 1.5 housekeeping** — Photography prompt rework + Brand-book PDF export (deferred during the build; non-blocking for Phase 2 deployment but should close before App Store submission).
+3. **Phase 3 — Stealth productized** — if Phase 3 was also kicked off in the same overnight run, look for additional commits beyond `4ebddc4`. Otherwise Phase 3 is the next code milestone (Live Activity, anonymous-first sign-in, biometric lock, alternate app icons).
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -120,18 +120,31 @@
   - [x] Photography page structure — header + 4-sentence mission · 12-tile hybrid mood board (60 % abstract, 40 % lifestyle, captioned placeholders) · 4 numbered composition rules (rule body copy constrained to 300 px so it wraps to 3 lines) · 4 Do/Don\'t split-pair cards · 4 Midjourney prompt templates (Hero portrait · Lifestyle context · Abstract cover art · Discreet environment) with `--ar` + `--style raw` flags, prompt boxes 1392 wide and text wrapping at 1360 in JetBrains Mono Regular · handoff card spec\'ing ~30 base images in 5 categories
   - [ ] Photography prompt rework — "Lifestyle context" reads plain; candidate replacements drafted (see session-close notes); may add a "social" slot bringing prompt count 4 → 5
   - [ ] Brand book frame in the Brand page exported as PDF
-- [ ] **Phase 2 — Habit-stacking (~1.5 weeks)**
-  - [ ] Migration `0004_streak_freezes.sql` applied to staging
-  - [ ] `modules/app-intents/` Swift implementation + 4 AppIntent types
-  - [ ] `modules/focus-filter/` Swift INFocusStatusCenter listener
-  - [ ] `modules/calendar-gaps/` EventKit free-time detector
-  - [ ] `plugins/withAppIntents.ts` config plugin
-  - [ ] `lib/streak.ts` client-side freeze logic
-  - [ ] `app/(app)/settings/reminders.tsx` UI
-  - [ ] `lib/notifications.ts` schedule/cancel reminder
-  - [ ] `lib/exercises.ts` `quick_discreet` preset
-  - [ ] `app/(app)/session/today.tsx` `?preset=` deep-link handling
-  - [ ] Acceptance criteria pass (5 items in plan §Phase 2)
+- [x] **Phase 2 — Habit-stacking** *(code complete; pending real-device QA on Mac)*
+  - [x] Migration `0004_streak_freezes.sql` written (freezes 0–2, last_freeze_earned_at, recompute_streak rewrite for +2 gap bridge / +7 day earn)
+  - [ ] Migration 0004 applied to staging Supabase (blocked on D1 service configuration)
+  - [x] `modules/app-intents/` Swift impl + 4 AppIntent types (StartSessionIntent, Start3MinDiscreetIntent, MarkTodayCompleteIntent, ShowStreakIntent) + AppShortcutsProvider + PrivacyInfo.xcprivacy (CA92.1)
+  - [x] `modules/focus-filter/` Swift INFocusStatusCenter wrapper + JS subscribe handle
+  - [x] `modules/calendar-gaps/` EventKit free-time detector with iOS 17 fullAccess support
+  - [x] `plugins/withAppIntents.ts` config plugin adds NSUserActivityTypes (additive), NSFocusStatusUsageDescription, NSCalendarsUsageDescription; wired into app.config.ts
+  - [x] `lib/streak.ts` client-side freeze logic + `stores/session.ts` delegates
+  - [x] `app/(app)/settings/reminders.tsx` toggle + 4 time presets + permission/error surface
+  - [x] `app/(app)/settings/index.tsx` Reminders row + live hint formatter
+  - [x] `lib/notifications.ts` scheduleDailyReminder(hhmm) + cancelDailyReminder() with calendar trigger
+  - [x] `lib/exercises.ts` quick_discreet preset + QUICK_DISCREET_PRESET ProgramDay
+  - [x] `app/(app)/session/today.tsx` ?preset=quick_discreet deep-link + Focus-mode auto-promote of the Stealth card
+  - [x] `lib/intents.ts`, `lib/focus.ts`, `lib/calendar-gaps.ts` lazy-load wrappers mirroring `lib/haptics/native.ts`
+  - [x] `app/_layout.tsx` registers AppIntents on cold start (web/Expo Go safe)
+  - [x] `stores/settings.ts` extended with reminderEnabled, reminderTime, biometricLocked, appIconVariant (additive — no STORAGE_KEY bump)
+  - [x] `lib/sessions.ts:fetchStreak` surfaces freezes + lastFreezeEarnedAt
+  - [x] 64/64 jest tests passing (+12 new: 7 freeze cases in streak.test.ts, 5 in notifications.test.ts)
+  - [x] typecheck + lint clean
+  - [x] `.gitignore` fix: scoped `/ios/` `/android/` to root so module-local native sources are tracked (was a pre-existing blocker — stealth-haptics ios/android were also untracked)
+  - [ ] Acceptance criteria 1: Siri "Hone quick discreet" launches a 3-min stealth session from a locked phone (real-device test on Mac)
+  - [ ] Acceptance criteria 2: 19:00 reminder fires next day with brand-neutral text (real-device test on Mac)
+  - [ ] Acceptance criteria 3: 7 days clean → freezes=1; skip day 8 → streak preserved; skip day 9 → resets (Supabase staging test)
+  - [ ] Acceptance criteria 4: iOS Focus mode auto-promotes Stealth card (real-device test on Mac)
+  - [ ] Acceptance criteria 5: Calendar permission granted → findNextGap returns a real interval (real-device test on Mac)
 - [ ] **Phase 3 — Stealth productized (~3 weeks)**
   - [ ] `modules/live-activity/` Swift ActivityKit wrapper
   - [ ] `ios/HoneLiveActivity/` widget extension target

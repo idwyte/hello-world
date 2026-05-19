@@ -10,21 +10,40 @@ export type AuthState = {
   loading: boolean;
   session: Session | null;
   user: User | null;
+  /** True when the user is signed in via Supabase anonymous auth. */
+  isAnonymous: boolean;
 };
 
+function deriveIsAnonymous(user: User | null): boolean {
+  if (!user) return false;
+  // Supabase 2.x sets `user.is_anonymous` directly; defence-in-depth fall
+  // back on the app_metadata provider for older SDKs.
+  type UserWithAnon = User & { is_anonymous?: boolean };
+  const flag = (user as UserWithAnon).is_anonymous;
+  if (typeof flag === 'boolean') return flag;
+  return user.app_metadata?.provider === 'anonymous';
+}
+
 /**
- * Subscribe to Supabase auth state. Returns `{ loading, session, user }`.
+ * Subscribe to Supabase auth state. Returns
+ * `{ loading, session, user, isAnonymous }`.
  */
 export function useAuth(): AuthState {
   const [state, setState] = useState<AuthState>({
     loading: true,
     session: null,
     user: null,
+    isAnonymous: false,
   });
 
   useEffect(() => {
     if (!hasSupabaseConfig()) {
-      setState({ loading: false, session: null, user: null });
+      setState({
+        loading: false,
+        session: null,
+        user: null,
+        isAnonymous: false,
+      });
       return;
     }
     const supabase = getSupabase();
@@ -32,19 +51,23 @@ export function useAuth(): AuthState {
 
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
+      const user = data.session?.user ?? null;
       setState({
         loading: false,
         session: data.session ?? null,
-        user: data.session?.user ?? null,
+        user,
+        isAnonymous: deriveIsAnonymous(user),
       });
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
+      const user = session?.user ?? null;
       setState({
         loading: false,
         session: session ?? null,
-        user: session?.user ?? null,
+        user,
+        isAnonymous: deriveIsAnonymous(user),
       });
     });
 
@@ -142,6 +165,54 @@ export async function signOut(): Promise<void> {
   if (!hasSupabaseConfig()) return;
   const supabase = getSupabase();
   await supabase.auth.signOut();
+}
+
+/**
+ * Sign in anonymously. The returned session has a stable user id that
+ * persists across launches (Supabase stores the refresh token via the
+ * configured `storage` adapter). RLS policies referencing `auth.uid()`
+ * continue to apply, so the user's data is owner-scoped just like a
+ * named account.
+ *
+ * If the user later wants to convert to a named account, call
+ * `linkIdentityToCurrent(provider)` from a signed-in anonymous session.
+ */
+export async function signInAnonymously(): Promise<void> {
+  if (!hasSupabaseConfig()) return;
+  const supabase = getSupabase();
+  const { error } = await supabase.auth.signInAnonymously();
+  if (error) throw error;
+}
+
+/**
+ * Convert the current anonymous session into a named account by linking
+ * an OAuth provider. Supabase preserves the underlying `auth.users` row
+ * (and therefore the `user_id` foreign keys across the app's owner-scoped
+ * tables), so the user's history is retained.
+ *
+ * Note: conflict-resolution when the OAuth identity is already attached
+ * to a different account is out of scope for v1.1 (documented in plan
+ * §"Out of scope for v1.1"). Surface a friendly error and stop.
+ */
+export async function linkIdentityToCurrent(
+  provider: 'apple' | 'google',
+): Promise<void> {
+  if (!hasSupabaseConfig()) {
+    throw new Error('Supabase is not configured.');
+  }
+  const supabase = getSupabase();
+  const { error } = await supabase.auth.linkIdentity({
+    provider,
+    options: { redirectTo: 'hone://auth/callback' },
+  });
+  if (error) {
+    if (error.message?.toLowerCase().includes('already')) {
+      throw new Error(
+        'That account is already linked to another Hone profile. Sign out and sign in to the existing profile instead.',
+      );
+    }
+    throw error;
+  }
 }
 
 /**

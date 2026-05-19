@@ -25,6 +25,12 @@ export type DecoyConfig = {
   cover: DecoyCover;
   title: string;
   artist: string;
+  /**
+   * Total session duration in seconds. Drives the Live Activity progress
+   * bar. When 0/undefined the Live Activity is skipped — useful for the
+   * Now-Playing-only fallback path.
+   */
+  totalSeconds?: number;
 };
 
 const DEFAULT_CONFIG: DecoyConfig = {
@@ -55,6 +61,7 @@ function resolveTrackSource(): number | string {
 
 let started = false;
 let serviceRegistered = false;
+let liveActivityId: string | null = null;
 
 type TrackPlayerModule = {
   setupPlayer: (opts?: object) => Promise<void>;
@@ -130,9 +137,42 @@ export async function startDecoy(
     });
     await TP.play();
     started = true;
+
+    // Start a Live Activity if a session duration was provided. Lazy-loaded
+    // and best-effort — the wrapper is no-op on web / pre-iOS 16.1 / when
+    // the widget extension target isn't wired up yet.
+    if (final.totalSeconds && final.totalSeconds > 0) {
+      try {
+        const la = await import('../live-activity');
+        const handle = await la.startLiveActivity({
+          totalSeconds: final.totalSeconds,
+        });
+        liveActivityId = handle?.activityId ?? null;
+      } catch {
+        liveActivityId = null;
+      }
+    }
+
     return true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Update the Live Activity timestamp. Called from the stealth player's
+ * per-second tick. Safe to call when no activity was started (no-op).
+ */
+export async function tickLiveActivity(
+  elapsedS: number,
+  isPaused = false,
+): Promise<void> {
+  if (!liveActivityId) return;
+  try {
+    const la = await import('../live-activity');
+    await la.updateLiveActivity(liveActivityId, { elapsedS, isPaused });
+  } catch {
+    // ignore
   }
 }
 
@@ -145,6 +185,15 @@ export async function stopDecoy(): Promise<void> {
     await TP.reset();
   } catch {
     // ignore
+  }
+  if (liveActivityId) {
+    try {
+      const la = await import('../live-activity');
+      await la.endLiveActivity(liveActivityId);
+    } catch {
+      // ignore
+    }
+    liveActivityId = null;
   }
   started = false;
 }

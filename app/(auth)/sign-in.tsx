@@ -11,18 +11,25 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { sendMagicLink, signInWithApple, signInWithGoogle } from '@/lib/auth';
+import {
+  sendMagicLink,
+  signInAnonymously,
+  signInWithApple,
+  signInWithGoogle,
+} from '@/lib/auth';
 import { hasGoogleConfig, hasSupabaseConfig } from '@/lib/env';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
-  const [busy, setBusy] = useState<null | 'apple' | 'google' | 'email'>(null);
+  const [busy, setBusy] = useState<
+    null | 'apple' | 'google' | 'email' | 'guest'
+  >(null);
   const [emailSent, setEmailSent] = useState(false);
 
   const configured = hasSupabaseConfig();
 
   async function withBusy(
-    key: 'apple' | 'google' | 'email',
+    key: 'apple' | 'google' | 'email' | 'guest',
     fn: () => Promise<void>,
   ) {
     if (busy) return;
@@ -57,6 +64,28 @@ export default function SignIn() {
               </Text>
             </View>
           ) : null}
+
+          {configured ? (
+            <Pressable
+              disabled={busy !== null}
+              onPress={() => withBusy('guest', signInAnonymously)}
+              accessibilityRole="button"
+              accessibilityLabel="Continue without signing in. Your data stays private to this device until you choose to sync."
+              className="bg-accent rounded-xl py-4 items-center active:opacity-80"
+            >
+              {busy === 'guest' ? (
+                <ActivityIndicator color="#F5F5F7" />
+              ) : (
+                <Text className="text-ink font-semibold">
+                  Skip sign-in — start training
+                </Text>
+              )}
+            </Pressable>
+          ) : null}
+
+          <Text className="text-muted text-xs text-center mt-1 mb-1">
+            Sync across devices (optional)
+          </Text>
 
           {Platform.OS === 'ios' && configured ? (
             <AppleAuthentication.AppleAuthenticationButton

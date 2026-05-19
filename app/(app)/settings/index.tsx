@@ -12,7 +12,9 @@ type Row = {
     | '/settings/subscription'
     | '/settings/privacy'
     | '/settings/stealth'
-    | '/settings/reminders';
+    | '/settings/reminders'
+    | '/settings/security'
+    | '/settings/app-icon';
   hint?: string;
 };
 
@@ -54,6 +56,20 @@ export default function SettingsIndex() {
       label: 'Stealth Mode',
       href: '/settings/stealth',
       hint: 'Haptic intensity, AirPods cues, lockscreen cover',
+    },
+    {
+      label: 'Security',
+      href: '/settings/security',
+      hint: settings.biometricLocked ? 'Face ID lock on' : 'Face ID lock, account linking',
+    },
+    {
+      label: 'App icon',
+      href: '/settings/app-icon',
+      hint:
+        settings.appIconVariant === 'default'
+          ? 'Default'
+          : settings.appIconVariant.charAt(0).toUpperCase() +
+            settings.appIconVariant.slice(1),
     },
   ];
 
