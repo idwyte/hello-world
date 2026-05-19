@@ -1,11 +1,13 @@
 # Hone — Deployment Roadmap State
 
-**Last updated:** 2026-05-19 (overnight build — Phase 2 shipped)
-**Current stage:** Phase 2 — Habit-stacking · code complete on `claude/app-clone-with-usp-9qV0N`. Migration 0004, freeze logic, reminders screen, 3 native modules (app-intents, focus-filter, calendar-gaps), config plugin all built and tested. Awaiting code-review sign-off and a Mac-side `expo prebuild` / dev-client build for real-device QA.
+**Last updated:** 2026-05-19 (overnight build — Phases 2 + 3 both shipped)
+**Current stage:** Phases 2 and 3 — code complete on `claude/app-clone-with-usp-9qV0N`. Both went through the §9b Builder → Debug → autonomous code-reviewer loop; Phase 2 reviewer found 5 defects + 5 concerns, all fixed in commit `4aa5ff7`; Phase 3 reviewer findings (if any) captured in any commit beyond `b2947e1`. Awaiting a Mac-side `expo prebuild` / dev-client build for the real-device acceptance criteria.
 **Next session pick-up (in order):**
-1. **Review the overnight build** — read the 5 commits between `e5fefbc` and `HEAD` (b343075, 49866bf, 694e383, 50f90f0, 4ebddc4). Code-review findings from the autonomous run are captured in the commit at HEAD if any required follow-up; otherwise the build is ready for hardware verification.
-2. **Outstanding Phase 1.5 housekeeping** — Photography prompt rework + Brand-book PDF export (deferred during the build; non-blocking for Phase 2 deployment but should close before App Store submission).
-3. **Phase 3 — Stealth productized** — if Phase 3 was also kicked off in the same overnight run, look for additional commits beyond `4ebddc4`. Otherwise Phase 3 is the next code milestone (Live Activity, anonymous-first sign-in, biometric lock, alternate app icons).
+1. **Review the overnight diff** — `git log --oneline 9e2fcd3..HEAD` lists every commit. The two reviewer-fix commits are clearly tagged.
+2. **Mac-side hardware verification** — run `npx expo prebuild --clean && eas build --profile development --platform ios` on the user's Mac, install on a real iPhone, walk the §12 acceptance criteria from the plan (lockscreen disguise · Live Activity · Siri shortcut · reminder · freeze · biometric · alternate icon).
+3. **Outstanding Phase 1.5 housekeeping** — Photography prompt rework + Brand-book PDF export (deferred during the build; non-blocking for Phase 2/3 deployment but should close before App Store submission).
+4. **Asset production** — ElevenLabs audio (decoy loop + 6 cue clips) and Midjourney visuals (decoy covers, 4 alt-icon variants, marketing imagery). Phase 3 acceptance criteria 2 + 5 are blocked on this.
+5. **Service configuration** — Supabase migrations applied (0001–0004), RevenueCat one-off product, Apple Developer enrolment, Google OAuth, Play Console. Standard pre-launch grind.
 
 **Figma file:** [Hone — Design System v1](https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/Hone-%E2%80%94-Design-System-v1)
 **File key:** `qgY3Qcf7gP7w5V5A6uQTL4`
@@ -145,17 +147,24 @@
   - [ ] Acceptance criteria 3: 7 days clean → freezes=1; skip day 8 → streak preserved; skip day 9 → resets (Supabase staging test)
   - [ ] Acceptance criteria 4: iOS Focus mode auto-promotes Stealth card (real-device test on Mac)
   - [ ] Acceptance criteria 5: Calendar permission granted → findNextGap returns a real interval (real-device test on Mac)
-- [ ] **Phase 3 — Stealth productized (~3 weeks)**
-  - [ ] `modules/live-activity/` Swift ActivityKit wrapper
-  - [ ] `ios/HoneLiveActivity/` widget extension target
-  - [ ] `plugins/withLiveActivity.ts` config plugin
-  - [ ] Live Activity wiring in `lib/audio/decoy-track.ts` + `app/(app)/session/stealth.tsx`
-  - [ ] `MPMediaItemArtwork` Now Playing wiring in stealth-haptics module
-  - [ ] Anonymous-first sign-in in `lib/auth.ts` + `app/(auth)/sign-in.tsx`
-  - [ ] `lib/biometric-gate.tsx` + `app/(app)/settings/security.tsx`
-  - [ ] Alternate app icons via `expo-alternate-app-icons` or `plugins/withAlternateIcons.ts`
-  - [ ] `app/(app)/settings/app-icon.tsx`
-  - [ ] Acceptance criteria pass (5 items in plan §Phase 3)
+- [x] **Phase 3 — Stealth productized** *(code complete; pending real-device QA on Mac)*
+  - [x] `modules/live-activity/` Swift ActivityKit wrapper (HoneSessionActivityAttributes + HoneLiveActivityModule with isAvailable/start/update/end, all #available(iOS 16.1) gated)
+  - [x] Widget extension Swift source at `modules/live-activity/ios/widget/HoneLiveActivityWidget.swift` (Lock Screen banner + Dynamic Island compact/expanded/minimal). Manual Xcode target setup documented in file header.
+  - [x] `plugins/withLiveActivity.ts` config plugin sets NSSupportsLiveActivities + opts out of FrequentUpdates
+  - [x] Live Activity wiring in `lib/audio/decoy-track.ts` (DecoyConfig.totalSeconds, startDecoy fires startLiveActivity, new tickLiveActivity, stopDecoy ends it) + `app/(app)/session/stealth.tsx` (1 Hz tick interval alongside existing 10 Hz runner + 1 Hz route poll)
+  - [ ] `MPMediaItemArtwork` Now Playing artwork wiring — deferred to Asset production stage (depends on Midjourney cover art landing first)
+  - [x] Anonymous-first sign-in in `lib/auth.ts` (signInAnonymously, linkIdentityToCurrent with friendly already-linked error; AuthState.isAnonymous derived from user.is_anonymous + app_metadata fallback) + `app/(auth)/sign-in.tsx` ("Skip sign-in" promoted to primary CTA)
+  - [x] `lib/biometric-gate.tsx` (cold-launch + on-foreground prompt; falls open when biometrics unenrolled) + `app/(app)/settings/security.tsx` (toggle + "Link an account" section for anonymous users)
+  - [x] Alternate app icons via `plugins/withAlternateIcons.ts` (focus/posture/health variants in CFBundleAlternateIcons) + `lib/app-icon.ts` (bridges to RCTAlternateIconName) + `app/(app)/settings/app-icon.tsx` (4-option picker)
+  - [x] `app/(app)/settings/app-icon.tsx`
+  - [x] `expo-local-authentication ^55.0.14` added; all plugins registered in app.config.ts
+  - [x] BiometricGate mounted around <Stack> in app/_layout.tsx with hydrate-on-mount
+  - [x] typecheck + lint + 65/65 tests clean
+  - [ ] Acceptance criteria 1: Stealth session → Lock Screen shows "Focus · 00:14" Live Activity counting up; Dynamic Island compact + expanded variants (real-device test on Mac)
+  - [ ] Acceptance criteria 2: Now Playing card shows decoy track with cover art (cover art lands in Asset production; transport metadata already works on real device per M4)
+  - [ ] Acceptance criteria 3: "Skip sign-in" → 3-Q quiz + Index test → start a session; rows written under anonymous auth.uid() (Supabase staging test)
+  - [ ] Acceptance criteria 4: Enable Face ID lock → background and re-foreground → Face ID prompt blocks UI until passed (real-device test on Mac)
+  - [ ] Acceptance criteria 5: Long-press home-screen icon → Edit Icon → pick "Focus" → home-screen icon swaps (real-device test on Mac, blocked until icon PNGs land in Asset production)
 - [ ] **Asset production**
   - [ ] ElevenLabs — decoy ambient loop `assets/audio/focus-session.m4a`
   - [ ] ElevenLabs — 6 cue clips `assets/audio/cues/<style>_<phase>.m4a`
