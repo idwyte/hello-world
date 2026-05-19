@@ -106,6 +106,9 @@ export async function scheduleDailyReminder(hhmm: string): Promise<boolean> {
   if (!m) return false;
   try {
     await cancelDailyReminder();
+    // SDK 53+ exposes a typed `DAILY` trigger that's cross-platform. The
+    // older `{ type: 'calendar', hour, minute, repeats: true }` shape was
+    // iOS-only and silently rejected on this SDK.
     await m.scheduleNotificationAsync({
       identifier: DAILY_REMINDER_ID,
       content: {
@@ -114,11 +117,10 @@ export async function scheduleDailyReminder(hhmm: string): Promise<boolean> {
         sound: false,
       },
       trigger: {
-        type: 'calendar',
+        type: m.SchedulableTriggerInputTypes.DAILY,
         hour: parsed.hour,
         minute: parsed.minute,
-        repeats: true,
-      } as unknown as Parameters<typeof m.scheduleNotificationAsync>[0]['trigger'],
+      },
     });
     return true;
   } catch {

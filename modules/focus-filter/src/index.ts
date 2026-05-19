@@ -43,7 +43,13 @@ export async function getStatus() {
 
 /**
  * Subscribe to Focus mode changes. Returns an unsubscribe handle.
- * Auto-starts the native listener; the last unsubscribe stops it.
+ *
+ * Note: assumes a single in-flight subscriber. The native side keeps one
+ * NSNotification observer alive across `startListening` calls, and
+ * `stopListening` is destructive — calling `remove()` on this subscription
+ * tears down the observer for any other listener too. Today there is only
+ * one consumer (`app/(app)/session/today.tsx`); if a second one is added,
+ * replace this with a refcounted wrapper.
  */
 export function subscribe(
   callback: (status: { isFocus: boolean }) => void,

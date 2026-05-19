@@ -149,6 +149,24 @@ describe('computeStreak — freeze mechanics', () => {
     expect(s.lastFreezeEarnedAt).toBe('2023-12-25');
   });
 
+  it('after a freeze-bridged gap, run keeps climbing and freezes still balance', () => {
+    // 7 clean days (earn freeze #1) → 1 clean day → skip → bridge with
+    // freeze → keep going to day 13. Determinism contract: recomputing
+    // from history gives the same answer whether the row was previously
+    // populated or not.
+    const s = computeStreak(
+      endTimestamps([
+        '2024-01-01', '2024-01-02', '2024-01-03', '2024-01-04',
+        '2024-01-05', '2024-01-06', '2024-01-07', // earn freeze #1 (run=7)
+        '2024-01-08',
+        // skip 2024-01-09 → bridge with freeze
+        '2024-01-10', '2024-01-11', '2024-01-12', '2024-01-13',
+      ]),
+    );
+    expect(s.current).toBe(12); // 12 effective run days after the bridge
+    expect(s.freezes).toBe(0); // 1 earned, 1 consumed
+  });
+
   it('clamps prior freezes to the 0-2 range', () => {
     const high = computeStreak(endTimestamps(['2024-01-01']), 99);
     expect(high.freezes).toBe(2);

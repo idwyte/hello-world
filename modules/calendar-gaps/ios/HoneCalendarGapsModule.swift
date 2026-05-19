@@ -16,20 +16,26 @@ public class HoneCalendarGapsModule: Module {
 
     AsyncFunction("requestAuthorization") { (promise: Promise) in
       if #available(iOS 17.0, *) {
-        // iOS 17 introduced read-only access; prefer it where possible.
-        self.store.requestFullAccessToEvents { granted, _ in
-          promise.resolve(self.authString(granted: granted))
+        // iOS 17 introduced separate full / write access APIs.
+        self.store.requestFullAccessToEvents { _, _ in
+          let status = EKEventStore.authorizationStatus(for: .event)
+          promise.resolve(self.authString(status))
         }
       } else {
-        self.store.requestAccess(to: .event) { granted, _ in
-          promise.resolve(self.authString(granted: granted))
+        self.store.requestAccess(to: .event) { _, _ in
+          let status = EKEventStore.authorizationStatus(for: .event)
+          promise.resolve(self.authString(status))
         }
       }
     }
 
     AsyncFunction("findNextGap") { (minMinutes: Double, withinSeconds: Double, promise: Promise) in
       let status = EKEventStore.authorizationStatus(for: .event)
-      guard status == .authorized || status == .fullAccess else {
+      // .authorized is the iOS ≤16 grant; .fullAccess is the iOS 17 equivalent.
+      // Use the string mapping rather than direct case-matching so we don't
+      // require an iOS 17 deployment target.
+      let authorized = self.authString(status) == "authorized"
+      guard authorized else {
         promise.resolve(nil)
         return
       }
@@ -86,8 +92,25 @@ public class HoneCalendarGapsModule: Module {
     }
   }
 
-  private func authString(granted: Bool) -> String {
-    return granted ? "authorized" : "denied"
+  private func authString(_ status: EKAuthorizationStatus) -> String {
+    if #available(iOS 17.0, *) {
+      switch status {
+      case .notDetermined: return "notDetermined"
+      case .restricted: return "restricted"
+      case .denied: return "denied"
+      case .fullAccess, .authorized: return "authorized"
+      case .writeOnly: return "denied" // we need read access; treat as denied
+      @unknown default: return "denied"
+      }
+    } else {
+      switch status {
+      case .notDetermined: return "notDetermined"
+      case .restricted: return "restricted"
+      case .denied: return "denied"
+      case .authorized: return "authorized"
+      @unknown default: return "denied"
+      }
+    }
   }
 
   private func gapPayload(start: Date, durationSec: TimeInterval) -> [String: Any] {

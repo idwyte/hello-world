@@ -5,6 +5,13 @@
 --
 -- The trigger on `sessions` from 0002_streaks_fn.sql still fires; we replace
 -- the function body. Backfill is a no-op — defaults handle existing rows.
+--
+-- Determinism contract: this function recomputes the entire streak state
+-- from `sessions` history on every fire — no resume from the prior row.
+-- The JS mirror in `lib/streak.ts` does the same. If we ever want to
+-- persist user-controlled freeze grants (e.g. a "buy a freeze" feature)
+-- that becomes a separate column and is layered on top of the recomputed
+-- baseline.
 
 alter table public.streaks
   add column if not exists freezes int not null default 0
@@ -27,31 +34,20 @@ declare
   v_longest int := 0;
   v_freezes int := 0;
   v_last_earned date := null;
-  v_existing record;
 begin
   select array_agg(distinct (ended_at at time zone 'UTC')::date order by (ended_at at time zone 'UTC')::date)
     into v_dates
   from public.sessions
   where user_id = p_user_id and completed = true and ended_at is not null;
 
-  -- Read any existing freeze state so freezes earned in prior runs aren't
-  -- lost when we recompute from scratch. We still recompute current/longest
-  -- deterministically from the session history.
-  select freezes, last_freeze_earned_at
-    into v_existing
-    from public.streaks
-    where user_id = p_user_id;
-  if found then
-    v_freezes := coalesce(v_existing.freezes, 0);
-    v_last_earned := v_existing.last_freeze_earned_at;
-  end if;
-
   if v_dates is null or array_length(v_dates, 1) is null then
     insert into public.streaks (user_id, current, longest, last_session_date, freezes, last_freeze_earned_at)
-      values (p_user_id, 0, 0, null, v_freezes, v_last_earned)
+      values (p_user_id, 0, 0, null, 0, null)
     on conflict (user_id) do update
       set current = 0,
-          last_session_date = null;
+          last_session_date = null,
+          freezes = 0,
+          last_freeze_earned_at = null;
     return;
   end if;
 
@@ -61,8 +57,10 @@ begin
       v_run := 1;
     elsif v_d = v_prev + 1 then
       v_run := v_run + 1;
-      -- Earn a freeze every 7 consecutive days, capped at 2. Only earn once
-      -- per calendar day to keep the cap honest under same-day session bursts.
+      -- Earn a freeze every 7 consecutive days, capped at 2. The
+      -- v_last_earned guard prevents double-credit if the same date is
+      -- visited twice (shouldn't happen given distinct above, defence-
+      -- in-depth).
       if v_run > 0 and v_run % 7 = 0 and v_freezes < 2 and (v_last_earned is null or v_last_earned <> v_d) then
         v_freezes := v_freezes + 1;
         v_last_earned := v_d;

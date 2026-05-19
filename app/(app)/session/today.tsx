@@ -49,9 +49,17 @@ export default function SessionPreview() {
       const status = await getFocusStatus();
       if (removed) return;
       setFocusActive(status.isFocus);
-      unsub = await subscribeFocus((isFocus) => {
+      const handle = await subscribeFocus((isFocus) => {
         if (!removed) setFocusActive(isFocus);
       });
+      // The component may have unmounted while subscribeFocus resolved.
+      // If so, tear down immediately rather than leaving a dangling
+      // native observer.
+      if (removed) {
+        handle();
+      } else {
+        unsub = handle;
+      }
     })();
     return () => {
       removed = true;
