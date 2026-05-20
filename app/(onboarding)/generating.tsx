@@ -5,11 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { isAssessmentComplete } from '@/lib/assessment-questions';
 import { saveAssessmentAndProgram } from '@/lib/persistence';
-import {
-  buildProgram,
-  defaultStealthFromAnswers,
-  recommendLevel,
-} from '@/lib/program';
+import { buildProgram, recommendLevel } from '@/lib/program';
 import { useOnboardingStore } from '@/stores/onboarding';
 
 /**
@@ -34,8 +30,10 @@ export default function Generating() {
     // are gone from AssessmentAnswers. Phase C swaps this for an async
     // Edge-Function call; this is the dev-mode rule-based fallback path.
     const program = buildProgram(level, [], 8);
-    const stealthDefault = defaultStealthFromAnswers(draft);
-    setGenerated({ level, program, stealthDefault });
+    // v1.2: stealth defaults to off; users opt in from Settings → Stealth.
+    // (Was previously derived from the `trainingEnvironment` survey question
+    // which was removed in this pivot.)
+    setGenerated({ level, program, stealthDefault: false });
 
     (async () => {
       const minDelay = new Promise((r) => setTimeout(r, 1400));

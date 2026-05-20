@@ -1,7 +1,6 @@
 import { EXERCISES } from './exercises';
 import { levelFromComposite, type PelvicFloorIndex } from './pelvic-floor-index';
 import type {
-  AssessmentAnswers,
   ExerciseTemplate,
   Level,
   ProgramDay,
@@ -106,13 +105,4 @@ export function buildProgram(
     days.push(buildDay(d, effectivePool, targetSeconds));
   }
   return days;
-}
-
-// Stealth Mode default. v1.0 derived this from the
-// `trainingEnvironment` question; v1.2 removed that question, so the
-// default is now `false` — user opts in from settings.
-// AssessmentAnswers parameter kept so the signature still represents
-// where this used to derive from.
-export function defaultStealthFromAnswers(_a: AssessmentAnswers): boolean {
-  return false;
 }

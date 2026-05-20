@@ -1,20 +1,5 @@
 import { scoreIndex, type PelvicFloorIndex } from '@/lib/pelvic-floor-index';
-import {
-  buildProgram,
-  defaultStealthFromAnswers,
-  recommendLevel,
-} from '@/lib/program';
-import type { AssessmentAnswers } from '@/lib/types';
-
-function answers(overrides: Partial<AssessmentAnswers> = {}): AssessmentAnswers {
-  return {
-    ageBand: '26-35',
-    strengthDaysPerWeek: 3,
-    cardioDaysPerWeek: 2,
-    intimacyPerWeek: 1,
-    ...overrides,
-  };
-}
+import { buildProgram, recommendLevel } from '@/lib/program';
 
 function index(overrides: Partial<PelvicFloorIndex> = {}): PelvicFloorIndex {
   return {
@@ -83,12 +68,6 @@ describe('buildProgram (rule-based dev-mode fallback)', () => {
       (e) => e.slug,
     );
     expect(slugs.length).toBeGreaterThan(0);
-  });
-});
-
-describe('defaultStealthFromAnswers (v1.2 — environment question removed)', () => {
-  it('defaults to false now that trainingEnvironment is gone', () => {
-    expect(defaultStealthFromAnswers(answers())).toBe(false);
   });
 });
 
