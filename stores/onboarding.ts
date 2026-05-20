@@ -7,6 +7,10 @@ export type Generated = {
   level: Level;
   program: ProgramDay[];
   stealthDefault: boolean;
+  // 3 short program-emphasis strings rendered on /plan-preview
+  // (Figma 11). Populated by buildProgram() — AI-generated from
+  // measurements + lifestyle, or a level-based fallback in dev mode.
+  focuses: string[];
 };
 
 type OnboardingStore = {

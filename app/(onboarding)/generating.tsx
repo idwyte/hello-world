@@ -74,15 +74,15 @@ export default function Generating() {
         setTimeout(r, STAGE_INTERVAL_MS * STAGES.length),
       );
       try {
-        const program = await buildProgram({
+        const { days, focuses } = await buildProgram({
           level,
           measurements: { pulsesIn30s: index.pulsesIn30s, maxHoldS: index.maxHoldS },
           answers: draft,
         });
         if (cancelled) return;
-        setGenerated({ level, program, stealthDefault: false });
+        setGenerated({ level, program: days, stealthDefault: false, focuses });
         await Promise.all([
-          saveAssessmentAndProgram({ answers: draft, index, level, program }),
+          saveAssessmentAndProgram({ answers: draft, index, level, program: days }),
           minDelay,
         ]);
       } catch (e) {

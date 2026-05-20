@@ -101,6 +101,33 @@ export type BuildProgramInput = {
   dailyMinutes?: number;
 };
 
+// Output of buildProgram. `focuses` are 3 short program-emphasis strings
+// surfaced on /plan-preview (Figma 11). The Edge Function generates them
+// from the user's measurements + lifestyle; the rule-based fallback uses
+// a generic per-level set.
+export type GeneratedProgram = {
+  days: ProgramDay[];
+  focuses: string[];
+};
+
+const FALLBACK_FOCUSES_BY_LEVEL: Record<Level, string[]> = {
+  beginner: [
+    'Foundation — short holds + quick flicks',
+    'Control — coordination before load',
+    'Recovery — generous rest days',
+  ],
+  intermediate: [
+    'Endurance — long holds + ladder builds',
+    'Pulse speed — quick flicks 3×/week',
+    'Posterior chain — glute bridges + bird dogs',
+  ],
+  advanced: [
+    'Endurance ladders — progressive holds',
+    'Combo work — pulse + hold patterns',
+    'Holistic — adductors, glutes, mobility',
+  ],
+};
+
 // Local rule-based fallback. Used when Supabase isn't configured (dev
 // mode walkthrough) or when the Edge Function is unreachable. Ignores
 // measurements/answers — only the level matters here. The AI path uses
@@ -154,10 +181,13 @@ function resolveEdgeProgram(edge: EdgeProgramResponse['program']): ProgramDay[] 
 
 // Primary entry point. Calls the Supabase Edge Function (which calls
 // Claude) when configured; falls back to the rule-based local generator
-// in dev mode.
-export async function buildProgram(input: BuildProgramInput): Promise<ProgramDay[]> {
+// in dev mode. Returns `days` + 3 `focuses` strings for /plan-preview.
+export async function buildProgram(input: BuildProgramInput): Promise<GeneratedProgram> {
   if (!hasSupabaseConfig()) {
-    return buildProgramLocal(input);
+    return {
+      days: buildProgramLocal(input),
+      focuses: FALLBACK_FOCUSES_BY_LEVEL[input.level],
+    };
   }
 
   const supabase = getSupabase();
@@ -179,8 +209,14 @@ export async function buildProgram(input: BuildProgramInput): Promise<ProgramDay
       'generate-program · Edge Function failed, falling back to rule-based:',
       error ?? data?.error,
     );
-    return buildProgramLocal(input);
+    return {
+      days: buildProgramLocal(input),
+      focuses: FALLBACK_FOCUSES_BY_LEVEL[input.level],
+    };
   }
 
-  return resolveEdgeProgram(data.program);
+  return {
+    days: resolveEdgeProgram(data.program),
+    focuses: data.program.focuses,
+  };
 }

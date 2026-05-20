@@ -126,7 +126,7 @@ describe('buildProgram (async, Edge Function path)', () => {
     mockHasSupabaseConfig = false;
   });
 
-  it('calls generate-program with measurements + answers + level, resolves slugs to templates', async () => {
+  it('calls generate-program with measurements + answers + level, resolves slugs to templates, returns focuses', async () => {
     mockFunctionsInvoke.mockResolvedValueOnce({
       data: {
         ok: true,
@@ -149,7 +149,7 @@ describe('buildProgram (async, Edge Function path)', () => {
       error: null,
     });
 
-    const program = await buildProgram(localInput({ level: 'intermediate' }));
+    const result = await buildProgram(localInput({ level: 'intermediate' }));
 
     expect(mockFunctionsInvoke).toHaveBeenCalledWith('generate-program', {
       body: {
@@ -158,21 +158,25 @@ describe('buildProgram (async, Edge Function path)', () => {
         level: 'intermediate',
       },
     });
-    expect(program).toHaveLength(2);
+    expect(result.days).toHaveLength(2);
     // Sets/reps from the Edge Function override catalog defaults
-    expect(program[0].exercises[0].slug).toBe('long_holds');
-    expect(program[0].exercises[0].sets).toBe(3);
-    expect(program[0].exercises[0].reps).toBe(6);
+    expect(result.days[0].exercises[0].slug).toBe('long_holds');
+    expect(result.days[0].exercises[0].sets).toBe(3);
+    expect(result.days[0].exercises[0].reps).toBe(6);
+    // Focuses pass through verbatim for /plan-preview
+    expect(result.focuses).toEqual(['Endurance', 'Pulse speed', 'Posterior chain']);
   });
 
-  it('falls back to rule-based when the Edge Function errors', async () => {
+  it('falls back to rule-based when the Edge Function errors, with level-based focuses', async () => {
     mockFunctionsInvoke.mockResolvedValueOnce({
       data: null,
       error: { message: 'boom' },
     });
-    const program = await buildProgram(localInput({ level: 'beginner' }));
-    // Rule-based output: 56 days, every day populated
-    expect(program).toHaveLength(56);
+    const result = await buildProgram(localInput({ level: 'beginner' }));
+    expect(result.days).toHaveLength(56);
+    expect(result.focuses).toHaveLength(3);
+    // beginner fallback focuses include "Foundation"
+    expect(result.focuses[0]).toMatch(/Foundation/i);
   });
 
   it('falls back to rule-based when the Edge Function returns ok:false', async () => {
@@ -180,8 +184,9 @@ describe('buildProgram (async, Edge Function path)', () => {
       data: { ok: false, error: 'LLM error' },
       error: null,
     });
-    const program = await buildProgram(localInput({ level: 'beginner' }));
-    expect(program).toHaveLength(56);
+    const result = await buildProgram(localInput({ level: 'beginner' }));
+    expect(result.days).toHaveLength(56);
+    expect(result.focuses).toHaveLength(3);
   });
 });
 

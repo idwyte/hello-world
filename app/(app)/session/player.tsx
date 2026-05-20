@@ -172,6 +172,17 @@ export default function Player() {
   }
 
   if (state.status === 'done') {
+    // Pass session stats as router params to the celebration screen so it
+    // can render DURATION / REPS / DAY · WEEK without re-querying.
+    const durationS = Math.max(
+      0,
+      Math.floor((Date.now() - startedAtRef.current) / 1000),
+    );
+    const totalReps = day.exercises.reduce(
+      (acc, ex) => acc + ex.sets * ex.reps,
+      0,
+    );
+    const todayMeta = todayDayQuery.data;
     return (
       <SafeAreaView className="flex-1 bg-bg">
         <View className="flex-1 items-center justify-center px-6">
@@ -184,7 +195,17 @@ export default function Player() {
           {/* Route through /session/complete (Figma 14) for the celebration
               + rating + Done flow before returning to home. */}
           <Pressable
-            onPress={() => router.replace('/session/complete')}
+            onPress={() =>
+              router.replace({
+                pathname: '/session/complete',
+                params: {
+                  durationS: durationS.toString(),
+                  reps: totalReps.toString(),
+                  dayNumber: todayMeta?.dayNumber?.toString() ?? '',
+                  weekNumber: todayMeta?.weekNumber?.toString() ?? '',
+                },
+              })
+            }
             className="bg-accent rounded-xl mt-8 py-4 px-8 active:opacity-80"
             accessibilityRole="button"
             accessibilityLabel="Continue"
