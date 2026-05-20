@@ -30,17 +30,29 @@ function useOnboardingState(userId: string | null) {
 }
 
 export default function Index() {
-  // No backend wired up yet → demo / walk-through mode. Enter at /welcome so
-  // the entire onboarding chain is reachable on dev emulator without
-  // configuring Supabase. The persistence layer no-ops cleanly when
-  // hasSupabaseConfig() is false, so welcome → assessment → index-test →
-  // generating → plan-preview → paywall → home works end-to-end.
+  // Dev / walk-through entry point — unconditional in __DEV__ so the user
+  // can validate the Figma flow regardless of cached auth state or env
+  // configuration. Switch DEV_ENTRY to '/welcome' to walk from screen 01,
+  // or any other route to jump in mid-flow.
+  if (__DEV__) {
+    return <Redirect href={DEV_ENTRY} />;
+  }
+  // Production: no backend wired up yet → still demo flow, but enter at
+  // /welcome (the persistence layer no-ops without Supabase).
   if (!hasSupabaseConfig()) {
     return <Redirect href="/welcome" />;
   }
 
   return <Router />;
 }
+
+// Edit this to change the dev launch destination. Examples:
+//   '/welcome'        — Figma 01, full onboarding walk
+//   '/assessment'     — Figma 03, skip splash + jump to the 3-question quiz
+//   '/home'           — Figma 08, skip onboarding entirely
+//   '/sign-in'        — Figma 02, validate auth screen
+const DEV_ENTRY: '/assessment' | '/welcome' | '/home' | '/sign-in' =
+  '/assessment';
 
 function Router() {
   const auth = useAuth();
