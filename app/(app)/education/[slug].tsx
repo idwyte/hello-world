@@ -12,7 +12,7 @@
 //   - Article content hardcoded; promote with content lookup by slug.
 //   - Accent-soft key-fact callout rendered as a plain Card.
 //   - Read-time computation from content length not done.
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -20,7 +20,8 @@ import { Body, Button, Card, SectionLabel } from '@/components/ui';
 
 export default function Education() {
   const router = useRouter();
-  const { slug } = useLocalSearchParams<{ slug: string }>();
+  // TODO Phase 2: read params.slug and load content from a catalog
+  // (Markdown, MDX, or DB). Hardcoded content for now.
 
   return (
     <SafeAreaView className="flex-1 bg-surface-canvas">
@@ -77,10 +78,6 @@ export default function Education() {
           Consistent contractions build both endurance and fast-twitch
           response. The 8-week program targets both at different ratios per
           phase, so you don&rsquo;t plateau.
-        </Body>
-
-        <Body size="xs" color="muted" className="mt-6">
-          Article slug: {slug}
         </Body>
       </ScrollView>
 
