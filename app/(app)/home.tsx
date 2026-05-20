@@ -35,6 +35,14 @@ function greetingFor(now: Date): string {
 function exerciseLabel(slug: string): string {
   const ex = EXERCISES[slug];
   if (!ex) return slug;
+  // For hold-dominant exercises, surface the hold duration in seconds
+  // rather than rep count — matches the Figma pattern "Long Holds · 2 × 30 s"
+  // / "Quick Flicks · 2 × 10 reps".
+  const holdPhase = ex.phases.find((p) => p.kind === 'hold');
+  if (holdPhase) {
+    const seconds = Math.round(holdPhase.durationMs / 1000);
+    return `${ex.name} · ${ex.sets} × ${seconds} s`;
+  }
   return `${ex.name} · ${ex.sets} × ${ex.reps} reps`;
 }
 
@@ -127,8 +135,9 @@ export default function Home() {
 
         {/* Hero session card — Figma `72:45` (radius 20, p-24, gap-20) */}
         <Card padding="lg" radius="card-hero" className="mt-6">
-          {/* TODO: surface DAY N once fetchTodayProgramDay returns dayIndex */}
-          <SectionLabel tracking="wide">TODAY</SectionLabel>
+          <SectionLabel tracking="wide">
+            {today ? `TODAY · DAY ${today.dayNumber}` : 'TODAY'}
+          </SectionLabel>
           <Body
             weight="semibold"
             color="primary"

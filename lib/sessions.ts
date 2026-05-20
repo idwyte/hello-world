@@ -164,6 +164,8 @@ export async function fetchIndexHistory(
 
 export async function fetchTodayProgramDay(): Promise<{
   programDayId: string | null;
+  dayNumber: number; // 1-indexed day within the 8-week program (1-56)
+  weekNumber: number; // 1-8
   exercises: string[];
   targetDurationS: number;
 } | null> {
@@ -202,6 +204,8 @@ export async function fetchTodayProgramDay(): Promise<{
     : [];
   return {
     programDayId: day.id as string,
+    dayNumber: dayIndex + 1,
+    weekNumber: Math.floor(dayIndex / 7) + 1,
     exercises,
     targetDurationS: day.target_duration_s as number,
   };
