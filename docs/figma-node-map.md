@@ -90,4 +90,23 @@ Once the user approves these (or iterates), the table above gets the
 new IDs and the originals (62:26, 66:42, 67:47, 68:60, 69:86) are
 archived in the file with a `-v1` suffix in their frame name.
 
+### Audit pass (2026-05-20, after approval)
+
+Two cross-cutting fixes landed in Figma after the initial draft:
+
+1. **Tab bar icon alignment** — the `tabBar` component-set (`77:851`) had
+   16 icon vectors all positioned at (8, 4) inside their 40×32 container.
+   That position only centers a 24×24 icon; the actual lucide-shaped
+   icons (18×18 / 16×18 / 18×10 / 16×12) ended up top-left-shifted,
+   making the Progress active-pill look like a misshapen blob. Each
+   icon re-centered to `((40-w)/2, (32-h)/2)`. Fix propagates to every
+   instance on the Screens page (4 of them — one per tab destination).
+2. **Variable rebinding on new screens** — the 9 newly drafted Phase F
+   screens were initially built with hardcoded RGB values rather than
+   the variable bindings used across the existing 41 screens. Walked
+   330 nodes across the new boards; rebound 304 fills + 63 strokes to
+   the `brand/*` variables (id 2:7-2:16). Visually identical, but the
+   new screens now respect Foundations updates the same way existing
+   ones do.
+
 ---
