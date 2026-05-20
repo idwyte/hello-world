@@ -115,6 +115,28 @@ export type FetchedIndex = PelvicFloorIndex & {
   createdAt: string;
 };
 
+// Recommended cadence between retests. Less than this and statistical
+// noise (sleep, hydration, time of day) dominates the trend signal.
+export const RETEST_INTERVAL_DAYS = 14;
+
+/**
+ * Days since the user's last Pelvic Floor Index measurement. Returns
+ * null if there are no prior measurements (first-time user, or history
+ * empty in dev mode). Used to gate the bi-weekly retest cadence — the
+ * UX is soft: we warn if the user re-tests early, but never block it.
+ */
+export function daysSinceLastIndex(
+  history: FetchedIndex[],
+  now: Date = new Date(),
+): number | null {
+  if (history.length === 0) return null;
+  // fetchIndexHistory returns oldest-first; the last entry is the most recent.
+  const latest = history[history.length - 1];
+  const last = new Date(latest.createdAt).getTime();
+  const diffMs = now.getTime() - last;
+  return Math.max(0, Math.floor(diffMs / 86_400_000));
+}
+
 export async function fetchIndexHistory(
   limit = 12,
 ): Promise<FetchedIndex[]> {

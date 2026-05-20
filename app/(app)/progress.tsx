@@ -14,9 +14,11 @@ import {
 } from '@/components/ui';
 import { hasSupabaseConfig } from '@/lib/env';
 import {
+  daysSinceLastIndex,
   fetchIndexHistory,
   fetchRecentSessions,
   fetchStreak,
+  RETEST_INTERVAL_DAYS,
 } from '@/lib/sessions';
 import { useSessionStore } from '@/stores/session';
 
@@ -59,6 +61,16 @@ export default function Progress() {
   const prev = indexHistory.at(-2) ?? null;
   const delta = latest && prev ? latest.composite - prev.composite : null;
 
+  // Bi-weekly retest cadence — show days-remaining on the pill if the
+  // user has retested recently, "Retest" otherwise. Soft enforcement —
+  // tapping always lets them through (the screen itself shows a warning
+  // banner if it's <14 days since last retest).
+  const daysSince = daysSinceLastIndex(indexHistory);
+  const daysRemaining =
+    daysSince !== null ? Math.max(0, RETEST_INTERVAL_DAYS - daysSince) : 0;
+  const retestDue = daysSince === null || daysRemaining === 0;
+  const retestLabel = retestDue ? 'Retest' : `In ${daysRemaining}d`;
+
   return (
     <SafeAreaView className="flex-1 bg-surface-canvas">
       <ScrollView
@@ -74,10 +86,18 @@ export default function Progress() {
               onPress={() => router.push('/index-retest')}
               hitSlop={8}
               accessibilityRole="button"
-              accessibilityLabel="Retest your Pelvic Floor Index"
+              accessibilityLabel={
+                retestDue
+                  ? 'Retest your Pelvic Floor Index'
+                  : `Retest available in ${daysRemaining} days`
+              }
               className="active:opacity-70"
             >
-              <Pill label="Retest" tone="accent" size="md" />
+              <Pill
+                label={retestLabel}
+                tone={retestDue ? 'accent' : 'surface2'}
+                size="md"
+              />
             </Pressable>
           }
         />
@@ -118,7 +138,7 @@ export default function Progress() {
             </View>
             <Body size="sm" color="muted" className="mt-4">
               {indexHistory.length > 0
-                ? `Since last retest. ${indexHistory.length} measurement${indexHistory.length === 1 ? '' : 's'} over ${indexHistory.length} week${indexHistory.length === 1 ? '' : 's'}.`
+                ? `Since last retest. ${indexHistory.length} measurement${indexHistory.length === 1 ? '' : 's'} · bi-weekly cadence.`
                 : 'Complete your first index test to start tracking trends.'}
             </Body>
             <View className="mt-4">
