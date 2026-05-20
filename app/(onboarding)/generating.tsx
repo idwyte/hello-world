@@ -30,7 +30,10 @@ export default function Generating() {
       return;
     }
     const level = recommendLevel(index);
-    const program = buildProgram(level, draft.dailyMinutes, draft.goal);
+    // Phase A: buildProgram signature simplified — `goal` and `dailyMinutes`
+    // are gone from AssessmentAnswers. Phase C swaps this for an async
+    // Edge-Function call; this is the dev-mode rule-based fallback path.
+    const program = buildProgram(level, [], 8);
     const stealthDefault = defaultStealthFromAnswers(draft);
     setGenerated({ level, program, stealthDefault });
 

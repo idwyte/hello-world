@@ -70,15 +70,15 @@ import {
 } from '@/lib/persistence';
 
 const sampleAnswers: AssessmentAnswers = {
-  goal: 'control',
-  dailyMinutes: 5,
-  trainingEnvironment: 'private',
+  ageBand: '26-35',
+  strengthDaysPerWeek: 3,
+  cardioDaysPerWeek: 2,
+  intimacyPerWeek: 3,
 };
 
 const sampleIndex = scoreIndex({
-  reactionMs: 500,
-  enduranceS: 18,
-  rapidReps10s: 12,
+  pulsesIn30s: 45,
+  maxHoldS: 25,
 });
 
 describe('saveAssessmentAndProgram', () => {
@@ -117,9 +117,8 @@ describe('saveAssessmentAndProgram', () => {
     const index = calls[1];
     expect(index.payload).toMatchObject({
       user_id: 'user-uuid-fake',
-      reaction_ms: Math.round(sampleIndex.reactionMs),
-      endurance_s: sampleIndex.enduranceS,
-      rapid_reps_10s: sampleIndex.rapidReps10s,
+      pulses_in_30s: Math.round(sampleIndex.pulsesIn30s),
+      max_hold_s: sampleIndex.maxHoldS,
       composite: sampleIndex.composite,
       level: sampleIndex.level,
     });

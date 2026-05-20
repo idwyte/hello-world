@@ -23,12 +23,16 @@ export default function IndexTest() {
   const [enduranceS, setEnduranceS] = useState<number | null>(null);
   const [rapidReps, setRapidReps] = useState<number | null>(null);
 
+  // TEMP (Phase A): the v1.2 assessment uses pulsesIn30s + maxHoldS per
+  // Figma 04 / 05. This screen still runs the v1.0 reaction/endurance/
+  // rapid-reps UI which Phase B rewrites. Until then, we map the v1.0
+  // outputs into the new shape so scoreIndex compiles — values will be
+  // garbage-but-deterministic. Not shipped (dev path only).
   const finish = useCallback(
-    (r: number, e: number, p: number) => {
+    (_r: number, e: number, p: number) => {
       const idx = scoreIndex({
-        reactionMs: r,
-        enduranceS: e,
-        rapidReps10s: p,
+        pulsesIn30s: p * 3, // rough scale: rapid_reps_in_10s → pulses_in_30s
+        maxHoldS: e,
       });
       setIndex(idx);
       router.replace('/generating');

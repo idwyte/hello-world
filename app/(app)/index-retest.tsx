@@ -40,10 +40,11 @@ export default function IndexRetest() {
       enduranceS !== null &&
       rapidReps !== null
     ) {
+      // TEMP (Phase A): v1.0 measurement UI still in place — map to v1.2
+      // scoreIndex inputs. Phase B replaces this with pulse + hold UI.
       const idx = scoreIndex({
-        reactionMs,
-        enduranceS,
-        rapidReps10s: rapidReps,
+        pulsesIn30s: rapidReps * 3,
+        maxHoldS: enduranceS,
       });
       (async () => {
         try {

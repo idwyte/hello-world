@@ -29,7 +29,8 @@ export async function saveAssessmentAndProgram(input: {
   const userId = userData.user?.id;
   if (!userId) throw new Error('Not signed in.');
 
-  // 1. survey answers (slim 3-question version)
+  // 1. lifestyle answers (4-question v1.2 assessment: age band, strength
+  //    days/week, cardio days/week, intimacy per week).
   const { error: aErr } = await supabase.from('assessments').insert({
     user_id: userId,
     answers: input.answers,
@@ -43,9 +44,8 @@ export async function saveAssessmentAndProgram(input: {
     .from('pelvic_floor_assessments')
     .insert({
       user_id: userId,
-      reaction_ms: Math.round(input.index.reactionMs),
-      endurance_s: input.index.enduranceS,
-      rapid_reps_10s: input.index.rapidReps10s,
+      pulses_in_30s: Math.round(input.index.pulsesIn30s),
+      max_hold_s: input.index.maxHoldS,
       composite: input.index.composite,
       level: input.index.level,
     });
@@ -112,9 +112,8 @@ export async function saveIndexRetest(
     .from('pelvic_floor_assessments')
     .insert({
       user_id: userId,
-      reaction_ms: Math.round(index.reactionMs),
-      endurance_s: index.enduranceS,
-      rapid_reps_10s: index.rapidReps10s,
+      pulses_in_30s: Math.round(index.pulsesIn30s),
+      max_hold_s: index.maxHoldS,
       composite: index.composite,
       level: index.level,
     });

@@ -1,31 +1,35 @@
 import type { Level } from './types';
 
-export type PelvicFloorIndexInput = {
-  reactionMs: number;
-  enduranceS: number;
-  rapidReps10s: number;
+// Two real measurements collected on Figma 04 (quick pulse, node 199:387)
+// and Figma 05 (max hold, node 199:415). These replace the v1.0
+// reaction/endurance/rapid-reps inputs which had no mechanistic link to
+// pelvic-floor function.
+export type PelvicFloorMeasurements = {
+  // Count of contract-release cycles in a 30 s window. Sedentary ≈ 10;
+  // trained adult ≈ 60-80.
+  pulsesIn30s: number;
+  // Max sustained contraction in seconds. Untrained ≈ 3-5 s; trained ≈
+  // 30-60 s; elite can hit 90 s+. We cap input at 90 s for scoring.
+  maxHoldS: number;
 };
 
-export type PelvicFloorIndex = PelvicFloorIndexInput & {
+export type PelvicFloorIndex = PelvicFloorMeasurements & {
   composite: number;
   level: Level;
 };
 
-// Norm bands are population-rough; replace with telemetry-driven calibration
-// once we have ≥1000 retests in production. Sources: Bø & Sherburn 2005
-// (reaction & endurance), Cardenas-Trowers et al. 2018 (rapid contractions).
-const REACTION_BEST_MS = 250;
-const REACTION_WORST_MS = 1200;
+// Norm bands are population-rough; replace with telemetry-driven
+// calibration once we have ≥1000 retests in production. Endurance is
+// weighted heavier than pulse speed per Bø & Sherburn 2005 — slow-twitch
+// strength is a stronger predictor of function than fast-twitch speed.
+const PULSE_BEST = 80;
+const PULSE_WORST = 10;
 
-const ENDURANCE_BEST_S = 30;
-const ENDURANCE_WORST_S = 2;
+const HOLD_BEST_S = 90;
+const HOLD_WORST_S = 3;
 
-const RAPID_BEST_REPS = 18;
-const RAPID_WORST_REPS = 4;
-
-const WEIGHT_REACTION = 0.35;
-const WEIGHT_ENDURANCE = 0.4;
-const WEIGHT_RAPID = 0.25;
+const WEIGHT_PULSE = 0.4;
+const WEIGHT_HOLD = 0.6;
 
 function clamp01(x: number): number {
   if (x < 0) return 0;
@@ -48,15 +52,12 @@ export function levelFromComposite(composite: number): Level {
   return 'advanced';
 }
 
-export function scoreIndex(input: PelvicFloorIndexInput): PelvicFloorIndex {
-  const rN = normalize(input.reactionMs, REACTION_BEST_MS, REACTION_WORST_MS);
-  const eN = normalize(input.enduranceS, ENDURANCE_BEST_S, ENDURANCE_WORST_S);
-  const pN = normalize(input.rapidReps10s, RAPID_BEST_REPS, RAPID_WORST_REPS);
+export function scoreIndex(input: PelvicFloorMeasurements): PelvicFloorIndex {
+  const pulseN = normalize(input.pulsesIn30s, PULSE_BEST, PULSE_WORST);
+  const holdN = normalize(input.maxHoldS, HOLD_BEST_S, HOLD_WORST_S);
   const composite =
     Math.round(
-      (rN * WEIGHT_REACTION + eN * WEIGHT_ENDURANCE + pN * WEIGHT_RAPID) *
-        100 *
-        100,
+      (pulseN * WEIGHT_PULSE + holdN * WEIGHT_HOLD) * 100 * 100,
     ) / 100;
   return {
     ...input,

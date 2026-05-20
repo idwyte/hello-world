@@ -3,7 +3,6 @@ import { levelFromComposite, type PelvicFloorIndex } from './pelvic-floor-index'
 import type {
   AssessmentAnswers,
   ExerciseTemplate,
-  Goal,
   Level,
   ProgramDay,
 } from './types';
@@ -12,34 +11,25 @@ export function recommendLevel(index: PelvicFloorIndex): Level {
   return levelFromComposite(index.composite);
 }
 
-function pickExercisesFor(level: Level, goal: Goal): string[] {
-  const pool: string[] = [];
+// Local rule-based pool selection. Used as a dev-mode fallback when
+// hasSupabaseConfig() is false (Phase C ships the Claude-API path via
+// supabase/functions/generate-program). Driven only by `level` now —
+// goal was removed from the assessment in the v1.2 pivot.
+function pickExercisesFor(level: Level): string[] {
   if (level === 'beginner') {
-    pool.push('short_holds', 'quick_flicks');
-    if (goal === 'strength' || goal === 'stamina') {
-      pool.push('long_holds');
-    }
-  } else if (level === 'intermediate') {
-    pool.push('short_holds', 'quick_flicks', 'long_holds');
-  } else {
-    pool.push('quick_flicks', 'long_holds', 'endurance_ladder', 'short_holds');
+    return ['short_holds', 'quick_flicks', 'long_holds'];
   }
-  if (goal === 'control') {
-    return ['quick_flicks', ...pool.filter((e) => e !== 'quick_flicks')];
+  if (level === 'intermediate') {
+    return ['short_holds', 'quick_flicks', 'long_holds', 'endurance_ladder'];
   }
-  if (goal === 'strength' || goal === 'stamina') {
-    return [
-      ...pool.filter((e) => e === 'long_holds' || e === 'endurance_ladder'),
-      ...pool.filter((e) => e !== 'long_holds' && e !== 'endurance_ladder'),
-    ];
-  }
-  return pool;
+  return ['quick_flicks', 'long_holds', 'endurance_ladder', 'short_holds'];
 }
 
 // Retest-adaptive bias. If the most recent Index improved by >10 points
 // over the prior, bring endurance work to the front. If it regressed by
 // >10, fall back one level so progressive overload doesn't reinforce a
-// plateau.
+// plateau. This stays in code as the "rule-based retest" path the plan
+// explicitly chose — no Claude call on each retest.
 function applyTrendBias(
   pool: string[],
   level: Level,
@@ -61,7 +51,7 @@ function applyTrendBias(
   }
   if (delta < -10) {
     const downshift: Level =
-      level === 'advanced' ? 'intermediate' : level === 'intermediate' ? 'beginner' : 'beginner';
+      level === 'advanced' ? 'intermediate' : 'beginner';
     return { pool, level: downshift };
   }
   return { pool, level };
@@ -96,17 +86,20 @@ function buildDay(
   };
 }
 
+// Default to 5 minutes — the AI plan chooses per-user in Phase C; this
+// is only the dev-mode fallback path.
+const DEFAULT_DAILY_MINUTES = 5;
+
 export function buildProgram(
   level: Level,
-  dailyMinutes: 3 | 5 | 8,
-  goal: Goal,
   indexHistory: PelvicFloorIndex[] = [],
   weeks = 8,
+  dailyMinutes: number = DEFAULT_DAILY_MINUTES,
 ): ProgramDay[] {
-  const initialPool = pickExercisesFor(level, goal);
+  const initialPool = pickExercisesFor(level);
   const adjusted = applyTrendBias(initialPool, level, indexHistory);
   const effectivePool =
-    adjusted.level !== level ? pickExercisesFor(adjusted.level, goal) : adjusted.pool;
+    adjusted.level !== level ? pickExercisesFor(adjusted.level) : adjusted.pool;
   const targetSeconds = dailyMinutes * 60;
   const days: ProgramDay[] = [];
   for (let d = 0; d < weeks * 7; d++) {
@@ -115,6 +108,11 @@ export function buildProgram(
   return days;
 }
 
-export function defaultStealthFromAnswers(a: AssessmentAnswers): boolean {
-  return a.trainingEnvironment === 'public';
+// Stealth Mode default. v1.0 derived this from the
+// `trainingEnvironment` question; v1.2 removed that question, so the
+// default is now `false` — user opts in from settings.
+// AssessmentAnswers parameter kept so the signature still represents
+// where this used to derive from.
+export function defaultStealthFromAnswers(_a: AssessmentAnswers): boolean {
+  return false;
 }

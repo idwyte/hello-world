@@ -124,16 +124,15 @@ export async function fetchIndexHistory(
   if (!user.user) return [];
   const { data, error } = await supabase
     .from('pelvic_floor_assessments')
-    .select('reaction_ms, endurance_s, rapid_reps_10s, composite, level, created_at')
+    .select('pulses_in_30s, max_hold_s, composite, level, created_at')
     .eq('user_id', user.user.id)
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) throw error;
   return (data ?? [])
     .map((r) => ({
-      reactionMs: Number(r.reaction_ms),
-      enduranceS: Number(r.endurance_s),
-      rapidReps10s: Number(r.rapid_reps_10s),
+      pulsesIn30s: Number(r.pulses_in_30s),
+      maxHoldS: Number(r.max_hold_s),
       composite: Number(r.composite),
       level: r.level as Level,
       createdAt: r.created_at as string,
