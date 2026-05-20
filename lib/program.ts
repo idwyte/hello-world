@@ -1,6 +1,9 @@
 import { EXERCISES } from './exercises';
-import { levelFromComposite, type PelvicFloorIndex } from './pelvic-floor-index';
+import { hasSupabaseConfig } from './env';
+import { levelFromComposite, type PelvicFloorIndex, type PelvicFloorMeasurements } from './pelvic-floor-index';
+import { getSupabase } from './supabase';
 import type {
+  AssessmentAnswers,
   ExerciseTemplate,
   Level,
   ProgramDay,
@@ -85,16 +88,25 @@ function buildDay(
   };
 }
 
-// Default to 5 minutes — the AI plan chooses per-user in Phase C; this
-// is only the dev-mode fallback path.
+// Default to 5 minutes for the rule-based fallback. Production uses the
+// AI plan from the Edge Function which sets targetDurationS per-day.
 const DEFAULT_DAILY_MINUTES = 5;
 
-export function buildProgram(
-  level: Level,
-  indexHistory: PelvicFloorIndex[] = [],
-  weeks = 8,
-  dailyMinutes: number = DEFAULT_DAILY_MINUTES,
-): ProgramDay[] {
+export type BuildProgramInput = {
+  level: Level;
+  measurements: PelvicFloorMeasurements;
+  answers: AssessmentAnswers;
+  indexHistory?: PelvicFloorIndex[];
+  weeks?: number;
+  dailyMinutes?: number;
+};
+
+// Local rule-based fallback. Used when Supabase isn't configured (dev
+// mode walkthrough) or when the Edge Function is unreachable. Ignores
+// measurements/answers — only the level matters here. The AI path uses
+// all inputs.
+export function buildProgramLocal(input: BuildProgramInput): ProgramDay[] {
+  const { level, indexHistory = [], weeks = 8, dailyMinutes = DEFAULT_DAILY_MINUTES } = input;
   const initialPool = pickExercisesFor(level);
   const adjusted = applyTrendBias(initialPool, level, indexHistory);
   const effectivePool =
@@ -105,4 +117,70 @@ export function buildProgram(
     days.push(buildDay(d, effectivePool, targetSeconds));
   }
   return days;
+}
+
+// Edge-function-returned shape — slug + sets + reps per exercise rather
+// than the full ExerciseTemplate. We resolve slugs to templates locally
+// because the templates carry phase timing the session engine needs.
+type EdgeProgramExercise = { slug: string; sets: number; reps: number };
+type EdgeProgramDay = {
+  dayIndex: number;
+  targetDurationS: number;
+  exercises: EdgeProgramExercise[];
+};
+type EdgeProgramResponse = {
+  ok: boolean;
+  program?: { weeks: number; focuses: string[]; days: EdgeProgramDay[] };
+  error?: string;
+};
+
+function resolveEdgeProgram(edge: EdgeProgramResponse['program']): ProgramDay[] {
+  if (!edge) return [];
+  return edge.days.map((d) => ({
+    dayIndex: d.dayIndex,
+    targetDurationS: d.targetDurationS,
+    // Resolve slugs to full ExerciseTemplate. Per-exercise sets/reps from
+    // the AI override the catalog defaults — clone the template and
+    // patch the fields the session engine reads.
+    exercises: d.exercises
+      .map((e) => {
+        const template = EXERCISES[e.slug];
+        if (!template) return null;
+        return { ...template, sets: e.sets, reps: e.reps };
+      })
+      .filter((x): x is ExerciseTemplate => x !== null),
+  }));
+}
+
+// Primary entry point. Calls the Supabase Edge Function (which calls
+// Claude) when configured; falls back to the rule-based local generator
+// in dev mode.
+export async function buildProgram(input: BuildProgramInput): Promise<ProgramDay[]> {
+  if (!hasSupabaseConfig()) {
+    return buildProgramLocal(input);
+  }
+
+  const supabase = getSupabase();
+  const { data, error } = await supabase.functions.invoke<EdgeProgramResponse>(
+    'generate-program',
+    {
+      body: {
+        measurements: input.measurements,
+        answers: input.answers,
+        level: input.level,
+      },
+    },
+  );
+
+  // On any Edge Function failure, fall back to the rule-based path
+  // rather than blocking onboarding. The user gets a program either way.
+  if (error || !data?.ok || !data.program) {
+    console.warn(
+      'generate-program · Edge Function failed, falling back to rule-based:',
+      error ?? data?.error,
+    );
+    return buildProgramLocal(input);
+  }
+
+  return resolveEdgeProgram(data.program);
 }

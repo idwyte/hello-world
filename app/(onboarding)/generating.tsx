@@ -26,25 +26,25 @@ export default function Generating() {
       return;
     }
     const level = recommendLevel(index);
-    // Phase A: buildProgram signature simplified — `goal` and `dailyMinutes`
-    // are gone from AssessmentAnswers. Phase C swaps this for an async
-    // Edge-Function call; this is the dev-mode rule-based fallback path.
-    const program = buildProgram(level, [], 8);
-    // v1.2: stealth defaults to off; users opt in from Settings → Stealth.
-    // (Was previously derived from the `trainingEnvironment` survey question
-    // which was removed in this pivot.)
-    setGenerated({ level, program, stealthDefault: false });
 
     (async () => {
       const minDelay = new Promise((r) => setTimeout(r, 1400));
       try {
+        // Phase C: buildProgram is async and calls the Supabase Edge
+        // Function (generate-program) when Supabase is configured, falling
+        // back to the local rule-based path otherwise. The Edge Function
+        // calls Claude Haiku 4.5 with the user's measurements + lifestyle
+        // answers + level and returns a structured 8-week program.
+        const program = await buildProgram({
+          level,
+          measurements: { pulsesIn30s: index.pulsesIn30s, maxHoldS: index.maxHoldS },
+          answers: draft,
+        });
+        if (cancelled) return;
+        // v1.2: stealth defaults to off; users opt in from Settings → Stealth.
+        setGenerated({ level, program, stealthDefault: false });
         await Promise.all([
-          saveAssessmentAndProgram({
-            answers: draft,
-            index,
-            level,
-            program,
-          }),
+          saveAssessmentAndProgram({ answers: draft, index, level, program }),
           minDelay,
         ]);
       } catch (e) {
@@ -52,9 +52,9 @@ export default function Generating() {
         const msg =
           e instanceof Error
             ? e.message
-            : "Couldn't save your plan. Try again.";
+            : "Couldn't build your plan. Try again.";
         setError(msg);
-        Alert.alert('Save failed', msg, [
+        Alert.alert('Generation failed', msg, [
           { text: 'Retry', onPress: () => router.replace('/generating') },
           { text: 'Cancel', onPress: () => router.replace('/welcome') },
         ]);
