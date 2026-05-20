@@ -8,6 +8,17 @@ export type Phase = {
   exerciseIndex: number;
 };
 
+// Posture/setup requirement. Optional; omit for floor-only exercises that
+// work in any seated/standing position. New in v1.2 — the AI plan generator
+// uses this to vary daily routines and avoid back-to-back position changes
+// that would force the user to move equipment / unroll a mat repeatedly.
+export type ExercisePosition =
+  | 'seated'
+  | 'supine'
+  | 'standing'
+  | 'quadruped'
+  | 'any';
+
 export type ExerciseTemplate = {
   slug: string;
   name: string;
@@ -17,6 +28,7 @@ export type ExerciseTemplate = {
   reps: number;
   phases: Array<{ kind: Exclude<PhaseKind, 'prep' | 'done'>; durationMs: number }>;
   restBetweenSetsMs: number;
+  position?: ExercisePosition;
 };
 
 export type ProgramDay = {

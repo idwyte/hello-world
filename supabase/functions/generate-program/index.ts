@@ -31,12 +31,24 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+// IMPORTANT: keep in lockstep with lib/exercises.ts EXERCISES keys.
+// The client resolves these slugs to ExerciseTemplate locally, so any
+// slug the AI emits that isn't in this list will be dropped client-side.
 const VALID_SLUGS = [
+  // Original v1.1 catalog — pure pelvic-floor work
   'quick_flicks',
   'short_holds',
   'long_holds',
   'endurance_ladder',
   'quick_discreet',
+  // v1.2 expansion — holistic palette
+  'reverse_kegels',
+  'pulse_hold_combo',
+  'adductor_squeeze',
+  'glute_bridge',
+  'bird_dog',
+  'deep_squat_breath',
+  'tabletop_marches',
 ] as const;
 
 const SYSTEM_PROMPT = `You are a clinical exercise physiologist specialising in pelvic-floor training. Generate a personalised 8-week program from a user's assessment.
@@ -51,11 +63,27 @@ INPUTS
 - level: beginner | intermediate | advanced
 
 EXERCISE CATALOG (use only these slugs)
-- quick_flicks: 1 s on, 1 s off rapid contractions. Trains fast-twitch fibres. Typical 2 × 10.
-- short_holds: 1 s squeeze, 3 s hold, 3 s release. Foundational contraction control. Typical 2 × 8.
-- long_holds: 1.5 s squeeze, 8 s hold, 5 s release. Builds slow-twitch endurance. Typical 2 × 5.
-- endurance_ladder: 1.5 s squeeze, 5 s hold, 5 s release. Cardio adaptation. Typical 1 × 5.
-- quick_discreet: 1 s on, 1.5 s off. Stealth-friendly short session. Typical 1 × 5.
+Pure pelvic-floor work (foundational):
+- quick_flicks: 1 s on, 1 s off rapid contractions. Trains fast-twitch fibres. Typical 2 × 10. Position: any.
+- short_holds: 1 s squeeze, 3 s hold, 3 s release. Foundational contraction control. Typical 2 × 8. Position: any.
+- long_holds: 1.5 s squeeze, 8 s hold, 5 s release. Builds slow-twitch endurance. Typical 2 × 5. Position: any.
+- endurance_ladder: 1.5 s squeeze, 5 s hold, 5 s release. Progressive holds for cardio adaptation. Typical 1 × 5. Position: any.
+- quick_discreet: 1 s on, 1.5 s off. Stealth-friendly short session. Typical 1 × 5. Position: any.
+
+Release / expansion work:
+- reverse_kegels: Active downward release (gentle bear-down). Trains the OPPOSITE of a contraction — full relaxation and downward expansion. Typical 2 × 5. Position: supine.
+
+Combined fast + slow patterns:
+- pulse_hold_combo: 5 quick pulses, 4 s hold, 5 more pulses. Hybrid of fast-twitch speed + slow-twitch endurance in one set. Typical 2 × 6. Position: any.
+
+Synergist + posterior-chain integration (recruit adjacent muscles):
+- adductor_squeeze: Inner-thigh squeeze with pelvic-floor co-contraction. Adductors fire reflexively with the floor. Typical 2 × 10. Position: supine.
+- glute_bridge: Hip bridge held at the top with floor activation. Builds posterior-chain support. Typical 2 × 8. Position: supine.
+- bird_dog: Quadruped opposite arm + leg extension with floor cue. Deep-core stabiliser. Each rep is one side, so 2 × 10 = 5 per side. Position: quadruped.
+- tabletop_marches: Supine tabletop hip flexion alternating sides with floor brace. Deep-core integration. Each rep is one side. Typical 2 × 10. Position: supine.
+
+Mobility + breath:
+- deep_squat_breath: Deep squat hold with diaphragmatic breathing; downshift the floor on each exhale. Pairs mobility with active relaxation. Typical 1 × 5. Position: standing.
 
 PROGRAM DESIGN RULES
 1. Output exactly 56 day objects (8 weeks × 7 days), dayIndex 0-55.
@@ -73,6 +101,8 @@ PROGRAM DESIGN RULES
    - High intimacy frequency: prioritise both endurance and control evenly
 7. targetDurationS per training day: 240-360 s (4-6 min). 0 for rest days.
 8. sets: 1-5. reps: 1-20.
+9. Holistic variety — within each week, prefer a mix of categories (pure floor work + at least one synergist/posterior-chain or release/mobility exercise) rather than 7 days of pure Kegel-style work.
+10. Position grouping — when a day mixes exercises, prefer same-position groupings (e.g. all supine, or floor + standing) over forcing the user to repeatedly change setup mid-session. The catalog tags each exercise's position; 'any' fits with anything.
 
 OUTPUT
 Return STRICT JSON. Include 3 short "focuses" (≤ 8 words each) that name the program's emphasis — these appear on the user's plan-preview screen. Examples: "Endurance — long holds + ladder", "Pulse speed — quick flicks 3×/week", "Posterior chain — adductor + glute work".`;
