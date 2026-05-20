@@ -2,8 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Body, Card, Heading, SectionLabel } from '@/components/ui';
+import { Body, Card, Pill, ScreenHeader } from '@/components/ui';
 import { hasSupabaseConfig } from '@/lib/env';
+import { EXERCISES } from '@/lib/exercises';
 import { getSupabase } from '@/lib/supabase';
 
 type ProgramDayRow = {
@@ -37,12 +38,13 @@ async function fetchActiveProgramDays(): Promise<ProgramDayRow[]> {
   return (data as ProgramDayRow[]) ?? [];
 }
 
-function prettyName(slug: string): string {
-  return slug
-    .split('_')
-    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-    .join(' ');
+function prettyExercises(slugs: string[]): string {
+  return slugs
+    .map((s) => EXERCISES[s]?.name ?? s.replace(/_/g, ' '))
+    .join(' · ');
 }
+
+const WEEKDAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 export default function Program() {
   const daysQuery = useQuery({
@@ -53,7 +55,7 @@ export default function Program() {
 
   const days = daysQuery.data ?? [];
 
-  // Group days by week for the calendar grid (Figma 09·program).
+  // Group days by week index for the week-card layout.
   const weeks: ProgramDayRow[][] = [];
   for (const day of days) {
     const w = Math.floor(day.day_index / 7);
@@ -63,62 +65,97 @@ export default function Program() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface-canvas">
-      <ScrollView
-        className="flex-1 px-4 pt-3"
-        contentContainerClassName="pb-12"
-      >
-        <View>
-          <SectionLabel>Plan</SectionLabel>
-          <Heading level="display-lg" className="mt-1">
-            Your 8-week program
-          </Heading>
-          <Body size="md" color="muted" className="mt-2">
-            Day by day. Each session adapts to your daily-minute target.
-          </Body>
-        </View>
+      <ScreenHeader kind="large-title" title="Plan" />
 
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="pb-12 px-4"
+      >
         {!hasSupabaseConfig() ? (
-          <Card padding="md" className="mt-6" bordered>
+          <Card padding="md" radius="card-tight" bordered className="mt-2">
             <Body size="sm" color="muted">
               Sign in to see your generated plan. The hardcoded demo day appears
               on Today.
             </Body>
           </Card>
         ) : daysQuery.isLoading ? (
-          <Body size="md" color="muted" className="mt-6">
+          <Body size="md" color="muted" className="mt-2">
             Loading…
           </Body>
-        ) : days.length === 0 ? (
-          <Card padding="md" className="mt-6" bordered>
+        ) : weeks.length === 0 ? (
+          <Card padding="md" radius="card-tight" bordered className="mt-2">
             <Body size="sm" color="muted">
               Complete the onboarding assessment to generate your plan.
             </Body>
           </Card>
         ) : (
-          <View className="gap-4 mt-6">
-            {weeks.map((week, wi) => (
-              <View key={wi} className="gap-2">
-                <SectionLabel>Week {wi + 1}</SectionLabel>
-                {week.map((d) => (
-                  <Card key={d.id} padding="md" bordered>
-                    <View className="flex-row justify-between">
-                      <SectionLabel>Day {(d.day_index % 7) + 1}</SectionLabel>
-                      <Body size="xs" color="muted">
-                        ~{Math.round(d.target_duration_s / 60)} min
+          <View className="gap-3 mt-2">
+            {weeks.map((week, wi) => {
+              const completed = 0; // TODO: cross-reference sessions to compute completion
+              return (
+                <Card
+                  key={wi}
+                  padding="md"
+                  radius="card-tight"
+                  className="w-[358px] self-center"
+                >
+                  {/* Week header */}
+                  <View className="flex-row items-center justify-between">
+                    <View>
+                      <Body
+                        weight="semibold"
+                        color="primary"
+                        style={{ fontSize: 17, lineHeight: 24 }}
+                      >
+                        Week {wi + 1}
+                      </Body>
+                      <Body
+                        size="sm"
+                        color="muted"
+                        style={{ fontSize: 13, lineHeight: 18 }}
+                      >
+                        {prettyExercises(
+                          week[0]?.exercises.map((e) => e.slug) ?? [],
+                        ) || 'Recovery week'}
                       </Body>
                     </View>
-                    <Body
-                      size="md"
-                      weight="semibold"
-                      color="primary"
-                      className="mt-1"
-                    >
-                      {d.exercises.map((e) => prettyName(e.slug)).join(' · ')}
-                    </Body>
-                  </Card>
-                ))}
-              </View>
-            ))}
+                    <Pill
+                      label={`${completed} / ${week.length}`}
+                      tone="surface2"
+                      size="xs"
+                    />
+                  </View>
+                  {/* 7-day grid */}
+                  <View className="flex-row gap-1 mt-3">
+                    {WEEKDAY_LETTERS.map((letter, di) => {
+                      const day = week[di];
+                      return (
+                        <View
+                          key={di}
+                          className={`flex-1 items-center justify-center py-2 rounded-[10px] ${day ? 'bg-surface-sunken' : 'bg-surface-sunken opacity-40'}`}
+                        >
+                          <Body
+                            weight="medium"
+                            color="muted"
+                            style={{ fontSize: 11, lineHeight: 14 }}
+                          >
+                            {letter}
+                          </Body>
+                          <Body
+                            weight="medium"
+                            color="primary"
+                            className="mt-0.5"
+                            style={{ fontSize: 18, lineHeight: 24 }}
+                          >
+                            {day ? (day.day_index % 28) + 1 : '—'}
+                          </Body>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </Card>
+              );
+            })}
           </View>
         )}
       </ScrollView>

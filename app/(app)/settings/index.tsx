@@ -5,22 +5,26 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Body,
   Card,
-  Heading,
   ListRow,
+  ScreenHeader,
   SectionLabel,
 } from '@/components/ui';
-import { semantic } from '@/lib/theme';
 import { useEntitlement } from '@/lib/revenuecat';
+import { semantic } from '@/lib/theme';
 import { useSettingsStore } from '@/stores/settings';
 
-type Group = {
+type Row = {
   label: string;
-  rows: Array<{
-    label: string;
-    href: string;
-    sublabel?: string;
-    destructive?: boolean;
-  }>;
+  sublabel?: string;
+  href?: string;
+  destructive?: boolean;
+  showChevron?: boolean;
+  trailing?: React.ReactNode;
+};
+
+type Group = {
+  label: string | null;
+  rows: Row[];
 };
 
 export default function SettingsIndex() {
@@ -35,61 +39,72 @@ export default function SettingsIndex() {
 
   const groups: Group[] = [
     {
-      label: 'Account',
+      label: 'ACCOUNT',
       rows: [
         {
           label: 'Account',
-          href: '/settings/account',
           sublabel: 'Email, sign out, delete account',
+          href: '/settings/account',
+          showChevron: true,
         },
       ],
     },
     {
-      label: 'Training',
+      label: 'TRAINING',
       rows: [
-        { label: 'Reminders', href: '/settings/reminders', sublabel: reminderHint },
+        {
+          label: 'Reminders',
+          sublabel: reminderHint,
+          href: '/settings/reminders',
+          showChevron: true,
+        },
         {
           label: 'Stealth Mode',
-          href: '/settings/stealth',
           sublabel: 'Haptic intensity, AirPods cues',
+          href: '/settings/stealth',
+          showChevron: true,
         },
         {
           label: 'App icon',
-          href: '/settings/app-icon',
           sublabel:
             settings.appIconVariant === 'default'
               ? 'Default'
               : settings.appIconVariant.charAt(0).toUpperCase() +
                 settings.appIconVariant.slice(1),
+          href: '/settings/app-icon',
+          showChevron: true,
         },
       ],
     },
     {
-      label: 'Subscription',
+      label: 'SUBSCRIPTION',
       rows: [
         {
           label: 'Subscription',
-          href: '/settings/subscription',
           sublabel: entitlement.isPro
             ? entitlement.isInTrial
               ? 'Trial'
               : 'Active'
             : 'Free',
+          href: '/settings/subscription',
+          showChevron: true,
         },
       ],
     },
     {
-      label: 'About',
+      label: 'ABOUT',
       rows: [
         {
           label: 'Privacy',
-          href: '/settings/privacy',
           sublabel: 'Analytics, data export, deletion',
+          href: '/settings/privacy',
+          showChevron: true,
         },
         {
           label: 'Security',
-          href: '/settings/security',
           sublabel: settings.biometricLocked ? 'Face ID lock on' : 'Face ID lock',
+          href: '/settings/security',
+          showChevron: true,
         },
       ],
     },
@@ -97,34 +112,39 @@ export default function SettingsIndex() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface-canvas">
-      <ScrollView className="flex-1 px-4 pt-3" contentContainerClassName="pb-12">
-        <View>
-          <SectionLabel>Settings</SectionLabel>
-          <Heading level="heading-lg" className="mt-1">
-            Preferences
-          </Heading>
-        </View>
+      <ScreenHeader kind="large-title" title="Settings" />
 
-        <View className="mt-6 gap-6">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="pb-12 px-4"
+      >
+        <View className="gap-6">
           {groups.map((g) => (
-            <View key={g.label} className="gap-2">
-              <SectionLabel className="px-1">{g.label}</SectionLabel>
-              <Card padding="none" radius="xl" bordered>
+            <View key={g.label ?? Math.random()}>
+              {g.label ? (
+                <SectionLabel tracking="tight" className="mb-2 px-0.5">
+                  {g.label}
+                </SectionLabel>
+              ) : null}
+              <Card padding="none" radius="card-tight" className="w-[358px] self-center">
                 {g.rows.map((r, i) => (
-                  <View key={r.href}>
+                  <View key={r.label}>
+                    {i > 0 ? (
+                      <View
+                        className="h-px w-full"
+                        style={{ backgroundColor: semantic.borderDefault }}
+                      />
+                    ) : null}
                     <ListRow
                       label={r.label}
                       sublabel={r.sublabel}
                       destructive={r.destructive}
-                      showChevron
-                      onPress={() => router.push(r.href as never)}
+                      showChevron={r.showChevron}
+                      trailing={r.trailing}
+                      onPress={
+                        r.href ? () => router.push(r.href as never) : undefined
+                      }
                     />
-                    {i < g.rows.length - 1 ? (
-                      <View
-                        className="h-px ml-4"
-                        style={{ backgroundColor: semantic.borderDefault }}
-                      />
-                    ) : null}
                   </View>
                 ))}
               </Card>

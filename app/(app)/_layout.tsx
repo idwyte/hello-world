@@ -1,34 +1,31 @@
 import { Tabs } from 'expo-router';
-import { CalendarDays, LineChart, Settings, Sparkles } from 'lucide-react-native';
+import {
+  CalendarDays,
+  Home,
+  LineChart,
+  Settings,
+} from 'lucide-react-native';
+import { View } from 'react-native';
 
-import { Body } from '@/components/ui';
 import { semantic } from '@/lib/theme';
 
-type IconProps = { color: string; size: number };
-
+// Figma `81:35` / `92:230` / `94:299` — h-50, no labels, 4 flex-1 cells with
+// a 40×32 active-state pill behind the icon. Active = accent bg + ink icon;
+// inactive = transparent bg + muted icon.
 function tabIcon(
   Icon: React.ComponentType<{ color?: string; size?: number }>,
 ) {
-  // Stable component reference; React Navigation re-renders on focus change.
-  function TabBarIcon({ color, size }: IconProps) {
-    return <Icon color={color} size={size} />;
-  }
-  return TabBarIcon;
-}
-
-function tabLabel(text: string) {
-  function TabBarLabel({ focused }: { focused: boolean }) {
+  function TabBarIcon({ focused }: { focused: boolean }) {
+    const iconColor = focused ? semantic.textPrimary : semantic.textMuted;
     return (
-      <Body
-        size="xs"
-        weight={focused ? 'semibold' : 'medium'}
-        color={focused ? 'primary' : 'muted'}
+      <View
+        className={`w-10 h-8 rounded-[10px] items-center justify-center ${focused ? 'bg-interactive-primary' : ''}`}
       >
-        {text}
-      </Body>
+        <Icon color={iconColor} size={20} />
+      </View>
     );
   }
-  return TabBarLabel;
+  return TabBarIcon;
 }
 
 export default function AppLayout() {
@@ -36,15 +33,15 @@ export default function AppLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: semantic.interactivePrimary,
-        tabBarInactiveTintColor: semantic.textMuted,
+        tabBarShowLabel: false,
         tabBarStyle: {
           backgroundColor: semantic.surfaceRaised,
           borderTopColor: semantic.borderDefault,
           borderTopWidth: 1,
-          height: 64,
-          paddingTop: 8,
-          paddingBottom: 8,
+          height: 50,
+          paddingTop: 9,
+          paddingBottom: 9,
+          paddingHorizontal: 4,
         },
         sceneStyle: { backgroundColor: semantic.surfaceCanvas },
       }}
@@ -52,8 +49,7 @@ export default function AppLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          tabBarIcon: tabIcon(Sparkles),
-          tabBarLabel: tabLabel('Today'),
+          tabBarIcon: tabIcon(Home),
           tabBarAccessibilityLabel: 'Today',
         }}
       />
@@ -61,7 +57,6 @@ export default function AppLayout() {
         name="program"
         options={{
           tabBarIcon: tabIcon(CalendarDays),
-          tabBarLabel: tabLabel('Plan'),
           tabBarAccessibilityLabel: 'Plan',
         }}
       />
@@ -69,7 +64,6 @@ export default function AppLayout() {
         name="progress"
         options={{
           tabBarIcon: tabIcon(LineChart),
-          tabBarLabel: tabLabel('Progress'),
           tabBarAccessibilityLabel: 'Progress',
         }}
       />
@@ -77,16 +71,10 @@ export default function AppLayout() {
         name="settings"
         options={{
           tabBarIcon: tabIcon(Settings),
-          tabBarLabel: tabLabel('Settings'),
           tabBarAccessibilityLabel: 'Settings',
         }}
       />
-      {/*
-        Routes below are reachable via direct navigation (router.push or deep
-        link) but must NOT appear in the tab bar. expo-router auto-registers
-        every file under (app)/, so each non-tab route needs an explicit
-        `href: null` slot.
-      */}
+      {/* Hidden routes — reachable via router.push but not part of tab bar. */}
       <Tabs.Screen name="session" options={{ href: null }} />
       <Tabs.Screen name="index-retest" options={{ href: null }} />
     </Tabs>

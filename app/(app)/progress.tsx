@@ -8,9 +8,9 @@ import { StreakHeatmap } from '@/components/charts/StreakHeatmap';
 import {
   Body,
   Card,
-  Heading,
+  Pill,
+  ScreenHeader,
   SectionLabel,
-  Stat,
 } from '@/components/ui';
 import { hasSupabaseConfig } from '@/lib/env';
 import {
@@ -19,6 +19,10 @@ import {
   fetchStreak,
 } from '@/lib/sessions';
 import { useSessionStore } from '@/stores/session';
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
 export default function Progress() {
   const router = useRouter();
@@ -43,7 +47,6 @@ export default function Progress() {
   const streak = streakQuery.data ?? {
     current: local.streak.current,
     longest: local.streak.longest,
-    lastDate: local.streak.lastDate ?? null,
   };
   const sessionDates =
     sessionsQuery.data?.map((s) => s.endedAt ?? s.startedAt) ??
@@ -52,64 +55,119 @@ export default function Progress() {
       .map((h) => new Date(h.endedAt).toISOString());
 
   const indexHistory = indexQuery.data ?? [];
+  const latest = indexHistory.at(-1) ?? null;
+  const prev = indexHistory.at(-2) ?? null;
+  const delta = latest && prev ? latest.composite - prev.composite : null;
 
   return (
     <SafeAreaView className="flex-1 bg-surface-canvas">
       <ScrollView
-        className="flex-1 px-4 pt-3"
+        className="flex-1"
         contentContainerClassName="pb-12"
       >
-        {/* Header with Retest CTA — Figma 10·progress */}
-        <View className="flex-row items-end justify-between h-14 py-1.5">
-          <View>
-            <SectionLabel>Progress</SectionLabel>
-            <Heading level="heading-lg" className="mt-1">
-              Your rhythm
-            </Heading>
-          </View>
-          <Pressable
-            onPress={() => router.push('/index-retest')}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Retest your Pelvic Floor Index"
-            className="active:opacity-60 px-3 py-2 rounded-full border border-border-default"
-          >
-            <Body size="sm" weight="semibold" color="accent">
-              Retest →
+        {/* Figma 10·progress — title + Retest pill, h-14 */}
+        <ScreenHeader
+          kind="title"
+          title="Progress"
+          trailing={
+            <Pressable
+              onPress={() => router.push('/index-retest')}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Retest your Pelvic Floor Index"
+              className="active:opacity-70"
+            >
+              <Pill label="Retest" tone="accent" size="md" />
+            </Pressable>
+          }
+        />
+
+        <View className="px-4 mt-5">
+          {/* Index card — Figma `92:83` (p-20, gap-16, radius 16) */}
+          <Card padding="xl" radius="card">
+            <SectionLabel tracking="wide">Pelvic Floor Index</SectionLabel>
+            <View className="mt-4 flex-row items-end justify-between">
+              <View className="flex-row items-end" style={{ gap: 12 }}>
+                <Body
+                  weight="semibold"
+                  color="primary"
+                  style={{ fontSize: 56, lineHeight: 60 }}
+                >
+                  {latest ? Math.round(latest.composite).toString() : '—'}
+                </Body>
+                {latest ? (
+                  <View className="pb-1.5">
+                    <Pill
+                      label={capitalize(latest.level)}
+                      tone="accent"
+                      size="sm"
+                    />
+                  </View>
+                ) : null}
+              </View>
+              {delta !== null ? (
+                <View className="pb-1.5">
+                  <Pill
+                    label={`${delta > 0 ? '+' : ''}${Math.round(delta)}`}
+                    tone="surface2"
+                    size="sm"
+                    textColor={delta >= 0 ? 'success' : 'danger'}
+                  />
+                </View>
+              ) : null}
+            </View>
+            <Body size="sm" color="muted" className="mt-4">
+              {indexHistory.length > 0
+                ? `Since last retest. ${indexHistory.length} measurement${indexHistory.length === 1 ? '' : 's'} over ${indexHistory.length} week${indexHistory.length === 1 ? '' : 's'}.`
+                : 'Complete your first index test to start tracking trends.'}
             </Body>
-          </Pressable>
+            <View className="mt-4">
+              <IndexTrendChart history={indexHistory} />
+            </View>
+          </Card>
+
+          {/* Streak card — Figma `92:118` (same shell) */}
+          <Card padding="xl" radius="card" className="mt-4">
+            <SectionLabel tracking="wide">Streak</SectionLabel>
+            <View className="mt-4 flex-row items-end justify-between">
+              <View className="flex-row items-end" style={{ gap: 8 }}>
+                <Body
+                  weight="semibold"
+                  color="primary"
+                  style={{ fontSize: 56, lineHeight: 60 }}
+                >
+                  {streak.current}
+                </Body>
+                <Body
+                  color="muted"
+                  style={{ fontSize: 20, lineHeight: 28 }}
+                  className="pb-2"
+                >
+                  days
+                </Body>
+              </View>
+              <View className="items-end pb-2">
+                <Body
+                  weight="medium"
+                  color="muted"
+                  style={{ fontSize: 10, lineHeight: 14, letterSpacing: 1.2 }}
+                >
+                  BEST
+                </Body>
+                <Body
+                  weight="semibold"
+                  color="primary"
+                  style={{ fontSize: 15, lineHeight: 22 }}
+                >
+                  {streak.longest} days
+                </Body>
+              </View>
+            </View>
+            <View className="mt-4">
+              <StreakHeatmap dates={sessionDates} />
+            </View>
+          </Card>
         </View>
-
-        {/* Streak pair */}
-        <View className="flex-row gap-3 mt-6">
-          <Stat kicker="Current streak" value={`${streak.current}d`} />
-          <Stat kicker="Longest" value={`${streak.longest}d`} />
-        </View>
-
-        {/* Pelvic Floor Index sparkline */}
-        <Card padding="lg" radius="2xl" className="mt-6 gap-3">
-          <SectionLabel>Pelvic Floor Index</SectionLabel>
-          <IndexTrendChart history={indexHistory} />
-        </Card>
-
-        {/* 12-week heatmap */}
-        <Card padding="lg" radius="2xl" className="mt-4 gap-3">
-          <SectionLabel>Last 12 weeks</SectionLabel>
-          <StreakHeatmap dates={sessionDates} />
-        </Card>
-
-        {/* Sessions counter */}
-        <Card padding="lg" radius="2xl" className="mt-4">
-          <SectionLabel>Sessions completed</SectionLabel>
-          <Heading level="heading-lg" className="mt-1">
-            {sessionDates.length}
-          </Heading>
-          <Body size="xs" color="muted" className="mt-1">
-            {hasSupabaseConfig()
-              ? 'Synced from Supabase'
-              : 'Local count (dev mode)'}
-          </Body>
-        </Card>
       </ScrollView>
     </SafeAreaView>
   );

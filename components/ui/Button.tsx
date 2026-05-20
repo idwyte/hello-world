@@ -4,11 +4,15 @@ import { Body } from './Body';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'destructive';
 type Size = 'sm' | 'md' | 'lg';
+// Foundations: radius/lg (12) is the canonical button radius. 'cta' (14) is
+// for hero CTAs per Figma 08 home Start session button.
+type Radius = 'md' | 'lg' | 'cta';
 
 type Props = Omit<PressableProps, 'children'> & {
   label: string;
   variant?: Variant;
   size?: Size;
+  radius?: Radius;
   leadingIcon?: React.ReactNode;
   trailingIcon?: React.ReactNode;
   className?: string;
@@ -34,6 +38,12 @@ const SIZE_HEIGHT: Record<Size, string> = {
   lg: 'h-14 px-4',
 };
 
+const RADIUS_CLASS: Record<Radius, string> = {
+  md: 'rounded-md',
+  lg: 'rounded-lg',
+  cta: 'rounded-[14px]',
+};
+
 const SIZE_TEXT: Record<Size, 'sm' | 'md' | 'lg'> = {
   sm: 'sm',
   md: 'md',
@@ -44,6 +54,7 @@ export function Button({
   label,
   variant = 'primary',
   size = 'lg',
+  radius = 'lg',
   leadingIcon,
   trailingIcon,
   className = '',
@@ -55,10 +66,10 @@ export function Button({
       accessibilityRole="button"
       accessibilityLabel={label}
       disabled={disabled}
-      className={`${VARIANT_BG[variant]} ${SIZE_HEIGHT[size]} rounded-lg flex-row items-center justify-center ${disabled ? 'opacity-50' : ''} ${className}`}
+      className={`${VARIANT_BG[variant]} ${SIZE_HEIGHT[size]} ${RADIUS_CLASS[radius]} flex-row items-center justify-center ${disabled ? 'opacity-50' : ''} ${className}`}
       {...rest}
     >
-      {leadingIcon ? <View className="mr-2">{leadingIcon}</View> : null}
+      {leadingIcon ? <View className="mr-2.5">{leadingIcon}</View> : null}
       <Body
         size={SIZE_TEXT[size]}
         weight="semibold"

@@ -5,6 +5,7 @@ export { Heading } from './Heading';
 export { ListRow } from './ListRow';
 export { Pill } from './Pill';
 export { ProgressBar } from './ProgressBar';
+export { ScreenHeader } from './ScreenHeader';
 export { SectionLabel } from './SectionLabel';
 export { Stat } from './Stat';
 export { TextField } from './TextField';

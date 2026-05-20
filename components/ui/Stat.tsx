@@ -11,21 +11,29 @@ type Props = ViewProps & {
   className?: string;
 };
 
-// "THIS WEEK · 5 / 7 · 3 to go" stat tile per Figma 08·home (`72:62`).
+// Stat tile per Figma 08·home (`72:62`).
+// Fixed width 173 px (NOT flex-1): two stats with gap-3 between them tile
+// exactly into the 358-px content column. bg surface, no border, p-16,
+// rounded-16. Kicker uses 'tight' tracking (1.2 px).
 export function Stat({ kicker, value, sub, className = '', ...rest }: Props) {
   return (
-    <Card padding="md" radius="xl" className={`flex-1 ${className}`} {...rest}>
-      <SectionLabel>{kicker}</SectionLabel>
+    <Card
+      padding="md"
+      radius="card"
+      className={`w-[173px] ${className}`}
+      {...rest}
+    >
+      <SectionLabel tracking="tight">{kicker}</SectionLabel>
       <Body
-        size="lg"
         weight="semibold"
-        className="text-text-primary mt-1"
+        color="primary"
+        className="mt-1"
         style={{ fontSize: 28, lineHeight: 34 }}
       >
         {value}
       </Body>
       {sub ? (
-        <Body size="xs" color="muted" weight="regular">
+        <Body size="xs" color="muted" weight="regular" className="mt-0.5">
           {sub}
         </Body>
       ) : (

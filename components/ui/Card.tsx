@@ -1,8 +1,11 @@
 import { View, type ViewProps } from 'react-native';
 
 type Elevation = 0 | 1 | 2 | 3;
-type Padding = 'none' | 'sm' | 'md' | 'lg';
-type Radius = 'md' | 'lg' | 'xl' | '2xl';
+type Padding = 'none' | 'sm' | 'md' | 'lg' | 'xl';
+// Foundations radii (md/lg/xl/2xl = 8/12/16/24) plus off-scale Figma literals
+// observed across screens: card-tight=14 (group/week cards), card=16 (alias
+// for xl, used as the in-app canonical), card-hero=20 (home today-session).
+type Radius = 'md' | 'lg' | 'xl' | '2xl' | 'card-tight' | 'card' | 'card-hero';
 
 type Props = ViewProps & {
   elevation?: Elevation;
@@ -15,9 +18,10 @@ type Props = ViewProps & {
 
 const PADDING_CLASS: Record<Padding, string> = {
   none: '',
-  sm: 'p-3',
-  md: 'p-4',
-  lg: 'p-6',
+  sm: 'p-3', // 12
+  md: 'p-4', // 16
+  lg: 'p-6', // 24
+  xl: 'p-5', // 20 — Figma progress index/streak cards
 };
 
 const RADIUS_CLASS: Record<Radius, string> = {
@@ -25,6 +29,9 @@ const RADIUS_CLASS: Record<Radius, string> = {
   lg: 'rounded-lg',
   xl: 'rounded-xl',
   '2xl': 'rounded-2xl',
+  'card-tight': 'rounded-[14px]',
+  card: 'rounded-[16px]',
+  'card-hero': 'rounded-[20px]',
 };
 
 const ELEVATION_CLASS: Record<Elevation, string> = {
