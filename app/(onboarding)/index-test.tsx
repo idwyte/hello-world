@@ -1,359 +1,461 @@
+// Figma: 04 · quick pulse — node 199:387 (stage 1)
+//        05 · max hold     — node 199:415 (stage 2)
+// https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/?node-id=199-387
+// https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/?node-id=199-415
+//
+// Two-stage measurement that powers the Pelvic Floor Index. Both stages
+// share the same screen shell (modal header + PacerRing + helper + CTA).
+// Stage 1 counts down a 30 s window during which the user physically
+// pulses; on completion the screen swaps to a number-stepper for entering
+// the count. Stage 2 counts UP from 0; user taps Stop when they can't
+// hold any longer (capped at 120 s).
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Body, Button, SectionLabel } from '@/components/ui';
+import { PacerRing } from '@/components/session/PacerRing';
 import { scoreIndex } from '@/lib/pelvic-floor-index';
+import { semantic } from '@/lib/theme';
 import { useOnboardingStore } from '@/stores/onboarding';
 
-type Stage = 'intro-reaction' | 'reaction' | 'intro-endurance' | 'endurance' | 'intro-rapid' | 'rapid' | 'done';
+type Stage = 'pulse-idle' | 'pulse-running' | 'pulse-review' | 'hold-idle' | 'hold-running' | 'done';
 
-const REACTION_CUE_COUNT = 5;
-const REACTION_MIN_DELAY_MS = 1500;
-const REACTION_MAX_DELAY_MS = 4000;
-const ENDURANCE_CAP_MS = 30_000;
-const RAPID_WINDOW_MS = 10_000;
+const PULSE_WINDOW_S = 30;
+const HOLD_CAP_S = 120;
 
 export default function IndexTest() {
   const router = useRouter();
   const setIndex = useOnboardingStore((s) => s.setIndex);
 
-  const [stage, setStage] = useState<Stage>('intro-reaction');
-  const [reactionMs, setReactionMs] = useState<number | null>(null);
-  const [enduranceS, setEnduranceS] = useState<number | null>(null);
-  const [rapidReps, setRapidReps] = useState<number | null>(null);
+  const [stage, setStage] = useState<Stage>('pulse-idle');
+  const [pulsesIn30s, setPulsesIn30s] = useState<number | null>(null);
+  const [maxHoldS, setMaxHoldS] = useState<number | null>(null);
 
-  // TEMP (Phase A): the v1.2 assessment uses pulsesIn30s + maxHoldS per
-  // Figma 04 / 05. This screen still runs the v1.0 reaction/endurance/
-  // rapid-reps UI which Phase B rewrites. Until then, we map the v1.0
-  // outputs into the new shape so scoreIndex compiles — values will be
-  // garbage-but-deterministic. Not shipped (dev path only).
-  const finish = useCallback(
-    (_r: number, e: number, p: number) => {
-      const idx = scoreIndex({
-        pulsesIn30s: p * 3, // rough scale: rapid_reps_in_10s → pulses_in_30s
-        maxHoldS: e,
-      });
-      setIndex(idx);
-      router.replace('/generating');
-    },
-    [router, setIndex],
-  );
-
+  // When both measurements land, compute the Index + advance.
   useEffect(() => {
-    if (
-      stage === 'done' &&
-      reactionMs !== null &&
-      enduranceS !== null &&
-      rapidReps !== null
-    ) {
-      finish(reactionMs, enduranceS, rapidReps);
+    if (stage === 'done' && pulsesIn30s !== null && maxHoldS !== null) {
+      const idx = scoreIndex({ pulsesIn30s, maxHoldS });
+      setIndex(idx);
+      router.replace('/assessment');
     }
-  }, [stage, reactionMs, enduranceS, rapidReps, finish]);
+  }, [stage, pulsesIn30s, maxHoldS, router, setIndex]);
+
+  const stageNumber = stage.startsWith('pulse') ? 1 : 2;
 
   return (
-    <SafeAreaView className="flex-1 bg-bg">
-      <View className="flex-1 px-6 pt-4 pb-6">
-        <View className="flex-row items-center justify-between">
-          <Text className="text-muted text-xs uppercase tracking-wider">
-            Pelvic Floor Index
-          </Text>
-          <Text className="text-muted text-xs">{stageLabel(stage)}</Text>
+    <SafeAreaView className="flex-1 bg-surface-canvas">
+      {/* Modal header — Figma `I199:387;...` (cancel × + "Test N of 2") */}
+      <View className="h-14 flex-row items-center px-4">
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={12}
+          accessibilityLabel="Cancel"
+          className="w-8 h-8 items-center justify-center"
+        >
+          <Body color="muted" style={{ fontSize: 24, lineHeight: 24 }}>
+            ×
+          </Body>
+        </Pressable>
+        <View className="flex-1 items-center -ml-8">
+          <Body
+            weight="medium"
+            color="muted"
+            style={{ fontSize: 15, lineHeight: 22 }}
+          >
+            Test {stageNumber} of 2
+          </Body>
         </View>
-
-        {stage === 'intro-reaction' && (
-          <IntroCard
-            title="Test 1 of 3 · Reaction"
-            body="When the circle turns green, contract immediately. Five cues will appear at random intervals."
-            cta="Start"
-            onStart={() => setStage('reaction')}
-          />
-        )}
-        {stage === 'reaction' && (
-          <ReactionTest
-            onDone={(ms) => {
-              setReactionMs(ms);
-              setStage('intro-endurance');
-            }}
-          />
-        )}
-
-        {stage === 'intro-endurance' && (
-          <IntroCard
-            title="Test 2 of 3 · Endurance"
-            body="Press and hold the circle while you hold a single contraction. Release the circle the moment you can't hold the contraction any longer."
-            cta="Start"
-            onStart={() => setStage('endurance')}
-          />
-        )}
-        {stage === 'endurance' && (
-          <EnduranceTest
-            onDone={(s) => {
-              setEnduranceS(s);
-              setStage('intro-rapid');
-            }}
-          />
-        )}
-
-        {stage === 'intro-rapid' && (
-          <IntroCard
-            title="Test 3 of 3 · Rapid reps"
-            body="In ten seconds, tap as many quick contractions as you can. Each tap counts as one rep."
-            cta="Start"
-            onStart={() => setStage('rapid')}
-          />
-        )}
-        {stage === 'rapid' && (
-          <RapidTest
-            onDone={(count) => {
-              setRapidReps(count);
-              setStage('done');
-            }}
-          />
-        )}
-
-        {stage === 'done' && (
-          <View className="flex-1 items-center justify-center">
-            <Text className="text-ink text-lg">Computing your Index…</Text>
-          </View>
-        )}
       </View>
+
+      {stage === 'pulse-idle' && (
+        <PulseStage
+          remainingS={PULSE_WINDOW_S}
+          onPrimary={() => setStage('pulse-running')}
+        />
+      )}
+      {stage === 'pulse-running' && (
+        <PulseRunner
+          windowS={PULSE_WINDOW_S}
+          onComplete={() => setStage('pulse-review')}
+        />
+      )}
+      {stage === 'pulse-review' && (
+        <PulseReview
+          onSubmit={(n) => {
+            setPulsesIn30s(n);
+            setStage('hold-idle');
+          }}
+        />
+      )}
+      {stage === 'hold-idle' && (
+        <HoldStage
+          elapsedS={0}
+          onPrimary={() => setStage('hold-running')}
+        />
+      )}
+      {stage === 'hold-running' && (
+        <HoldRunner
+          capS={HOLD_CAP_S}
+          onComplete={(elapsedS) => {
+            setMaxHoldS(elapsedS);
+            setStage('done');
+          }}
+        />
+      )}
+      {stage === 'done' && (
+        <View className="flex-1 items-center justify-center">
+          <Body color="muted">Computing your Index…</Body>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
 
-function stageLabel(s: Stage): string {
-  if (s.startsWith('intro-reaction') || s === 'reaction') return '1 / 3';
-  if (s.startsWith('intro-endurance') || s === 'endurance') return '2 / 3';
-  if (s.startsWith('intro-rapid') || s === 'rapid') return '3 / 3';
-  return '';
-}
+// === Stage 1 · pulse ===
 
-function IntroCard({
-  title,
-  body,
-  cta,
-  onStart,
+function PulseStage({
+  remainingS,
+  onPrimary,
 }: {
-  title: string;
-  body: string;
-  cta: string;
-  onStart: () => void;
+  remainingS: number;
+  onPrimary: () => void;
 }) {
   return (
-    <View className="flex-1 items-center justify-center">
-      <Text className="text-ink text-2xl font-semibold text-center">{title}</Text>
-      <Text className="text-muted text-center leading-6 mt-4 max-w-xs">
-        {body}
-      </Text>
-      <Pressable
-        onPress={onStart}
-        accessibilityRole="button"
-        accessibilityLabel={cta}
-        className="bg-accent rounded-xl py-4 px-12 mt-10 active:opacity-80"
-      >
-        <Text className="text-ink font-semibold">{cta}</Text>
-      </Pressable>
+    <View className="flex-1 px-6 pb-8">
+      <SectionLabel tracking="wide" className="text-center">
+        QUICK PULSE
+      </SectionLabel>
+      <View className="flex-1 items-center justify-center -mt-4">
+        <View className="items-center">
+          <PacerRing progress={1} color={semantic.borderDefault} size={260} strokeWidth={6} />
+          <View
+            className="absolute inset-0 items-center justify-center"
+            pointerEvents="none"
+          >
+            <Body
+              weight="semibold"
+              color="primary"
+              style={{ fontSize: 56, lineHeight: 60 }}
+            >
+              {formatTimer(remainingS)}
+            </Body>
+            <Body
+              weight="medium"
+              color="muted"
+              className="mt-1"
+              style={{ fontSize: 12, lineHeight: 16, letterSpacing: 1.4 }}
+            >
+              SECONDS
+            </Body>
+          </View>
+        </View>
+        <Body
+          weight="medium"
+          color="primary"
+          className="text-center mt-8"
+          style={{ fontSize: 16, lineHeight: 24 }}
+        >
+          Squeeze and release as fast as you can.
+        </Body>
+        <Body
+          color="muted"
+          size="sm"
+          className="text-center mt-2 px-4"
+        >
+          Tap Start when ready. Count happens automatically — just go.
+        </Body>
+      </View>
+      <Button
+        label="Start"
+        variant="primary"
+        size="lg"
+        radius="cta"
+        onPress={onPrimary}
+      />
     </View>
   );
 }
 
-function ReactionTest({ onDone }: { onDone: (ms: number) => void }) {
-  const [isCueActive, setIsCueActive] = useState(false);
-  const [cueIndex, setCueIndex] = useState(0);
-  const cueShownAtRef = useRef<number>(0);
-  const samplesRef = useRef<number[]>([]);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const scheduleNextCue = useCallback(() => {
-    const delay =
-      REACTION_MIN_DELAY_MS +
-      Math.random() * (REACTION_MAX_DELAY_MS - REACTION_MIN_DELAY_MS);
-    timeoutRef.current = setTimeout(() => {
-      cueShownAtRef.current = Date.now();
-      setIsCueActive(true);
-    }, delay);
-  }, []);
+function PulseRunner({
+  windowS,
+  onComplete,
+}: {
+  windowS: number;
+  onComplete: () => void;
+}) {
+  const [remainingMs, setRemainingMs] = useState(windowS * 1000);
+  const startRef = useRef(Date.now());
 
   useEffect(() => {
-    if (cueIndex < REACTION_CUE_COUNT) {
-      scheduleNextCue();
-    }
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, [cueIndex, scheduleNextCue]);
-
-  function onTap() {
-    if (!isCueActive) return;
-    const ms = Date.now() - cueShownAtRef.current;
-    samplesRef.current.push(ms);
-    setIsCueActive(false);
-    const nextIndex = cueIndex + 1;
-    if (nextIndex >= REACTION_CUE_COUNT) {
-      const avg =
-        samplesRef.current.reduce((a, b) => a + b, 0) / samplesRef.current.length;
-      onDone(avg);
-      return;
-    }
-    setCueIndex(nextIndex);
-  }
-
-  return (
-    <View className="flex-1 items-center justify-center">
-      <Text className="text-muted text-sm">
-        Cue {Math.min(cueIndex + 1, REACTION_CUE_COUNT)} of {REACTION_CUE_COUNT}
-      </Text>
-      <Pressable
-        onPress={onTap}
-        accessibilityRole="button"
-        accessibilityLabel="Tap when the circle turns green"
-        className="mt-6 active:opacity-80"
-      >
-        <View
-          style={{
-            width: 220,
-            height: 220,
-            borderRadius: 110,
-            backgroundColor: isCueActive ? '#22C55E' : '#1E1E27',
-            borderWidth: 2,
-            borderColor: isCueActive ? '#22C55E' : '#2A2A33',
-          }}
-        />
-      </Pressable>
-      <Text className="text-muted text-xs mt-6 text-center max-w-xs">
-        Wait for green, then tap as fast as you can.
-      </Text>
-    </View>
-  );
-}
-
-function EnduranceTest({ onDone }: { onDone: (s: number) => void }) {
-  const [pressedAt, setPressedAt] = useState<number | null>(null);
-  const [elapsedMs, setElapsedMs] = useState(0);
-  const capRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (pressedAt === null) return;
-    const id = setInterval(() => {
-      const next = Date.now() - pressedAt;
-      setElapsedMs(Math.min(next, ENDURANCE_CAP_MS));
-    }, 100);
-    capRef.current = setTimeout(() => {
-      onDone(ENDURANCE_CAP_MS / 1000);
-    }, ENDURANCE_CAP_MS);
-    return () => {
-      clearInterval(id);
-      if (capRef.current) clearTimeout(capRef.current);
-    };
-  }, [pressedAt, onDone]);
-
-  function handlePressIn() {
-    if (pressedAt !== null) return;
-    setPressedAt(Date.now());
-  }
-
-  function handlePressOut() {
-    if (pressedAt === null) return;
-    if (capRef.current) clearTimeout(capRef.current);
-    const totalMs = Math.min(Date.now() - pressedAt, ENDURANCE_CAP_MS);
-    onDone(totalMs / 1000);
-  }
-
-  const seconds = (elapsedMs / 1000).toFixed(1);
-
-  return (
-    <View className="flex-1 items-center justify-center">
-      <Text className="text-ink text-4xl font-semibold">{seconds}s</Text>
-      <Pressable
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        accessibilityRole="button"
-        accessibilityLabel="Press and hold while you contract; release when you can't hold any longer"
-        className="mt-8 active:opacity-90"
-      >
-        <View
-          style={{
-            width: 220,
-            height: 220,
-            borderRadius: 110,
-            backgroundColor: pressedAt !== null ? '#7C5CFF' : '#1E1E27',
-            borderWidth: 2,
-            borderColor: pressedAt !== null ? '#7C5CFF' : '#2A2A33',
-          }}
-        />
-      </Pressable>
-      <Text className="text-muted text-xs mt-6 text-center max-w-xs">
-        Press and hold. Release when you can't hold the contraction any longer.
-      </Text>
-    </View>
-  );
-}
-
-function RapidTest({ onDone }: { onDone: (count: number) => void }) {
-  const [started, setStarted] = useState(false);
-  const [count, setCount] = useState(0);
-  const [remainingMs, setRemainingMs] = useState(RAPID_WINDOW_MS);
-  const startedAtRef = useRef<number>(0);
-
-  useEffect(() => {
-    if (!started) return;
-    startedAtRef.current = Date.now();
     const tick = setInterval(() => {
-      const remaining = RAPID_WINDOW_MS - (Date.now() - startedAtRef.current);
+      const elapsed = Date.now() - startRef.current;
+      const remaining = Math.max(0, windowS * 1000 - elapsed);
+      setRemainingMs(remaining);
       if (remaining <= 0) {
         clearInterval(tick);
-        setRemainingMs(0);
-        // Use a callback so we read the latest count
-        setCount((c) => {
-          onDone(c);
-          return c;
-        });
-      } else {
-        setRemainingMs(remaining);
+        onComplete();
       }
     }, 100);
     return () => clearInterval(tick);
-  }, [started, onDone]);
+  }, [windowS, onComplete]);
 
-  if (!started) {
-    return (
-      <IntroCard
-        title="Ready?"
-        body="Tap the circle as many times as you can in ten seconds."
-        cta="Begin"
-        onStart={() => setStarted(true)}
-      />
-    );
-  }
-
-  const seconds = Math.max(0, Math.ceil(remainingMs / 1000));
+  const remainingS = Math.ceil(remainingMs / 1000);
+  const progress = remainingMs / (windowS * 1000);
 
   return (
-    <View className="flex-1 items-center justify-center">
-      <Text className="text-muted text-sm">{seconds}s left</Text>
-      <Text className="text-ink text-5xl font-semibold mt-2">{count}</Text>
-      <Pressable
-        onPress={() => {
-          if (remainingMs <= 0) return;
-          setCount((c) => c + 1);
-        }}
-        accessibilityRole="button"
-        accessibilityLabel="Tap to count a contraction"
-        className="mt-8 active:opacity-80"
-      >
-        <View
-          style={{
-            width: 220,
-            height: 220,
-            borderRadius: 110,
-            backgroundColor: '#7C5CFF',
-          }}
-        />
-      </Pressable>
-      <Text className="text-muted text-xs mt-6 text-center max-w-xs">
-        Tap as fast as you can.
-      </Text>
+    <View className="flex-1 px-6 pb-8">
+      <SectionLabel tracking="wide" className="text-center">
+        QUICK PULSE
+      </SectionLabel>
+      <View className="flex-1 items-center justify-center -mt-4">
+        <View className="items-center">
+          <PacerRing progress={progress} color={semantic.interactivePrimary} size={260} strokeWidth={6} />
+          <View
+            className="absolute inset-0 items-center justify-center"
+            pointerEvents="none"
+          >
+            <Body
+              weight="semibold"
+              color="primary"
+              style={{ fontSize: 56, lineHeight: 60 }}
+            >
+              {formatTimer(remainingS)}
+            </Body>
+            <Body
+              weight="medium"
+              color="muted"
+              className="mt-1"
+              style={{ fontSize: 12, lineHeight: 16, letterSpacing: 1.4 }}
+            >
+              SECONDS
+            </Body>
+          </View>
+        </View>
+        <Body
+          weight="medium"
+          color="primary"
+          className="text-center mt-8"
+          style={{ fontSize: 16, lineHeight: 24 }}
+        >
+          Pulse now — squeeze and release.
+        </Body>
+      </View>
+      <Button
+        label="Stop early"
+        variant="secondary"
+        size="lg"
+        radius="cta"
+        onPress={onComplete}
+      />
     </View>
   );
+}
+
+function PulseReview({ onSubmit }: { onSubmit: (n: number) => void }) {
+  const [count, setCount] = useState(30);
+  return (
+    <View className="flex-1 px-6 pb-8">
+      <SectionLabel tracking="wide" className="text-center">
+        QUICK PULSE
+      </SectionLabel>
+      <View className="flex-1 items-center justify-center">
+        <Body
+          weight="semibold"
+          color="primary"
+          className="text-center"
+          style={{ fontSize: 22, lineHeight: 28 }}
+        >
+          How many pulses did you complete?
+        </Body>
+        <Body color="muted" size="sm" className="text-center mt-2 px-4">
+          Estimate is fine — you don&rsquo;t need to be exact.
+        </Body>
+        <View className="flex-row items-center mt-10 gap-6">
+          <Stepper sign="-" onPress={() => setCount((c) => Math.max(0, c - 1))} />
+          <Body
+            weight="semibold"
+            color="primary"
+            style={{ fontSize: 64, lineHeight: 72, minWidth: 120, textAlign: 'center' }}
+          >
+            {count}
+          </Body>
+          <Stepper sign="+" onPress={() => setCount((c) => Math.min(200, c + 1))} />
+        </View>
+      </View>
+      <Button
+        label="Submit"
+        variant="primary"
+        size="lg"
+        radius="cta"
+        onPress={() => onSubmit(count)}
+      />
+    </View>
+  );
+}
+
+function Stepper({ sign, onPress }: { sign: '+' | '-'; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={sign === '+' ? 'Increase' : 'Decrease'}
+      hitSlop={12}
+      className="w-14 h-14 rounded-full bg-surface-raised items-center justify-center active:opacity-70"
+      style={{
+        borderWidth: 1,
+        borderColor: semantic.borderDefault,
+      }}
+    >
+      <Body
+        weight="semibold"
+        color="primary"
+        style={{ fontSize: 28, lineHeight: 28 }}
+      >
+        {sign}
+      </Body>
+    </Pressable>
+  );
+}
+
+// === Stage 2 · hold ===
+
+function HoldStage({
+  elapsedS,
+  onPrimary,
+}: {
+  elapsedS: number;
+  onPrimary: () => void;
+}) {
+  return (
+    <View className="flex-1 px-6 pb-8">
+      <SectionLabel tracking="wide" className="text-center">
+        MAX HOLD
+      </SectionLabel>
+      <View className="flex-1 items-center justify-center -mt-4">
+        <View className="items-center">
+          <PacerRing progress={0} color={semantic.interactivePrimary} size={260} strokeWidth={6} />
+          <View
+            className="absolute inset-0 items-center justify-center"
+            pointerEvents="none"
+          >
+            <Body
+              weight="semibold"
+              color="primary"
+              style={{ fontSize: 56, lineHeight: 60 }}
+            >
+              {formatTimer(elapsedS)}
+            </Body>
+            <Body
+              weight="medium"
+              color="muted"
+              className="mt-1"
+              style={{ fontSize: 12, lineHeight: 16, letterSpacing: 1.4 }}
+            >
+              HOLDING
+            </Body>
+          </View>
+        </View>
+        <Body
+          weight="medium"
+          color="primary"
+          className="text-center mt-8"
+          style={{ fontSize: 16, lineHeight: 24 }}
+        >
+          Hold for as long as you can.
+        </Body>
+        <Body color="muted" size="sm" className="text-center mt-2 px-4">
+          Tap Start, squeeze, and hold. Tap Stop when you can&rsquo;t hold any longer.
+        </Body>
+      </View>
+      <Button
+        label="Start"
+        variant="primary"
+        size="lg"
+        radius="cta"
+        onPress={onPrimary}
+      />
+    </View>
+  );
+}
+
+function HoldRunner({
+  capS,
+  onComplete,
+}: {
+  capS: number;
+  onComplete: (elapsedS: number) => void;
+}) {
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const startRef = useRef(Date.now());
+
+  useEffect(() => {
+    const tick = setInterval(() => {
+      const e = Math.min(capS * 1000, Date.now() - startRef.current);
+      setElapsedMs(e);
+      if (e >= capS * 1000) {
+        clearInterval(tick);
+        onComplete(capS);
+      }
+    }, 100);
+    return () => clearInterval(tick);
+  }, [capS, onComplete]);
+
+  const elapsedS = Math.floor(elapsedMs / 1000);
+  const progress = Math.min(1, elapsedMs / (capS * 1000));
+
+  return (
+    <View className="flex-1 px-6 pb-8">
+      <SectionLabel tracking="wide" className="text-center">
+        MAX HOLD
+      </SectionLabel>
+      <View className="flex-1 items-center justify-center -mt-4">
+        <View className="items-center">
+          <PacerRing progress={progress} color={semantic.interactivePrimary} size={260} strokeWidth={6} />
+          <View
+            className="absolute inset-0 items-center justify-center"
+            pointerEvents="none"
+          >
+            <Body
+              weight="semibold"
+              color="primary"
+              style={{ fontSize: 56, lineHeight: 60 }}
+            >
+              {formatTimer(elapsedS)}
+            </Body>
+            <Body
+              weight="medium"
+              color="muted"
+              className="mt-1"
+              style={{ fontSize: 12, lineHeight: 16, letterSpacing: 1.4 }}
+            >
+              HOLDING
+            </Body>
+          </View>
+        </View>
+        <Body
+          weight="medium"
+          color="primary"
+          className="text-center mt-8"
+          style={{ fontSize: 16, lineHeight: 24 }}
+        >
+          Keep holding…
+        </Body>
+      </View>
+      <Button
+        label="Stop"
+        variant="primary"
+        size="lg"
+        radius="cta"
+        onPress={() => onComplete(Math.floor(elapsedMs / 1000))}
+      />
+    </View>
+  );
+}
+
+function formatTimer(s: number): string {
+  const mins = Math.floor(s / 60);
+  const secs = s % 60;
+  return `${mins}:${String(secs).padStart(2, '0')}`;
 }

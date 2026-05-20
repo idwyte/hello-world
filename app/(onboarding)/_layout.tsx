@@ -10,8 +10,9 @@ export default function OnboardingLayout() {
       }}
     >
       <Stack.Screen name="welcome" />
-      <Stack.Screen name="assessment" />
+      <Stack.Screen name="assessment-intro" />
       <Stack.Screen name="index-test" />
+      <Stack.Screen name="assessment" />
       <Stack.Screen name="generating" />
       <Stack.Screen name="plan-preview" />
       <Stack.Screen name="paywall" />

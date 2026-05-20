@@ -47,12 +47,19 @@ export default function Index() {
 }
 
 // Edit this to change the dev launch destination. Examples:
-//   '/welcome'        — Figma 01, full onboarding walk
-//   '/assessment'     — Figma 03, skip splash + jump to the 3-question quiz
-//   '/home'           — Figma 08, skip onboarding entirely
-//   '/sign-in'        — Figma 02, validate auth screen
-const DEV_ENTRY: '/assessment' | '/welcome' | '/home' | '/sign-in' =
-  '/assessment';
+//   '/welcome'           — Figma 01, full onboarding walk
+//   '/assessment-intro'  — Figma 03 (NEW), 6-step preview before tests
+//   '/index-test'        — Figma 04+05 (NEW), pulse + hold measurements
+//   '/assessment'        — Figma 06-09 (NEW), 4 lifestyle questions
+//   '/home'              — Figma 08, skip onboarding entirely
+//   '/sign-in'           — Figma 02, validate auth screen
+const DEV_ENTRY:
+  | '/assessment-intro'
+  | '/welcome'
+  | '/index-test'
+  | '/assessment'
+  | '/home'
+  | '/sign-in' = '/assessment-intro';
 
 function Router() {
   const auth = useAuth();

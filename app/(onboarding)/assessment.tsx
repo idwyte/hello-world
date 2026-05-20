@@ -23,7 +23,10 @@ export default function Assessment() {
     if (step < QUESTIONS.length - 1) {
       next();
     } else {
-      router.replace('/index-test');
+      // v1.2 flow: measurements (/index-test) happen BEFORE the
+      // lifestyle questions. After the last question we go straight to
+      // /generating, which has both the Index + the lifestyle answers.
+      router.replace('/generating');
     }
   }
 
@@ -66,7 +69,7 @@ export default function Assessment() {
           disabled={!hasValue}
           accessibilityRole="button"
           accessibilityLabel={
-            step === QUESTIONS.length - 1 ? 'Begin Index test' : 'Next question'
+            step === QUESTIONS.length - 1 ? 'Build my plan' : 'Next question'
           }
           accessibilityState={{ disabled: !hasValue }}
           className={`rounded-xl py-4 items-center active:opacity-80 ${
@@ -74,7 +77,7 @@ export default function Assessment() {
           }`}
         >
           <Text className="text-ink font-semibold">
-            {step === QUESTIONS.length - 1 ? 'Take the Index test' : 'Continue'}
+            {step === QUESTIONS.length - 1 ? 'Build my plan' : 'Continue'}
           </Text>
         </Pressable>
       </View>

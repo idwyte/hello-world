@@ -1,6 +1,8 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import type { Question } from '@/lib/assessment-questions';
+import { Body } from '@/components/ui';
+import { semantic } from '@/lib/theme';
 
 type Props = {
   question: Question;
@@ -19,58 +21,163 @@ function isSelected(question: Question, current: unknown, choiceValue: unknown) 
 }
 
 export function QuestionCard({ question, value, onSelect }: Props) {
+  const layout = question.layout ?? 'list';
+
+  function handleSelect(choiceValue: unknown) {
+    if (question.kind === 'multi') {
+      const current = Array.isArray(value) ? [...(value as unknown[])] : [];
+      if (current.includes(choiceValue)) {
+        onSelect(current.filter((v) => v !== choiceValue));
+      } else if (choiceValue === 'none') {
+        onSelect(['none']);
+      } else {
+        onSelect([...current.filter((v) => v !== 'none'), choiceValue]);
+      }
+    } else {
+      onSelect(choiceValue);
+    }
+  }
+
   return (
     <View>
-      <Text className="text-ink text-2xl font-semibold leading-8">
+      <Body
+        weight="semibold"
+        color="primary"
+        style={{ fontSize: 28, lineHeight: 36 }}
+      >
         {question.prompt}
-      </Text>
+      </Body>
       {question.help ? (
-        <Text className="text-muted text-sm mt-2 leading-5">{question.help}</Text>
+        <Body size="sm" color="muted" className="mt-2">
+          {question.help}
+        </Body>
       ) : null}
 
-      <View className="mt-6 gap-3">
-        {question.choices.map((c, idx) => {
-          const selected = isSelected(question, value, c.value);
-          return (
-            <Pressable
-              key={`${question.id}-${idx}`}
-              onPress={() => {
-                if (question.kind === 'multi') {
-                  const current = Array.isArray(value) ? [...(value as unknown[])] : [];
-                  if (current.includes(c.value)) {
-                    onSelect(current.filter((v) => v !== c.value));
-                  } else {
-                    // "none" is exclusive
-                    if (c.value === 'none') {
-                      onSelect(['none']);
-                    } else {
-                      onSelect([...current.filter((v) => v !== 'none'), c.value]);
-                    }
-                  }
-                } else {
-                  onSelect(c.value);
-                }
-              }}
-              accessibilityRole={question.kind === 'multi' ? 'checkbox' : 'radio'}
-              accessibilityState={{ checked: selected }}
-              accessibilityLabel={c.label}
-              className={`py-4 px-5 rounded-xl border active:opacity-80 ${
-                selected
-                  ? 'bg-accent border-accent'
-                  : 'bg-surface border-border'
-              }`}
+      {layout === 'list' ? (
+        <ListChoices
+          question={question}
+          value={value}
+          onSelect={handleSelect}
+        />
+      ) : layout === 'grid' ? (
+        <GridChoices
+          question={question}
+          value={value}
+          onSelect={handleSelect}
+        />
+      ) : (
+        <SegmentedChoices
+          question={question}
+          value={value}
+          onSelect={handleSelect}
+        />
+      )}
+    </View>
+  );
+}
+
+// Figma 09 · intimacy — stacked full-width cards, 358×64, surface bg,
+// selected = accent stroke 2 + Semi Bold label.
+function ListChoices({ question, value, onSelect }: Props) {
+  return (
+    <View className="mt-6 gap-3">
+      {question.choices.map((c, idx) => {
+        const selected = isSelected(question, value, c.value);
+        return (
+          <Pressable
+            key={`${question.id}-${idx}`}
+            onPress={() => onSelect(c.value)}
+            accessibilityRole={question.kind === 'multi' ? 'checkbox' : 'radio'}
+            accessibilityState={{ checked: selected }}
+            accessibilityLabel={c.label}
+            className="bg-surface-raised rounded-[14px] px-5 h-16 justify-center active:opacity-80"
+            style={{
+              borderWidth: selected ? 2 : 1,
+              borderColor: selected ? semantic.interactivePrimary : semantic.borderDefault,
+            }}
+          >
+            <Body
+              color="primary"
+              weight={selected ? 'semibold' : 'regular'}
+              style={{ fontSize: 16, lineHeight: 24 }}
             >
-              <Text
-                className={`text-base ${
-                  selected ? 'text-ink font-semibold' : 'text-ink'
-                }`}
-              >
-                {c.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+              {c.label}
+            </Body>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+// Figma 06 · age — 2-column grid of band cards (171×64 each, gap-3).
+// Two stats per row with gap-3 fits a 358-wide content column exactly
+// (171 + 12 + 171 = 354 ≈ row).
+function GridChoices({ question, value, onSelect }: Props) {
+  return (
+    <View className="mt-6 flex-row flex-wrap gap-3">
+      {question.choices.map((c, idx) => {
+        const selected = isSelected(question, value, c.value);
+        return (
+          <Pressable
+            key={`${question.id}-${idx}`}
+            onPress={() => onSelect(c.value)}
+            accessibilityRole={question.kind === 'multi' ? 'checkbox' : 'radio'}
+            accessibilityState={{ checked: selected }}
+            accessibilityLabel={c.label}
+            className="bg-surface-raised rounded-[14px] h-16 items-center justify-center active:opacity-80"
+            style={{
+              width: '48%',
+              borderWidth: selected ? 2 : 1,
+              borderColor: selected ? semantic.interactivePrimary : semantic.borderDefault,
+            }}
+          >
+            <Body
+              color="primary"
+              weight={selected ? 'semibold' : 'regular'}
+              style={{ fontSize: 17, lineHeight: 24 }}
+            >
+              {c.label}
+            </Body>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+// Figma 07/08 · strength/cardio — horizontal segmented control,
+// 8 cells × 42 wide + gap-1, centered. Selected = accent fill.
+function SegmentedChoices({ question, value, onSelect }: Props) {
+  return (
+    <View className="mt-6 flex-row gap-1 justify-center">
+      {question.choices.map((c, idx) => {
+        const selected = isSelected(question, value, c.value);
+        return (
+          <Pressable
+            key={`${question.id}-${idx}`}
+            onPress={() => onSelect(c.value)}
+            accessibilityRole={question.kind === 'multi' ? 'checkbox' : 'radio'}
+            accessibilityState={{ checked: selected }}
+            accessibilityLabel={c.label}
+            className="h-14 items-center justify-center rounded-xl active:opacity-80"
+            style={{
+              width: 42,
+              backgroundColor: selected ? semantic.interactivePrimary : semantic.surfaceRaised,
+              borderWidth: selected ? 2 : 1,
+              borderColor: selected ? semantic.interactivePrimary : semantic.borderDefault,
+            }}
+          >
+            <Body
+              color="primary"
+              weight="semibold"
+              style={{ fontSize: 17, lineHeight: 24 }}
+            >
+              {c.label}
+            </Body>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }

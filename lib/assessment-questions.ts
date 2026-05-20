@@ -2,6 +2,11 @@ import type { AssessmentAnswers } from './types';
 
 type Choice<V> = { label: string; value: V };
 
+// Layout hint for QuestionCard. Defaults to 'list' (stacked full-width
+// buttons) per Figma 09 (intimacy). 'grid' is 2-column per Figma 06 (age).
+// 'segmented' is a single horizontal row per Figma 07/08 (days picker).
+export type QuestionLayout = 'list' | 'grid' | 'segmented';
+
 export type Question =
   | {
       kind: 'single';
@@ -9,6 +14,7 @@ export type Question =
       prompt: string;
       help?: string;
       choices: Choice<unknown>[];
+      layout?: QuestionLayout;
     }
   | {
       // Reserved for future multi-select questions; no current usage.
@@ -17,6 +23,7 @@ export type Question =
       prompt: string;
       help?: string;
       choices: Choice<unknown>[];
+      layout?: QuestionLayout;
     };
 
 // v1.2 lifestyle questions per Figma:
@@ -33,6 +40,7 @@ export const QUESTIONS: Question[] = [
     id: 'ageBand',
     prompt: 'How old are you?',
     help: 'We adjust the program intensity based on age.',
+    layout: 'grid',
     choices: [
       { label: '18–25', value: '18-25' },
       { label: '26–35', value: '26-35' },
@@ -47,6 +55,7 @@ export const QUESTIONS: Question[] = [
     id: 'strengthDaysPerWeek',
     prompt: 'Days of strength training?',
     help: 'How many days per week do you train with intensity (weights, resistance, intense bodyweight)?',
+    layout: 'segmented',
     choices: [
       { label: '0', value: 0 },
       { label: '1', value: 1 },
@@ -63,6 +72,7 @@ export const QUESTIONS: Question[] = [
     id: 'cardioDaysPerWeek',
     prompt: 'Days of cardio?',
     help: 'Aerobic activity that gets your heart rate up: running, cycling, swimming, brisk walking.',
+    layout: 'segmented',
     choices: [
       { label: '0', value: 0 },
       { label: '1', value: 1 },
@@ -79,6 +89,7 @@ export const QUESTIONS: Question[] = [
     id: 'intimacyPerWeek',
     prompt: 'Intimacy frequency?',
     help: 'Roughly how often per week, on average. Honest answers help us tailor — never shared.',
+    layout: 'list',
     // Maps the 4-band Figma 09 UI to the 0-7 numeric type. Rarely=0,
     // Weekly=1, "A few times a week"=3, "Daily or more"=7.
     choices: [

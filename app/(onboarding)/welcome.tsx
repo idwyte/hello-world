@@ -21,7 +21,7 @@ export default function Welcome() {
         </View>
 
         <Pressable
-          onPress={() => router.push('/assessment')}
+          onPress={() => router.push('/assessment-intro')}
           accessibilityRole="button"
           accessibilityLabel="Start assessment"
           className="bg-accent rounded-xl py-4 items-center active:opacity-80"
