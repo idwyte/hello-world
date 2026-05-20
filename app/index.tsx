@@ -30,9 +30,13 @@ function useOnboardingState(userId: string | null) {
 }
 
 export default function Index() {
-  // No backend wired up yet → run the M1 demo flow.
+  // No backend wired up yet → demo / walk-through mode. Enter at /welcome so
+  // the entire onboarding chain is reachable on dev emulator without
+  // configuring Supabase. The persistence layer no-ops cleanly when
+  // hasSupabaseConfig() is false, so welcome → assessment → index-test →
+  // generating → plan-preview → paywall → home works end-to-end.
   if (!hasSupabaseConfig()) {
-    return <Redirect href="/home" />;
+    return <Redirect href="/welcome" />;
   }
 
   return <Router />;

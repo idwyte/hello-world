@@ -181,13 +181,15 @@ export default function Player() {
           <Text className="text-muted mt-2 text-center">
             Nice. Consistency is the whole game.
           </Text>
+          {/* Route through /session/complete (Figma 14) for the celebration
+              + rating + Done flow before returning to home. */}
           <Pressable
-            onPress={() => router.replace('/home')}
+            onPress={() => router.replace('/session/complete')}
             className="bg-accent rounded-xl mt-8 py-4 px-8 active:opacity-80"
             accessibilityRole="button"
-            accessibilityLabel="Back to home"
+            accessibilityLabel="Continue"
           >
-            <Text className="text-ink font-semibold">Back to home</Text>
+            <Text className="text-ink font-semibold">Continue</Text>
           </Pressable>
         </View>
       </SafeAreaView>

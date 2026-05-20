@@ -12,7 +12,9 @@ export default function Account() {
   const [busy, setBusy] = useState(false);
   const configured = hasSupabaseConfig();
 
-  function confirmDelete() {
+  // Retained: the underlying RPC chain the new /settings/delete-account stub
+  // will call once promoted from stub to full screen.
+  function _confirmDelete() {
     Alert.alert(
       'Delete account?',
       'This permanently removes your account, assessments, programs, and session history. This cannot be undone.',
@@ -90,8 +92,12 @@ export default function Account() {
             <Text className="text-ink">Sign out</Text>
           </Pressable>
 
+          {/* Routes to /settings/delete-account (Figma 29) instead of an
+              inline Alert — the stub provides the type-to-confirm flow that
+              App Store policy requires. confirmDelete() retained as the
+              underlying RPC for the stub to call once promoted. */}
           <Pressable
-            onPress={confirmDelete}
+            onPress={() => router.push('/settings/delete-account')}
             disabled={busy || !configured}
             accessibilityRole="button"
             accessibilityLabel="Delete account"

@@ -1,9 +1,11 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Platform,
+  Pressable,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,6 +27,7 @@ import { hasGoogleConfig, hasSupabaseConfig } from '@/lib/env';
 import { semantic } from '@/lib/theme';
 
 export default function SignIn() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState<
     null | 'apple' | 'google' | 'email' | 'guest'
@@ -146,6 +149,7 @@ export default function SignIn() {
               withBusy('email', async () => {
                 await sendMagicLink(email);
                 setEmailSent(true);
+                router.push({ pathname: '/check-email', params: { email } });
               })
             }
           />
@@ -155,6 +159,23 @@ export default function SignIn() {
               <ActivityIndicator color={semantic.interactivePrimary} />
             </View>
           ) : null}
+
+          {/* New here? — Figma 02·sign-in flow: sign-in & sign-up are mirror
+              screens, link to /sign-up for first-time framing. */}
+          <View className="flex-row items-center justify-center mt-3 gap-1.5">
+            <Body size="sm" color="muted">
+              New here?
+            </Body>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Sign up"
+              onPress={() => router.push('/sign-up')}
+            >
+              <Body size="sm" weight="semibold" color="accent">
+                Sign up
+              </Body>
+            </Pressable>
+          </View>
 
           <Body size="xs" color="muted" className="text-center mt-4 px-2">
             By continuing you agree that pelvic floor training is general

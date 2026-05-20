@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { ScrollView, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Body, Card, Pill, ScreenHeader } from '@/components/ui';
@@ -47,6 +48,7 @@ function prettyExercises(slugs: string[]): string {
 const WEEKDAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 export default function Program() {
+  const router = useRouter();
   const daysQuery = useQuery({
     queryKey: ['program-days'],
     enabled: hasSupabaseConfig(),
@@ -92,9 +94,19 @@ export default function Program() {
           <View className="gap-3 mt-2">
             {weeks.map((week, wi) => {
               const completed = 0; // TODO: cross-reference sessions to compute completion
+              const firstDay = week[0];
               return (
-                <Card
+                <Pressable
                   key={wi}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Week ${wi + 1}`}
+                  onPress={() =>
+                    firstDay
+                      ? router.push(`/program/day/${firstDay.id}`)
+                      : undefined
+                  }
+                >
+                <Card
                   padding="md"
                   radius="card-tight"
                   className="w-[358px] self-center"
@@ -154,6 +166,7 @@ export default function Program() {
                     })}
                   </View>
                 </Card>
+                </Pressable>
               );
             })}
           </View>

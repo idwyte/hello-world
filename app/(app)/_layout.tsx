@@ -74,9 +74,16 @@ export default function AppLayout() {
           tabBarAccessibilityLabel: 'Settings',
         }}
       />
-      {/* Hidden routes — reachable via router.push but not part of tab bar. */}
+      {/* Hidden routes — reachable via router.push but not part of tab bar.
+          expo-router auto-registers every top-level (app)/* file/folder, so
+          each non-tab destination needs an explicit href: null. */}
       <Tabs.Screen name="session" options={{ href: null }} />
       <Tabs.Screen name="index-retest" options={{ href: null }} />
+      <Tabs.Screen name="error" options={{ href: null }} />
+      <Tabs.Screen name="maintenance" options={{ href: null }} />
+      <Tabs.Screen name="legal" options={{ href: null }} />
+      <Tabs.Screen name="education" options={{ href: null }} />
+      <Tabs.Screen name="coachmark" options={{ href: null }} />
     </Tabs>
   );
 }
