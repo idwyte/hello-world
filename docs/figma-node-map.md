@@ -63,3 +63,31 @@ Figma node via `get_design_context` and use that as the source of truth
 for component choice, tokens, spacing, typography, and layout.** The
 roadmap text descriptions in `docs/hone-roadmap-state.md` are a
 checklist, not a spec.
+
+---
+
+## Phase F proposals — Assessment + AI pivot (pending user approval)
+
+Drafted 2026-05-20 below the existing 41 screens on the Screens page
+(canvas `2:4`). These supersede screens 03 / 04 / 05 / 10 / 11 from
+the table above, and add 06 / 07 / 08 / 09 as new lifestyle-question
+screens. See `/root/.claude/plans/relay-the-plan-for-stateless-gadget.md`
+for the full pivot plan.
+
+| # | Node ID | New screen | Replaces / new | Code target |
+|---|---|---|---|---|
+| 03 | `199:341` | assessment intro (6-step timeline) | replaces old 03 (3-Q quiz) | `app/(onboarding)/assessment.tsx` |
+| 04 | `199:387` | Test 1 · quick pulse, 30 s | replaces old 04 (reaction tap) | `app/(onboarding)/index-test.tsx` (stage 1) |
+| 05 | `199:415` | Test 2 · max hold | replaces old 05 (endurance hold) | `app/(onboarding)/index-test.tsx` (stage 2) |
+| 06 | `197:341` | Question · age band | NEW | `app/(onboarding)/assessment.tsx` |
+| 07 | `199:443` | Question · strength days/week | NEW | `app/(onboarding)/assessment.tsx` |
+| 08 | `199:481` | Question · cardio days/week | NEW | `app/(onboarding)/assessment.tsx` |
+| 09 | `199:519` | Question · intimacy frequency | NEW | `app/(onboarding)/assessment.tsx` |
+| 10 | `199:551` | generating (AI plan call) | replaces old 10 generating | `app/(onboarding)/generating.tsx` |
+| 11 | `199:584` | plan-preview (new framing) | replaces old 11 plan-preview | `app/(onboarding)/plan-preview.tsx` |
+
+Once the user approves these (or iterates), the table above gets the
+new IDs and the originals (62:26, 66:42, 67:47, 68:60, 69:86) are
+archived in the file with a `-v1` suffix in their frame name.
+
+---
