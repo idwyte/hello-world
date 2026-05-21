@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PacerRing } from '@/components/session/PacerRing';
 import { PhaseLabel, colorForPhase } from '@/components/session/PhaseLabel';
+import { Body, Button, SectionLabel } from '@/components/ui';
 import { hasSupabaseConfig } from '@/lib/env';
 import { EXERCISES, getExercise } from '@/lib/exercises';
 import { play, patternForPhase } from '@/lib/haptics';
@@ -16,6 +17,7 @@ import {
   createSessionRunner,
 } from '@/lib/session-engine';
 import { fetchTodayProgramDay, logCompletedSession } from '@/lib/sessions';
+import { semantic } from '@/lib/theme';
 import type { PhaseKind, ProgramDay } from '@/lib/types';
 import { useSessionStore } from '@/stores/session';
 
@@ -54,9 +56,27 @@ export default function Player() {
   const logSession = useSessionStore((s) => s.logSession);
   const queryClient = useQueryClient();
   const [tick, setTick] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const runnerRef = useRef<SessionRunner | null>(null);
   const timelineRef = useRef<ReturnType<typeof buildTimeline>>([]);
   const startedAtRef = useRef<number>(0);
+
+  function handlePause() {
+    runnerRef.current?.pause();
+    setIsPaused(true);
+    AccessibilityInfo.announceForAccessibility('Paused');
+  }
+
+  function handleResume() {
+    runnerRef.current?.resume();
+    setIsPaused(false);
+    AccessibilityInfo.announceForAccessibility('Resumed');
+  }
+
+  function handleEnd() {
+    runnerRef.current?.stop();
+    router.replace('/home');
+  }
 
   // Fetch today's program day. If the query is still loading we start a
   // session against the fallback (M1 demo) day; the player blocks navigation
@@ -227,13 +247,13 @@ export default function Player() {
       <View className="flex-1 items-center justify-between px-6 py-8">
         <View className="self-end">
           <Pressable
-            onPress={() => router.replace('/home')}
+            onPress={handlePause}
             className="py-3 px-4 active:opacity-60"
             hitSlop={12}
             accessibilityRole="button"
-            accessibilityLabel="End session"
+            accessibilityLabel="Pause session"
           >
-            <Text className="text-muted">End</Text>
+            <Text className="text-muted">Pause</Text>
           </Pressable>
         </View>
 
@@ -266,6 +286,120 @@ export default function Player() {
           </Text>
         </View>
       </View>
+
+      {isPaused ? (
+        <PauseOverlay
+          state={state}
+          onResume={handleResume}
+          onEnd={handleEnd}
+        />
+      ) : null}
     </SafeAreaView>
   );
+}
+
+// Pause sheet (Figma 30 · node 114:336) — modal overlay on /session/player.
+// Replaces the dead /session/pause route, which lost runner state on mount.
+// Layout via design-system primitives (Card, Button, SectionLabel, Body) so
+// Figma cross-reference on desktop only needs to verify sizing/spacing.
+function PauseOverlay({
+  state,
+  onResume,
+  onEnd,
+}: {
+  state: SessionState;
+  onResume: () => void;
+  onEnd: () => void;
+}) {
+  // totalElapsedMs is pause-aware in the engine — freezes at the moment
+  // of pause via the `pausedAt - sessionStartedAt - totalPausedMs` branch.
+  const elapsedS = Math.max(0, Math.floor(state.totalElapsedMs / 1000));
+  const elapsedLabel = formatElapsed(elapsedS);
+  const setLabel = `Set ${state.phase.setIndex + 1}`;
+  const repLabel = `Rep ${state.phase.repIndex + 1}`;
+  const phaseLabel = phaseAnnouncement(state.phase.kind);
+
+  return (
+    <View
+      className="absolute inset-0 items-center justify-end"
+      style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
+      accessibilityViewIsModal
+    >
+      <View
+        className="w-full px-6 pt-4 pb-8"
+        style={{
+          backgroundColor: semantic.surfaceCanvas,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+        }}
+      >
+        <View
+          className="self-center mb-6"
+          style={{
+            width: 36,
+            height: 5,
+            borderRadius: 3,
+            backgroundColor: semantic.borderDefault,
+          }}
+        />
+
+        <View className="items-center">
+          <SectionLabel tracking="wide">PAUSED</SectionLabel>
+          <Body
+            weight="semibold"
+            color="primary"
+            className="mt-2"
+            style={{ fontSize: 64, lineHeight: 72 }}
+          >
+            {elapsedLabel}
+          </Body>
+        </View>
+
+        <View className="flex-row justify-center mt-6" style={{ gap: 24 }}>
+          <StatCol kicker="SET" value={setLabel} />
+          <StatCol kicker="REP" value={repLabel} />
+          <StatCol kicker="PHASE" value={phaseLabel} />
+        </View>
+
+        <View className="mt-8">
+          <Button
+            label="Resume"
+            variant="primary"
+            size="lg"
+            radius="cta"
+            onPress={onResume}
+          />
+          <Button
+            label="End session"
+            variant="ghost"
+            size="md"
+            className="mt-3"
+            onPress={onEnd}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function StatCol({ kicker, value }: { kicker: string; value: string }) {
+  return (
+    <View className="items-center">
+      <SectionLabel tracking="tight">{kicker}</SectionLabel>
+      <Body
+        weight="semibold"
+        color="primary"
+        className="mt-1"
+        style={{ fontSize: 22, lineHeight: 28 }}
+      >
+        {value}
+      </Body>
+    </View>
+  );
+}
+
+function formatElapsed(totalS: number): string {
+  const m = Math.floor(totalS / 60);
+  const s = totalS % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
 }
