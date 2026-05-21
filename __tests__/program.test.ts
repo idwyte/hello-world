@@ -5,6 +5,7 @@
 // branch.
 const mockFunctionsInvoke = jest.fn();
 let mockHasSupabaseConfig = false;
+let mockHasAiConsent = true;
 jest.mock('@/lib/env', () => ({
   hasSupabaseConfig: () => mockHasSupabaseConfig,
   hasGoogleConfig: () => false,
@@ -14,6 +15,10 @@ jest.mock('@/lib/supabase', () => ({
   getSupabase: () => ({
     functions: { invoke: mockFunctionsInvoke },
   }),
+}));
+jest.mock('@/lib/persistence', () => ({
+  hasAiConsent: () => Promise.resolve(mockHasAiConsent),
+  recordAiConsent: () => Promise.resolve(),
 }));
 
 import { scoreIndex, type PelvicFloorIndex } from '@/lib/pelvic-floor-index';
@@ -120,10 +125,20 @@ describe('buildProgramLocal (rule-based dev-mode fallback)', () => {
 describe('buildProgram (async, Edge Function path)', () => {
   beforeEach(() => {
     mockHasSupabaseConfig = true;
+    mockHasAiConsent = true;
     mockFunctionsInvoke.mockReset();
   });
   afterEach(() => {
     mockHasSupabaseConfig = false;
+    mockHasAiConsent = true;
+  });
+
+  it('skips the Edge Function entirely when AI consent is missing — never egress PII', async () => {
+    mockHasAiConsent = false;
+    const result = await buildProgram(localInput({ level: 'beginner' }));
+    expect(mockFunctionsInvoke).not.toHaveBeenCalled();
+    expect(result.days).toHaveLength(56);
+    expect(result.focuses).toHaveLength(3);
   });
 
   it('calls generate-program with measurements + answers + level, resolves slugs to templates, returns focuses', async () => {

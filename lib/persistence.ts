@@ -85,6 +85,44 @@ export async function saveAssessmentAndProgram(input: {
   return programRow.id;
 }
 
+/**
+ * Persist the user's consent to forward lifestyle + measurement data to
+ * Anthropic for AI program generation. The generate-program Edge Function
+ * checks `profiles.ai_consent_at` server-side before calling the model —
+ * see supabase/migrations/0006_ai_consent.sql. Dev-mode (no Supabase) is
+ * a no-op; the rule-based fallback path doesn't egress PII.
+ */
+export async function recordAiConsent(): Promise<void> {
+  if (!hasSupabaseConfig()) return;
+  const supabase = getSupabase();
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  const userId = data.user?.id;
+  if (!userId) throw new Error('Not signed in.');
+  const { error: upErr } = await supabase
+    .from('profiles')
+    .update({ ai_consent_at: new Date().toISOString() })
+    .eq('id', userId);
+  if (upErr) throw upErr;
+}
+
+export async function hasAiConsent(): Promise<boolean> {
+  // Dev-mode: no PII egress happens, treat as consented.
+  if (!hasSupabaseConfig()) return true;
+  const supabase = getSupabase();
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  const userId = data.user?.id;
+  if (!userId) return false;
+  const { data: profile, error: pErr } = await supabase
+    .from('profiles')
+    .select('ai_consent_at')
+    .eq('id', userId)
+    .maybeSingle();
+  if (pErr) throw pErr;
+  return Boolean(profile?.ai_consent_at);
+}
+
 export async function markOnboarded(): Promise<void> {
   if (!hasSupabaseConfig()) return;
   const supabase = getSupabase();

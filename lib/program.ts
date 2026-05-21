@@ -1,6 +1,7 @@
 import { EXERCISES } from './exercises';
 import { hasSupabaseConfig } from './env';
 import { levelFromComposite, type PelvicFloorIndex, type PelvicFloorMeasurements } from './pelvic-floor-index';
+import { hasAiConsent } from './persistence';
 import { getSupabase } from './supabase';
 import type {
   AssessmentAnswers,
@@ -184,6 +185,18 @@ function resolveEdgeProgram(edge: EdgeProgramResponse['program']): ProgramDay[] 
 // in dev mode. Returns `days` + 3 `focuses` strings for /plan-preview.
 export async function buildProgram(input: BuildProgramInput): Promise<GeneratedProgram> {
   if (!hasSupabaseConfig()) {
+    return {
+      days: buildProgramLocal(input),
+      focuses: FALLBACK_FOCUSES_BY_LEVEL[input.level],
+    };
+  }
+
+  // No consent → never POST PII to Anthropic. The Edge Function also
+  // enforces this server-side (returns 403 consent_required), but a
+  // client-side gate avoids the round trip and gives the caller a clean
+  // rule-based result.
+  const consented = await hasAiConsent().catch(() => false);
+  if (!consented) {
     return {
       days: buildProgramLocal(input),
       focuses: FALLBACK_FOCUSES_BY_LEVEL[input.level],

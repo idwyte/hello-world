@@ -217,6 +217,27 @@ serve(async (req) => {
     return jsonResponse({ ok: false, error: 'Invalid session' }, 401);
   }
 
+  // Enforce AI-consent server-side before any PII reaches Anthropic.
+  // Lifestyle answers (incl. intimacy frequency) and measurements are
+  // sensitive — a missing/null ai_consent_at means the user has not
+  // agreed to forward this data, and we refuse rather than trust the
+  // client to gate. See supabase/migrations/0006_ai_consent.sql.
+  const { data: profile, error: profileErr } = await userClient
+    .from('profiles')
+    .select('ai_consent_at')
+    .eq('id', userData.user.id)
+    .maybeSingle();
+  if (profileErr) {
+    console.error('generate-program · profile lookup failed:', profileErr);
+    return jsonResponse({ ok: false, error: 'Profile lookup failed' }, 500);
+  }
+  if (!profile?.ai_consent_at) {
+    return jsonResponse(
+      { ok: false, error: 'AI consent required', code: 'consent_required' },
+      403,
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();

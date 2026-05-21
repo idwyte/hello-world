@@ -24,9 +24,10 @@ export default function Assessment() {
       next();
     } else {
       // v1.2 flow: measurements (/index-test) happen BEFORE the
-      // lifestyle questions. After the last question we go straight to
-      // /generating, which has both the Index + the lifestyle answers.
-      router.replace('/generating');
+      // lifestyle questions. After the last question we route through
+      // /ai-consent (PII gate before lifestyle answers can be sent to
+      // Anthropic) and then on to /generating.
+      router.replace('/ai-consent');
     }
   }
 
