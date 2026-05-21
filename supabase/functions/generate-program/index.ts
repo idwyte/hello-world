@@ -22,7 +22,7 @@
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.46.0';
-import Anthropic from 'npm:@anthropic-ai/sdk@^0.40.0';
+import Anthropic from 'npm:@anthropic-ai/sdk@^0.65.0';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -261,8 +261,26 @@ serve(async (req) => {
     return jsonResponse({ ok: false, error: `LLM error: ${msg}` }, 502);
   }
 
-  // The structured-output path returns content as a single text block whose
-  // text is the JSON. Parse it; if anything is off, surface a 502.
+  // Guard on stop_reason BEFORE parsing — output_config.format guarantees
+  // schema-conformant JSON only on stop_reason === 'end_turn'. A 'refusal'
+  // means Claude declined (returns no JSON), 'max_tokens' means truncation
+  // mid-document (JSON.parse will throw). Distinguishing them gives ops a
+  // real signal instead of "Invalid LLM JSON" for every failure mode.
+  if (response.stop_reason === 'refusal') {
+    console.warn('generate-program · model refused:', response.stop_reason);
+    return jsonResponse(
+      { ok: false, error: 'Model declined to generate this program' },
+      502,
+    );
+  }
+  if (response.stop_reason === 'max_tokens') {
+    console.warn('generate-program · output truncated at max_tokens');
+    return jsonResponse(
+      { ok: false, error: 'Program too large — output truncated' },
+      502,
+    );
+  }
+
   const block = response.content.find((b) => b.type === 'text');
   if (!block || block.type !== 'text') {
     console.error('generate-program · no text block in response:', response);
