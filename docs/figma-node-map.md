@@ -83,6 +83,7 @@ for the full pivot plan.
 | 07 | `199:443` | Question · strength days/week | NEW | `app/(onboarding)/assessment.tsx` |
 | 08 | `199:481` | Question · cardio days/week | NEW | `app/(onboarding)/assessment.tsx` |
 | 09 | `199:519` | Question · intimacy frequency | NEW | `app/(onboarding)/assessment.tsx` |
+| 09b | `247:2` | AI consent gate (PII forwarding) | NEW v1.2 — added 2026-05-22 | `app/(onboarding)/ai-consent.tsx` |
 | 10 | `199:551` | generating (AI plan call) | replaces old 10 generating | `app/(onboarding)/generating.tsx` |
 | 11 | `199:584` | plan-preview (new framing) | replaces old 11 plan-preview | `app/(onboarding)/plan-preview.tsx` |
 

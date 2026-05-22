@@ -1,19 +1,18 @@
-// Figma: NOT YET MAPPED — Figma MCP was disconnected when this screen
-// was authored, so it is composed from already-Figma-vetted primitives
-// (Card · Button · Body · SectionLabel · semantic tokens) rather than
-// a freshly-pulled node. Cross-reference against Figma + add a node ID
-// to docs/figma-node-map.md before launch.
+// Figma: 09b · ai consent (NEW) — node 247:2
+// https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/?node-id=247-2
+// Spec: docs/figma-node-map.md line 86 · sits between 09 (intimacy
+// question) and 10 (generating AI).
 //
-// Sits between /assessment and /generating. Purpose: explicit consent
-// before lifestyle answers (incl. intimacy frequency) and pelvic-floor
-// measurements leave the device for AI processing by Anthropic via the
-// generate-program Edge Function. Without this gate, the Edge Function
-// returns 403 consent_required — and the client falls back to the
-// rule-based offline plan, so opting out still works.
+// Purpose: explicit consent before lifestyle answers (incl. intimacy
+// frequency) and pelvic-floor measurements leave the device for AI
+// processing by Anthropic via the generate-program Edge Function.
+// Without this gate, the Edge Function returns 403 consent_required —
+// and the client falls back to the rule-based offline plan, so opting
+// out still works.
 //
-// FIGMA-DIFF (pending):
-//   - Type scale, exact paddings, and the "what we send / what we don't"
-//     bullet style need cross-reference once Figma MCP is restored.
+// FIGMA-DIFF (verify on desktop):
+//   - Card was drafted with 12 px row gap and 13/18 bullets; the spec
+//     above is the source of truth for any drift.
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, ScrollView, View } from 'react-native';
