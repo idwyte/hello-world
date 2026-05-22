@@ -1,12 +1,13 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { Play } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Pressable, Text, View } from 'react-native';
+import { AccessibilityInfo, Alert, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PacerRing } from '@/components/session/PacerRing';
 import { PhaseLabel, colorForPhase } from '@/components/session/PhaseLabel';
-import { Body, Button, SectionLabel } from '@/components/ui';
+import { Body, Button } from '@/components/ui';
 import { hasSupabaseConfig } from '@/lib/env';
 import { EXERCISES, getExercise } from '@/lib/exercises';
 import { play, patternForPhase } from '@/lib/haptics';
@@ -18,7 +19,7 @@ import {
 } from '@/lib/session-engine';
 import { fetchTodayProgramDay, logCompletedSession } from '@/lib/sessions';
 import { semantic } from '@/lib/theme';
-import type { PhaseKind, ProgramDay } from '@/lib/types';
+import type { ExerciseTemplate, PhaseKind, ProgramDay } from '@/lib/types';
 import { useSessionStore } from '@/stores/session';
 
 // Hardcoded program day for the dev-without-backend M1 path. When Supabase
@@ -74,8 +75,24 @@ export default function Player() {
   }
 
   function handleEnd() {
-    runnerRef.current?.stop();
-    router.replace('/home');
+    // Per Figma 30 spec: double-confirm because the End-session affordance
+    // is small + muted but the action is destructive (this session's
+    // progress won't be saved). Default to Cancel.
+    Alert.alert(
+      'End this session?',
+      "Your progress for this day won't be saved.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'End session',
+          style: 'destructive',
+          onPress: () => {
+            runnerRef.current?.stop();
+            router.replace('/home');
+          },
+        },
+      ],
+    );
   }
 
   // Fetch today's program day. If the query is still loading we start a
@@ -290,6 +307,7 @@ export default function Player() {
       {isPaused ? (
         <PauseOverlay
           state={state}
+          exercise={day.exercises[state.phase.exerciseIndex]}
           onResume={handleResume}
           onEnd={handleEnd}
         />
@@ -300,14 +318,20 @@ export default function Player() {
 
 // Pause sheet (Figma 30 · node 114:336) — modal overlay on /session/player.
 // Replaces the dead /session/pause route, which lost runner state on mount.
-// Layout via design-system primitives (Card, Button, SectionLabel, Body) so
-// Figma cross-reference on desktop only needs to verify sizing/spacing.
+// Layout cross-referenced against the live Figma node 2026-05-22:
+// 55% black scrim, sheet pinned to bottom with 24 px top corners and
+// bg-page fill, 36×5 grabber at 50% opacity, accent PAUSED kicker (11 px
+// medium, tracking 2 px) → 6 px gap → 64/72 elapsed timer → 20 px gap →
+// stats row with 4 px ellipse dividers → flex spacer → 60 px Resume CTA
+// with play glyph → 12 px gap → muted "End session" text link.
 function PauseOverlay({
   state,
+  exercise,
   onResume,
   onEnd,
 }: {
   state: SessionState;
+  exercise: ExerciseTemplate | undefined;
   onResume: () => void;
   onEnd: () => void;
 }) {
@@ -315,9 +339,12 @@ function PauseOverlay({
   // of pause via the `pausedAt - sessionStartedAt - totalPausedMs` branch.
   const elapsedS = Math.max(0, Math.floor(state.totalElapsedMs / 1000));
   const elapsedLabel = formatElapsed(elapsedS);
-  const setLabel = `Set ${state.phase.setIndex + 1}`;
-  const repLabel = `Rep ${state.phase.repIndex + 1}`;
-  const phaseLabel = phaseAnnouncement(state.phase.kind);
+  // Stats show current/total per Figma ("2 / 3"). prep/rest phases
+  // pre-empt exercise activity so we fall back to "—" when no exercise
+  // is meaningful (timeline guards exerciseIndex within bounds otherwise).
+  const setLabel = exercise ? `${state.phase.setIndex + 1} / ${exercise.sets}` : '—';
+  const repLabel = exercise ? `${state.phase.repIndex + 1} / ${exercise.reps}` : '—';
+  const phaseLabel = shortPhaseLabel(state.phase.kind);
 
   return (
     <View
@@ -326,56 +353,89 @@ function PauseOverlay({
       accessibilityViewIsModal
     >
       <View
-        className="w-full px-6 pt-4 pb-8"
+        className="w-full px-6 pb-7"
         style={{
+          paddingTop: 12,
           backgroundColor: semantic.surfaceCanvas,
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
         }}
       >
         <View
-          className="self-center mb-6"
+          className="self-center"
           style={{
             width: 36,
             height: 5,
-            borderRadius: 3,
-            backgroundColor: semantic.borderDefault,
+            borderRadius: 2.5,
+            backgroundColor: semantic.textMuted,
+            opacity: 0.5,
           }}
         />
 
-        <View className="items-center">
-          <SectionLabel tracking="wide">PAUSED</SectionLabel>
+        <View className="items-center" style={{ marginTop: 16 }}>
+          <Text
+            style={{
+              fontFamily: 'Inter',
+              fontWeight: '500',
+              fontSize: 11,
+              lineHeight: 14,
+              letterSpacing: 2,
+              color: semantic.interactivePrimary,
+            }}
+          >
+            PAUSED
+          </Text>
           <Body
             weight="semibold"
             color="primary"
-            className="mt-2"
-            style={{ fontSize: 64, lineHeight: 72 }}
+            style={{ fontSize: 64, lineHeight: 72, marginTop: 6 }}
           >
             {elapsedLabel}
           </Body>
         </View>
 
-        <View className="flex-row justify-center mt-6" style={{ gap: 24 }}>
+        <View
+          className="flex-row items-center justify-center"
+          style={{ marginTop: 20, gap: 24 }}
+        >
           <StatCol kicker="SET" value={setLabel} />
+          <DividerDot />
           <StatCol kicker="REP" value={repLabel} />
+          <DividerDot />
           <StatCol kicker="PHASE" value={phaseLabel} />
         </View>
 
-        <View className="mt-8">
+        <View style={{ marginTop: 32 }}>
           <Button
             label="Resume"
             variant="primary"
             size="lg"
             radius="cta"
+            leadingIcon={
+              <Play size={14} color={semantic.textPrimary} fill={semantic.textPrimary} />
+            }
             onPress={onResume}
           />
-          <Button
-            label="End session"
-            variant="ghost"
-            size="md"
-            className="mt-3"
+          <Pressable
             onPress={onEnd}
-          />
+            accessibilityRole="button"
+            accessibilityLabel="End session"
+            className="active:opacity-60"
+            style={{
+              height: 28,
+              marginTop: 12,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Body
+              color="muted"
+              weight="medium"
+              style={{ fontSize: 14, lineHeight: 20 }}
+            >
+              End session
+            </Body>
+          </Pressable>
         </View>
       </View>
     </View>
@@ -384,18 +444,59 @@ function PauseOverlay({
 
 function StatCol({ kicker, value }: { kicker: string; value: string }) {
   return (
-    <View className="items-center">
-      <SectionLabel tracking="tight">{kicker}</SectionLabel>
+    <View className="items-center" style={{ gap: 4 }}>
+      <Text
+        style={{
+          fontFamily: 'Inter',
+          fontWeight: '500',
+          fontSize: 10,
+          lineHeight: 14,
+          letterSpacing: 1.2,
+          color: semantic.textMuted,
+        }}
+      >
+        {kicker}
+      </Text>
       <Body
         weight="semibold"
         color="primary"
-        className="mt-1"
         style={{ fontSize: 22, lineHeight: 28 }}
       >
         {value}
       </Body>
     </View>
   );
+}
+
+function DividerDot() {
+  return (
+    <View
+      style={{
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: semantic.textMuted,
+        opacity: 0.5,
+      }}
+    />
+  );
+}
+
+function shortPhaseLabel(kind: PhaseKind): string {
+  switch (kind) {
+    case 'prep':
+      return 'Prep';
+    case 'squeeze':
+      return 'Squeeze';
+    case 'hold':
+      return 'Hold';
+    case 'release':
+      return 'Release';
+    case 'rest':
+      return 'Rest';
+    case 'done':
+      return 'Done';
+  }
 }
 
 function formatElapsed(totalS: number): string {
