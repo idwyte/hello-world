@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Body, Button, SectionLabel } from '@/components/ui';
+import { Body, Button } from '@/components/ui';
 import { PacerRing } from '@/components/session/PacerRing';
 import { semantic } from '@/lib/theme';
 
@@ -18,6 +18,35 @@ export function formatTimer(s: number): string {
   const mins = Math.floor(s / 60);
   const secs = s % 60;
   return `${mins}:${String(secs).padStart(2, '0')}`;
+}
+
+// Stage title ("Quick Pulse" / "Max Hold") and the cue line below the ring
+// ("Pulse now…") share one prominent 22/28 semibold treatment so the
+// screen has a clear, readable verbal hierarchy instead of a faint kicker.
+function StageTitle({ children }: { children: string }) {
+  return (
+    <Body
+      weight="semibold"
+      color="primary"
+      className="text-center"
+      style={{ fontSize: 22, lineHeight: 28 }}
+    >
+      {children}
+    </Body>
+  );
+}
+
+function StageCue({ children }: { children: string }) {
+  return (
+    <Body
+      weight="semibold"
+      color="primary"
+      className="text-center mt-8"
+      style={{ fontSize: 22, lineHeight: 28 }}
+    >
+      {children}
+    </Body>
+  );
 }
 
 // === Stage 1 · pulse ===
@@ -31,9 +60,7 @@ export function PulseIdle({
 }) {
   return (
     <View className="flex-1 px-6 pb-8">
-      <SectionLabel tracking="wide" className="text-center">
-        QUICK PULSE
-      </SectionLabel>
+      <StageTitle>Quick Pulse</StageTitle>
       <View className="flex-1 items-center justify-center -mt-4">
         <View className="items-center">
           <PacerRing
@@ -63,14 +90,7 @@ export function PulseIdle({
             </Body>
           </View>
         </View>
-        <Body
-          weight="medium"
-          color="primary"
-          className="text-center mt-8"
-          style={{ fontSize: 16, lineHeight: 24 }}
-        >
-          Squeeze and release as fast as you can.
-        </Body>
+        <StageCue>Squeeze and release as fast as you can.</StageCue>
         <Body color="muted" size="sm" className="text-center mt-2 px-4">
           Tap Start when ready. Count happens automatically — just go.
         </Body>
@@ -114,9 +134,7 @@ export function PulseRunner({
 
   return (
     <View className="flex-1 px-6 pb-8">
-      <SectionLabel tracking="wide" className="text-center">
-        QUICK PULSE
-      </SectionLabel>
+      <StageTitle>Quick Pulse</StageTitle>
       <View className="flex-1 items-center justify-center -mt-4">
         <View className="items-center">
           <PacerRing
@@ -146,14 +164,7 @@ export function PulseRunner({
             </Body>
           </View>
         </View>
-        <Body
-          weight="medium"
-          color="primary"
-          className="text-center mt-8"
-          style={{ fontSize: 16, lineHeight: 24 }}
-        >
-          Pulse now — squeeze and release.
-        </Body>
+        <StageCue>Pulse now — squeeze and release.</StageCue>
       </View>
       <Button
         label="Stop early"
@@ -170,9 +181,7 @@ export function PulseReview({ onSubmit }: { onSubmit: (n: number) => void }) {
   const [count, setCount] = useState(30);
   return (
     <View className="flex-1 px-6 pb-8">
-      <SectionLabel tracking="wide" className="text-center">
-        QUICK PULSE
-      </SectionLabel>
+      <StageTitle>Quick Pulse</StageTitle>
       <View className="flex-1 items-center justify-center">
         <Body
           weight="semibold"
@@ -254,9 +263,7 @@ export function HoldIdle({
 }) {
   return (
     <View className="flex-1 px-6 pb-8">
-      <SectionLabel tracking="wide" className="text-center">
-        MAX HOLD
-      </SectionLabel>
+      <StageTitle>Max Hold</StageTitle>
       <View className="flex-1 items-center justify-center -mt-4">
         <View className="items-center">
           <PacerRing
@@ -286,14 +293,7 @@ export function HoldIdle({
             </Body>
           </View>
         </View>
-        <Body
-          weight="medium"
-          color="primary"
-          className="text-center mt-8"
-          style={{ fontSize: 16, lineHeight: 24 }}
-        >
-          Hold for as long as you can.
-        </Body>
+        <StageCue>Hold for as long as you can.</StageCue>
         <Body color="muted" size="sm" className="text-center mt-2 px-4">
           Tap Start, squeeze, and hold. Tap Stop when you can&rsquo;t hold any
           longer.
@@ -337,9 +337,7 @@ export function HoldRunner({
 
   return (
     <View className="flex-1 px-6 pb-8">
-      <SectionLabel tracking="wide" className="text-center">
-        MAX HOLD
-      </SectionLabel>
+      <StageTitle>Max Hold</StageTitle>
       <View className="flex-1 items-center justify-center -mt-4">
         <View className="items-center">
           <PacerRing
@@ -369,14 +367,7 @@ export function HoldRunner({
             </Body>
           </View>
         </View>
-        <Body
-          weight="medium"
-          color="primary"
-          className="text-center mt-8"
-          style={{ fontSize: 16, lineHeight: 24 }}
-        >
-          Keep holding…
-        </Body>
+        <StageCue>Keep holding…</StageCue>
       </View>
       <Button
         label="Stop"
