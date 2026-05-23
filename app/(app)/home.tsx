@@ -167,7 +167,7 @@ export default function Home() {
               variant="primary"
               size="lg"
               radius="cta"
-              className="self-center w-[294px] mt-5"
+              className={`self-center w-[294px] ${todayExercises.length > 0 ? 'mt-5' : 'mt-8'}`}
               leadingIcon={
                 <Play
                   size={14}

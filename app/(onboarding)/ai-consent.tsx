@@ -60,8 +60,11 @@ export default function AiConsent() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface-canvas">
-      <ScrollView className="flex-1" contentContainerClassName="px-4 pb-32">
-        <View className="h-20 justify-end mb-4">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="grow justify-center px-6 py-8"
+      >
+        <View>
           <Body
             weight="semibold"
             color="primary"
@@ -71,7 +74,7 @@ export default function AiConsent() {
           </Body>
           <Body
             color="muted"
-            className="mt-2"
+            className="mt-3"
             style={{ fontSize: 14, lineHeight: 20 }}
           >
             We can build a smarter, more personal program if you let us
@@ -79,9 +82,9 @@ export default function AiConsent() {
           </Body>
         </View>
 
-        <Card padding="xl" radius="card">
+        <Card padding="xl" radius="card" className="mt-8">
           <SectionLabel tracking="wide">WHAT WE&rsquo;D SEND</SectionLabel>
-          <View className="mt-3 gap-2">
+          <View className="mt-3 gap-3">
             {SHARED.map((line) => (
               <Bullet key={line} text={line} dot={semantic.interactivePrimary} />
             ))}
@@ -90,7 +93,7 @@ export default function AiConsent() {
           <SectionLabel tracking="wide" className="mt-6">
             WHAT WE WOULDN&rsquo;T SEND
           </SectionLabel>
-          <View className="mt-3 gap-2">
+          <View className="mt-3 gap-3">
             {NOT_SHARED.map((line) => (
               <Bullet key={line} text={line} dot={semantic.textMuted} />
             ))}
@@ -99,7 +102,7 @@ export default function AiConsent() {
 
         <Body
           color="muted"
-          className="mt-6 text-center"
+          className="mt-8 text-center"
           style={{ fontSize: 12, lineHeight: 18 }}
         >
           Data is sent to Anthropic (the makers of Claude) only for the
@@ -109,7 +112,7 @@ export default function AiConsent() {
         </Body>
       </ScrollView>
 
-      <View className="absolute bottom-0 left-0 right-0 px-6 pb-8 gap-3">
+      <View className="px-6 pb-8 pt-3 gap-3">
         <Button
           label={busy ? '…' : 'I agree — build my AI plan'}
           variant="primary"
