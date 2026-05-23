@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Play } from 'lucide-react-native';
+import { Pause, Play } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Alert, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -195,8 +195,6 @@ export default function Player() {
   }, [day, programDayId]);
 
   const state: SessionState | null = runnerRef.current?.getState() ?? null;
-  const total = timelineRef.current.length;
-  const remainingPhases = state ? Math.max(0, total - state.phaseIndex - 1) : 0;
 
   void tick;
 
@@ -259,55 +257,131 @@ export default function Player() {
       ? Math.min(1, state.phaseElapsedMs / state.phase.durationMs)
       : 1;
 
+  const currentExercise = day.exercises[state.phase.exerciseIndex];
+  const dayNumber = todayDayQuery.data?.dayNumber;
+  const countdownS = Math.ceil(
+    (state.phase.durationMs - state.phaseElapsedMs) / 1000,
+  );
+  const elapsedLabel = formatElapsed(Math.floor(state.totalElapsedMs / 1000));
+  // Header context: "Day N · Short Holds" when we know the day from the
+  // user's program; just the exercise name in the dev/no-Supabase fallback.
+  const headerLabel = currentExercise
+    ? dayNumber
+      ? `Day ${dayNumber} · ${currentExercise.name}`
+      : currentExercise.name
+    : dayNumber
+      ? `Day ${dayNumber}`
+      : '';
+  const setLabel = currentExercise
+    ? `${state.phase.setIndex + 1} / ${currentExercise.sets}`
+    : '—';
+  const repLabel = currentExercise
+    ? `${state.phase.repIndex + 1} / ${currentExercise.reps}`
+    : '—';
+
   return (
     <SafeAreaView className="flex-1 bg-bg">
       <View className="flex-1 items-center justify-between px-6 py-8">
-        <View className="self-end">
-          <Pressable
-            onPress={handlePause}
-            className="py-3 px-4 active:opacity-60"
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="Pause session"
+        {/* Context header — Figma 99:239 (Day N · exercise) */}
+        <View className="items-center" style={{ minHeight: 24 }}>
+          <Body
+            weight="medium"
+            color="muted"
+            style={{ fontSize: 14, lineHeight: 20, letterSpacing: 0.5 }}
           >
-            <Text className="text-muted">Pause</Text>
-          </Pressable>
+            {headerLabel}
+          </Body>
         </View>
 
+        {/* Phase label above the ring + big seconds countdown inside it */}
         <View
           className="items-center"
-          accessibilityLabel={`${phaseAnnouncement(state.phase.kind)}, ${Math.ceil((state.phase.durationMs - state.phaseElapsedMs) / 1000)} seconds remaining`}
+          accessibilityLabel={`${phaseAnnouncement(state.phase.kind)}, ${countdownS} seconds remaining`}
           accessibilityLiveRegion="polite"
         >
-          <PacerRing
-            progress={phaseProgress}
-            color={colorForPhase(state.phase.kind)}
-          />
-          <View className="absolute inset-0 items-center justify-center">
-            <PhaseLabel kind={state.phase.kind} />
-            <Text className="text-muted text-sm mt-3">
-              {Math.ceil(
-                (state.phase.durationMs - state.phaseElapsedMs) / 1000,
-              )}
-              s
-            </Text>
+          <PhaseLabel kind={state.phase.kind} />
+          <View className="items-center justify-center" style={{ marginTop: 24 }}>
+            <PacerRing
+              progress={phaseProgress}
+              color={colorForPhase(state.phase.kind)}
+            />
+            <View className="absolute inset-0 items-center justify-center">
+              <Body
+                weight="semibold"
+                color="primary"
+                style={{ fontSize: 112, lineHeight: 120 }}
+              >
+                {countdownS}
+              </Body>
+              <Text
+                style={{
+                  fontFamily: 'Inter',
+                  fontWeight: '500',
+                  fontSize: 11,
+                  lineHeight: 14,
+                  letterSpacing: 1.4,
+                  color: semantic.textMuted,
+                  marginTop: 4,
+                }}
+              >
+                SECONDS
+              </Text>
+            </View>
           </View>
         </View>
 
+        {/* Bottom controls: meta row · round Pause · End session link */}
         <View className="items-center">
-          <Text className="text-muted text-sm">
-            {remainingPhases} phases remaining
-          </Text>
-          <Text className="text-muted text-xs mt-1">
-            Rep {state.phase.repIndex + 1} · Set {state.phase.setIndex + 1}
-          </Text>
+          <View className="flex-row items-center justify-center" style={{ gap: 24 }}>
+            <StatCol kicker="SET" value={setLabel} />
+            <DividerDot />
+            <StatCol kicker="REP" value={repLabel} />
+            <DividerDot />
+            <StatCol kicker="TIME" value={elapsedLabel} />
+          </View>
+
+          <Pressable
+            onPress={handlePause}
+            accessibilityRole="button"
+            accessibilityLabel="Pause session"
+            hitSlop={8}
+            className="active:opacity-80"
+            style={{
+              marginTop: 32,
+              width: 72,
+              height: 72,
+              borderRadius: 36,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: semantic.interactivePrimary,
+            }}
+          >
+            <Pause
+              size={28}
+              color={semantic.textPrimary}
+              fill={semantic.textPrimary}
+            />
+          </Pressable>
+
+          <Pressable
+            onPress={handleEnd}
+            accessibilityRole="button"
+            accessibilityLabel="End session"
+            hitSlop={8}
+            className="active:opacity-60"
+            style={{ marginTop: 16 }}
+          >
+            <Body color="muted" weight="medium" style={{ fontSize: 15, lineHeight: 22 }}>
+              End session
+            </Body>
+          </Pressable>
         </View>
       </View>
 
       {isPaused ? (
         <PauseOverlay
           state={state}
-          exercise={day.exercises[state.phase.exerciseIndex]}
+          exercise={currentExercise}
           onResume={handleResume}
           onEnd={handleEnd}
         />

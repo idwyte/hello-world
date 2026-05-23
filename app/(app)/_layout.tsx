@@ -77,7 +77,12 @@ export default function AppLayout() {
       {/* Hidden routes — reachable via router.push but not part of tab bar.
           expo-router auto-registers every top-level (app)/* file/folder, so
           each non-tab destination needs an explicit href: null. */}
-      <Tabs.Screen name="session" options={{ href: null }} />
+      {/* Session is immersive — hide the tab bar so the user's focus stays
+          on the ring and they can't navigate away mid-set (Figma 13). */}
+      <Tabs.Screen
+        name="session"
+        options={{ href: null, tabBarStyle: { display: 'none' } }}
+      />
       <Tabs.Screen name="index-retest" options={{ href: null }} />
       <Tabs.Screen name="error" options={{ href: null }} />
       <Tabs.Screen name="maintenance" options={{ href: null }} />
