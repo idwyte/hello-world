@@ -1,22 +1,19 @@
 // Figma: 29 · delete account — node 113:348
-// https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/?node-id=113-348
-// Spec: docs/hone-roadmap-state.md line 113 (Figma-derived).
 //
-// Detail header · 72 px danger badge + halo + exclamation · WHAT'S DELETED
-// bullet card (4 danger × items) · purchase-preservation reassurance ·
-// type-to-confirm Input showing DELETE with danger stroke · 50/50 Cancel /
-// Delete forever buttons.
-//
-// FIGMA-DIFF (stub):
-//   - 72 px danger badge + halo rendered as emoji ⚠️.
-//   - Type-to-confirm Input not rendered; stub uses two buttons directly.
-//   - No actual delete RPC fired — just navigates back.
+// Real wiring: type "DELETE" to enable the destructive button → confirm
+// Alert → calls deleteAccount() (lib/auth.ts → delete-account Edge
+// Function → auth.admin.deleteUser, cascades data per RLS) → signs out →
+// routes to /welcome. Apple App Store guideline 5.1.1(v) compliance.
+import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ScrollView, View } from 'react-native';
+import { Alert, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Body, Button, Card, SectionLabel } from '@/components/ui';
+import { Body, Button, Card, ScreenHeader, SectionLabel } from '@/components/ui';
+import { deleteAccount } from '@/lib/auth';
 import { semantic } from '@/lib/theme';
+
+const CONFIRM_PHRASE = 'DELETE';
 
 const DELETED = [
   'Your account and profile',
@@ -27,22 +24,51 @@ const DELETED = [
 
 export default function DeleteAccount() {
   const router = useRouter();
+  const [typed, setTyped] = useState('');
+  const [busy, setBusy] = useState(false);
+  const armed = typed.trim().toUpperCase() === CONFIRM_PHRASE;
+
+  function confirmAndDelete() {
+    if (!armed || busy) return;
+    Alert.alert(
+      'Delete your account?',
+      'This permanently removes your account and all training data. It cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete forever',
+          style: 'destructive',
+          onPress: () => {
+            setBusy(true);
+            deleteAccount()
+              .then(() => {
+                router.replace('/welcome');
+              })
+              .catch((e) => {
+                setBusy(false);
+                Alert.alert(
+                  'Could not delete',
+                  e instanceof Error
+                    ? e.message
+                    : 'Something went wrong. Try again or contact support.',
+                );
+              });
+          },
+        },
+      ],
+    );
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-surface-canvas">
-      <ScrollView className="flex-1" contentContainerClassName="px-6 pb-12">
-        {/* Detail header */}
-        <View className="h-14 flex-row items-center -mx-2">
-          <Body color="primary" style={{ fontSize: 20 }} onPress={() => router.back()}>
-            ←
-          </Body>
-          <View className="flex-1 items-center">
-            <Body weight="semibold" color="primary" style={{ fontSize: 17, lineHeight: 24 }}>
-              Delete account
-            </Body>
-          </View>
-        </View>
+      <ScreenHeader
+        kind="detail"
+        title="Delete account"
+        onBack={() => router.back()}
+      />
 
-        <View className="items-center mt-8">
+      <ScrollView className="flex-1" contentContainerClassName="px-6 pb-12">
+        <View className="items-center mt-6">
           <View
             className="w-[72px] h-[72px] rounded-full items-center justify-center"
             style={{ backgroundColor: semantic.feedbackDanger + '33' }}
@@ -78,26 +104,56 @@ export default function DeleteAccount() {
         </Card>
 
         <Body size="sm" color="muted" className="mt-4 text-center px-4">
-          Your in-app purchases stay attached to your Apple ID — you can
-          restore them on any new account.
+          Your in-app purchases stay attached to your Apple ID or Google
+          Account — you can restore them on any new account.
         </Body>
 
-        <View className="flex-row gap-3 mt-10">
+        <SectionLabel tracking="wide" className="mt-8">
+          TYPE “{CONFIRM_PHRASE}” TO CONFIRM
+        </SectionLabel>
+        <TextInput
+          value={typed}
+          onChangeText={setTyped}
+          autoCapitalize="characters"
+          autoCorrect={false}
+          editable={!busy}
+          placeholder={CONFIRM_PHRASE}
+          placeholderTextColor={semantic.textMuted}
+          accessibilityLabel="Type the word DELETE to confirm"
+          style={{
+            marginTop: 12,
+            paddingHorizontal: 16,
+            paddingVertical: 14,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: armed
+              ? semantic.feedbackDanger
+              : semantic.borderDefault,
+            backgroundColor: semantic.surfaceRaised,
+            color: semantic.textPrimary,
+            fontSize: 16,
+            letterSpacing: 1,
+          }}
+        />
+
+        <View className="flex-row gap-3 mt-8">
           <Button
             label="Cancel"
             variant="secondary"
             size="lg"
             radius="cta"
             className="flex-1"
+            disabled={busy}
             onPress={() => router.back()}
           />
           <Button
-            label="Delete forever"
+            label={busy ? 'Deleting…' : 'Delete forever'}
             variant="destructive"
             size="lg"
             radius="cta"
             className="flex-1"
-            onPress={() => router.back()}
+            disabled={!armed || busy}
+            onPress={confirmAndDelete}
           />
         </View>
       </ScrollView>

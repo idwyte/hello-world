@@ -36,7 +36,16 @@ function makeChain(table: string) {
   const chain: any = {
     insert(payload: unknown) {
       calls.push({ table, op: 'insert', payload, filters });
-      return { error: null };
+      // logCompletedSession chains .insert().select('id').single() to
+      // get the inserted row id back, so return the chain — `single()`
+      // resolves to a fake id and `error: null`.
+      return chain;
+    },
+    single: async () => {
+      if (table === 'sessions') {
+        return { data: { id: 's_inserted_id' }, error: null };
+      }
+      return { data: null, error: null };
     },
     update(payload: unknown) {
       return {

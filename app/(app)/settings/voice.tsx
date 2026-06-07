@@ -12,10 +12,11 @@
 //   - Stealth Mode pairing hint card omitted; promote in full build.
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { Check } from 'lucide-react-native';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Body, Button, Card } from '@/components/ui';
+import { Body, Button, Card, ScreenHeader } from '@/components/ui';
 import { semantic } from '@/lib/theme';
 
 type Voice = { id: string; name: string; description: string };
@@ -33,24 +34,7 @@ export default function VoicePicker() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface-canvas">
-      {/* Detail header */}
-      <View className="h-14 flex-row items-center px-4">
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={12}
-          accessibilityLabel="Back"
-          className="w-11 h-11 items-center justify-center"
-        >
-          <Body color="primary" style={{ fontSize: 20 }}>
-            ←
-          </Body>
-        </Pressable>
-        <View className="flex-1 items-center -ml-11">
-          <Body weight="semibold" color="primary" style={{ fontSize: 17, lineHeight: 24 }}>
-            Voice
-          </Body>
-        </View>
-      </View>
+      <ScreenHeader kind="detail" title="Voice" onBack={() => router.back()} />
 
       <ScrollView className="flex-1" contentContainerClassName="px-4 pb-32 gap-2.5">
         {VOICES.map((v) => {
@@ -83,9 +67,16 @@ export default function VoicePicker() {
                     </Body>
                   </View>
                   {isSelected ? (
-                    <Body weight="semibold" color="accent">
-                      ✓
-                    </Body>
+                    <View
+                      className="w-7 h-7 rounded-full items-center justify-center ml-2"
+                      style={{ backgroundColor: semantic.interactivePrimary }}
+                    >
+                      <Check
+                        size={16}
+                        color={semantic.textPrimary}
+                        strokeWidth={3}
+                      />
+                    </View>
                   ) : null}
                 </View>
               </Card>

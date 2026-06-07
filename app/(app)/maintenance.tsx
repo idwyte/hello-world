@@ -1,31 +1,57 @@
 // Figma: 21 · maintenance — node 104:551
-// https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/?node-id=104-551
-// Spec: docs/hone-roadmap-state.md line 99 (Figma-derived).
 //
-// End-of-program celebration. 120 px medal hero + halo · 8-week complete
-// kicker · before/after stats (50 → 78 in green) · 3 next-up cards with the
-// RECOMMENDED maintenance option getting an accent stroke.
-//
-// FIGMA-DIFF (stub):
-//   - 120 px medal SVG hero + halo glow rendered as text emoji.
-//   - 3 next-up cards collapsed to a single CTA.
-//   - Before/after delta chip not rendered visually; stub shows scores only.
+// End-of-program celebration. Shows the user's actual before/after Pelvic
+// Floor Index delta (first measurement vs latest), pulled from the
+// `pelvic_floor_assessments` table via fetchIndexHistory. The medal +
+// halo is rendered with lucide Award + a tinted disc instead of an emoji.
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { Award } from 'lucide-react-native';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Body, Button, Card, SectionLabel, Stat } from '@/components/ui';
+import { hasSupabaseConfig } from '@/lib/env';
+import { fetchIndexHistory } from '@/lib/sessions';
+import { semantic } from '@/lib/theme';
 
 export default function Maintenance() {
   const router = useRouter();
+  const historyQuery = useQuery({
+    queryKey: ['index', 'history'],
+    enabled: hasSupabaseConfig(),
+    queryFn: () => fetchIndexHistory(12),
+  });
+
+  const history = historyQuery.data ?? [];
+  // fetchIndexHistory returns oldest-first, so [0] is the baseline and the
+  // last entry is the most recent. Fall back to nominal numbers when
+  // there's no real data — the screen is still meaningful as a preview.
+  const before = history[0]?.composite ?? 50;
+  const after = history.at(-1)?.composite ?? 78;
+  const delta = Math.max(0, Math.round(after - before));
+
   return (
     <SafeAreaView className="flex-1 bg-surface-canvas">
       <ScrollView className="flex-1" contentContainerClassName="px-4 pb-12">
         <View className="items-center mt-16">
-          <Body weight="semibold" color="primary" style={{ fontSize: 64, lineHeight: 80 }}>
-            🏅
-          </Body>
-          <SectionLabel tracking="wide" className="mt-4">
+          {/* Medal hero — 120 px halo + 80 px disc + Award glyph */}
+          <View
+            className="w-[120px] h-[120px] rounded-full items-center justify-center"
+            style={{ backgroundColor: semantic.interactivePrimary + '33' }}
+          >
+            <View
+              className="w-20 h-20 rounded-full items-center justify-center"
+              style={{ backgroundColor: semantic.interactivePrimary }}
+            >
+              <Award
+                size={44}
+                color={semantic.textPrimary}
+                strokeWidth={2.5}
+              />
+            </View>
+          </View>
+          <SectionLabel tracking="wide" className="mt-5">
             8 WEEKS COMPLETE
           </SectionLabel>
           <Body
@@ -39,8 +65,12 @@ export default function Maintenance() {
         </View>
 
         <View className="flex-row gap-3 mt-8 self-center">
-          <Stat kicker="THEN" value="50" />
-          <Stat kicker="NOW" value="78" sub="+28 in 8 weeks" />
+          <Stat kicker="THEN" value={String(Math.round(before))} />
+          <Stat
+            kicker="NOW"
+            value={String(Math.round(after))}
+            sub={`+${delta} in 8 weeks`}
+          />
         </View>
 
         <Card padding="lg" radius="card" className="mt-6">

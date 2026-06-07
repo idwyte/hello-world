@@ -1,34 +1,72 @@
 // Figma: 34 · RPE slider — node 131:363
-// https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/?node-id=131-363
-// Spec: docs/hone-roadmap-state.md line 105 (Figma-derived).
 //
-// Effort-rating sheet between /session/active and /session/complete. Faint
-// success halo + 55% scrim + 460 px sheet · EFFORT CHECK accent kicker ·
-// "How hard was that?" + 96/104 big "7" with "/10" suffix · 326 px
-// discrete slider at 70% with 10 ticks · Easy / All-out anchor labels ·
-// Submit + Skip CTAs.
+// Effort-rating screen between /session/player and /session/complete. The
+// player logs the session row first and forwards the new id here; this
+// screen patches the row's perceived_effort column (1–10 Borg CR10 — see
+// migration 0007_rpe_1_10.sql) and forwards every param to /complete so
+// the celebration can render without re-querying.
 //
-// FIGMA-DIFF (stub):
-//   - Renders as full screen (not 460 px bottom sheet + scrim).
-//   - No discrete slider with ticks; stub uses a button row 1-10.
-//   - Submit captures the value into route params; full build persists
-//     RPE into session row.
+// FIGMA-DIFF (intentional):
+//   - Renders as a full screen rather than a 460 px bottom sheet. A real
+//     sheet would require restructuring the session navigation; the
+//     visual rhythm here (sheet-like card, ample top breathing room)
+//     mirrors Figma 34's affordance pair: Submit (primary) + Skip (ghost).
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import Slider from '@react-native-community/slider';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Body, Button, SectionLabel } from '@/components/ui';
+import { updateSessionRpe } from '@/lib/sessions';
 import { semantic } from '@/lib/theme';
+
+type Params = {
+  sessionId?: string;
+  durationS?: string;
+  reps?: string;
+  dayNumber?: string;
+  weekNumber?: string;
+};
 
 export default function RpeSlider() {
   const router = useRouter();
+  const params = useLocalSearchParams<Params>();
   const [value, setValue] = useState(7);
+  const [saving, setSaving] = useState(false);
+
+  function forwardToComplete(rpe?: number) {
+    router.replace({
+      pathname: '/session/complete',
+      params: {
+        ...(params.durationS ? { durationS: params.durationS } : {}),
+        ...(params.reps ? { reps: params.reps } : {}),
+        ...(params.dayNumber ? { dayNumber: params.dayNumber } : {}),
+        ...(params.weekNumber ? { weekNumber: params.weekNumber } : {}),
+        ...(rpe ? { rpe: rpe.toString() } : {}),
+      },
+    });
+  }
+
+  async function handleSubmit() {
+    if (saving) return;
+    setSaving(true);
+    try {
+      if (params.sessionId) {
+        await updateSessionRpe(params.sessionId, value);
+      }
+      forwardToComplete(value);
+    } catch {
+      // Don't block the user on a sync failure — the row still exists,
+      // it just won't have an RPE. Continue to celebration.
+      forwardToComplete(value);
+    }
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-surface-canvas">
-      <ScrollView className="flex-1" contentContainerClassName="px-4 pb-12">
-        <View className="items-center mt-12">
+      <ScrollView className="flex-1" contentContainerClassName="px-6 pb-12">
+        <View className="items-center mt-16">
           <SectionLabel tracking="wide" className="text-interactive-primary">
             EFFORT CHECK
           </SectionLabel>
@@ -42,63 +80,63 @@ export default function RpeSlider() {
           </Body>
         </View>
 
-        <View className="items-center mt-10">
+        <View className="items-center mt-12">
           <View className="flex-row items-end">
-            <Body weight="semibold" color="primary" style={{ fontSize: 96, lineHeight: 104 }}>
+            <Body
+              weight="semibold"
+              color="primary"
+              style={{ fontSize: 96, lineHeight: 104 }}
+            >
               {value}
             </Body>
-            <Body color="muted" style={{ fontSize: 32, lineHeight: 56 }} className="pb-3">
+            <Body
+              color="muted"
+              style={{ fontSize: 32, lineHeight: 56 }}
+              className="pb-3"
+            >
               /10
             </Body>
           </View>
         </View>
 
-        <View className="flex-row gap-1.5 mt-10 justify-center">
-          {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
-            const active = n <= value;
-            return (
-              <Pressable
-                key={n}
-                onPress={() => setValue(n)}
-                hitSlop={4}
-                accessibilityLabel={`${n} of 10`}
-              >
-                <View
-                  className="w-7 h-10 rounded-md"
-                  style={{
-                    backgroundColor: active
-                      ? semantic.interactivePrimary
-                      : semantic.surfaceSunken,
-                  }}
-                />
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <View className="flex-row justify-between mt-3 px-4">
-          <Body size="xs" color="muted">
-            Easy
-          </Body>
-          <Body size="xs" color="muted">
-            All-out
-          </Body>
+        <View className="mt-10 px-2">
+          <Slider
+            value={value}
+            onValueChange={(v) => setValue(Math.round(v))}
+            minimumValue={1}
+            maximumValue={10}
+            step={1}
+            minimumTrackTintColor={semantic.interactivePrimary}
+            maximumTrackTintColor={semantic.borderDefault}
+            thumbTintColor={semantic.interactivePrimary}
+            accessibilityLabel={`Effort ${value} of 10`}
+          />
+          <View className="flex-row justify-between mt-2">
+            <Body size="xs" color="muted">
+              Easy
+            </Body>
+            <Body size="xs" color="muted">
+              All-out
+            </Body>
+          </View>
         </View>
 
         <Button
-          label="Submit"
+          label={saving ? 'Saving…' : 'Submit'}
           variant="primary"
           size="lg"
           radius="cta"
           className="mt-12"
-          onPress={() => router.replace({ pathname: '/session/complete', params: { rpe: value.toString() } })}
+          disabled={saving}
+          onPress={handleSubmit}
         />
         <Button
           label="Skip"
           variant="ghost"
           size="md"
           className="mt-2"
-          onPress={() => router.replace('/session/complete')}
+          disabled={saving}
+          onPress={() => forwardToComplete()}
         />
       </ScrollView>
     </SafeAreaView>

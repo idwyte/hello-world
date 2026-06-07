@@ -18,6 +18,7 @@
 //     computes the change.
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as StoreReview from 'expo-store-review';
 import { Check } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
@@ -261,16 +262,26 @@ function RatingPrompt() {
 
       {isHighRating ? (
         <Button
-          // TODO Phase 2: wire to react-native-store-review's
-          // requestReview() (iOS SKStoreReviewController / Play in-app
-          // review on Android). For now this is a no-op acknowledgment.
+          // Cross-platform: expo-store-review opens the App Store rating
+          // sheet on iOS (SKStoreReviewController) and the Play in-app
+          // review sheet on Android. Both surfaces silently no-op if
+          // their per-user / per-version throttle has been hit, so
+          // there's no need to gate this call ourselves.
           label="Rate on the App Store"
           variant="primary"
           size="md"
           radius="cta"
           className="mt-5 self-stretch"
           onPress={() => {
-            /* no-op — see TODO above */
+            void (async () => {
+              try {
+                if (await StoreReview.isAvailableAsync()) {
+                  await StoreReview.requestReview();
+                }
+              } catch {
+                // Native sheet unavailable — silent no-op.
+              }
+            })();
           }}
         />
       ) : null}

@@ -1,17 +1,14 @@
 // Figma: 18 · error state — node 104:327
-// https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/?node-id=104-327
-// Spec: docs/hone-roadmap-state.md line 96 (Figma-derived).
 //
-// Detail-header "Couldn't load program" + errorState instance (kind=retry)
-// + "Contact support" muted text · escalation pattern for data-load
-// failures. Distinct from components/ErrorBoundary.tsx (which is the
-// generic crash fallback).
+// Generic data-load failure screen. Accepts route params so callers can
+// pass `title`, `message`, and `retryHref` (the destination of "Try
+// again"). Defaults are "Couldn't load program" / connection hint /
+// /home, matching Figma's primary use case.
 //
-// FIGMA-DIFF (stub):
-//   - 96 px error glyph (errorState component instance) rendered as emoji ⚠️.
-//   - Retry callback hardcoded to router.replace('/home'); promote with
-//     route params telling stub which screen failed + its fetch fn.
-import { useRouter } from 'expo-router';
+// Distinct from components/ErrorBoundary.tsx (which is the generic
+// uncaught-render fallback).
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { AlertCircle } from 'lucide-react-native';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -20,6 +17,16 @@ import { semantic } from '@/lib/theme';
 
 export default function ErrorScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{
+    title?: string;
+    message?: string;
+    retryHref?: string;
+  }>();
+  const title = params.title || "Couldn't load program";
+  const message =
+    params.message || 'Check your connection and try again.';
+  const retryHref = params.retryHref || '/home';
+
   return (
     <SafeAreaView className="flex-1 bg-surface-canvas">
       <View className="flex-1 items-center justify-center px-6">
@@ -27,9 +34,11 @@ export default function ErrorScreen() {
           className="w-24 h-24 rounded-full items-center justify-center"
           style={{ backgroundColor: semantic.feedbackDanger + '33' }}
         >
-          <Body weight="semibold" color="danger" style={{ fontSize: 42 }}>
-            !
-          </Body>
+          <AlertCircle
+            size={48}
+            color={semantic.feedbackDanger}
+            strokeWidth={2.5}
+          />
         </View>
         <Body
           weight="semibold"
@@ -37,10 +46,14 @@ export default function ErrorScreen() {
           className="mt-5 text-center"
           style={{ fontSize: 22, lineHeight: 28 }}
         >
-          Couldn&rsquo;t load program
+          {title}
         </Body>
-        <Body color="muted" className="mt-2 text-center" style={{ fontSize: 15, lineHeight: 22 }}>
-          Check your connection and try again.
+        <Body
+          color="muted"
+          className="mt-2 text-center"
+          style={{ fontSize: 15, lineHeight: 22 }}
+        >
+          {message}
         </Body>
 
         <Button
@@ -49,7 +62,9 @@ export default function ErrorScreen() {
           size="lg"
           radius="cta"
           className="mt-8 self-stretch"
-          onPress={() => router.replace('/home')}
+          onPress={() =>
+            router.replace(retryHref as Parameters<typeof router.replace>[0])
+          }
         />
         <Body size="sm" color="muted" className="mt-4">
           Still stuck? Contact support.

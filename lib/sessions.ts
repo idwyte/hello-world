@@ -18,29 +18,57 @@ export type CompletedSessionPayload = {
  * Persist a completed session to Supabase. The `streaks` table is maintained
  * by the AFTER INSERT trigger defined in `0002_streaks_fn.sql`.
  *
- * No-op when Supabase isn't configured (dev / M1 demo mode); the local
- * Zustand store is then the source of truth.
+ * Returns the inserted session id so the caller (typically the player) can
+ * pass it to the RPE screen for a later `updateSessionRpe()` call. No-op
+ * (returns `null`) when Supabase isn't configured (dev / M1 demo mode);
+ * the local Zustand store is the source of truth.
  */
 export async function logCompletedSession(
   s: CompletedSessionPayload,
-): Promise<void> {
-  if (!hasSupabaseConfig()) return;
+): Promise<string | null> {
+  if (!hasSupabaseConfig()) return null;
   const supabase = getSupabase();
   const { data, error: userErr } = await supabase.auth.getUser();
   if (userErr) throw userErr;
   const userId = data.user?.id;
   if (!userId) throw new Error('Not signed in.');
-  const { error } = await supabase.from('sessions').insert({
-    user_id: userId,
-    program_day_id: s.programDayId,
-    started_at: s.startedAt.toISOString(),
-    ended_at: s.endedAt.toISOString(),
-    completed: true,
-    mode: s.mode,
-    reps_planned: s.repsPlanned,
-    reps_completed: s.repsCompleted,
-    perceived_effort: s.perceivedEffort,
-  });
+  const { data: row, error } = await supabase
+    .from('sessions')
+    .insert({
+      user_id: userId,
+      program_day_id: s.programDayId,
+      started_at: s.startedAt.toISOString(),
+      ended_at: s.endedAt.toISOString(),
+      completed: true,
+      mode: s.mode,
+      reps_planned: s.repsPlanned,
+      reps_completed: s.repsCompleted,
+      perceived_effort: s.perceivedEffort,
+    })
+    .select('id')
+    .single();
+  if (error) throw error;
+  return (row?.id as string) ?? null;
+}
+
+/**
+ * Attach a Borg CR10 (1-10) effort rating to an existing session row.
+ * Called by the /session/rpe screen after the user submits the slider.
+ * The 1-10 range is enforced by migration 0007_rpe_1_10.sql.
+ */
+export async function updateSessionRpe(
+  sessionId: string,
+  rpe: number,
+): Promise<void> {
+  if (!hasSupabaseConfig()) return;
+  if (!Number.isInteger(rpe) || rpe < 1 || rpe > 10) {
+    throw new Error('RPE must be an integer between 1 and 10.');
+  }
+  const supabase = getSupabase();
+  const { error } = await supabase
+    .from('sessions')
+    .update({ perceived_effort: rpe })
+    .eq('id', sessionId);
   if (error) throw error;
 }
 

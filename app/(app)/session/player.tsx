@@ -61,6 +61,7 @@ export default function Player() {
   const runnerRef = useRef<SessionRunner | null>(null);
   const timelineRef = useRef<ReturnType<typeof buildTimeline>>([]);
   const startedAtRef = useRef<number>(0);
+  const sessionIdRef = useRef<string | null>(null);
 
   function handlePause() {
     runnerRef.current?.pause();
@@ -164,7 +165,8 @@ export default function Player() {
           repsPlanned,
           repsCompleted: repsPlanned,
         })
-          .then(() => {
+          .then((id) => {
+            sessionIdRef.current = id;
             void queryClient.invalidateQueries({ queryKey: ['streak'] });
             void queryClient.invalidateQueries({ queryKey: ['sessions'] });
           })
@@ -227,13 +229,15 @@ export default function Player() {
           <Text className="text-muted mt-2 text-center">
             Nice. Consistency is the whole game.
           </Text>
-          {/* Route through /session/complete (Figma 14) for the celebration
-              + rating + Done flow before returning to home. */}
+          {/* Route through /session/rpe (Figma 34) → /session/complete
+              (Figma 14). The RPE screen attaches the effort rating to
+              the just-logged session row and forwards the same params. */}
           <Pressable
             onPress={() =>
               router.replace({
-                pathname: '/session/complete',
+                pathname: '/session/rpe',
                 params: {
+                  sessionId: sessionIdRef.current ?? '',
                   durationS: durationS.toString(),
                   reps: totalReps.toString(),
                   dayNumber: todayMeta?.dayNumber?.toString() ?? '',
