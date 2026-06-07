@@ -7,12 +7,13 @@
 //   - 96×96 heart glyph in surface card rendered as lucide Heart.
 //   - Connect doesn't actually call HKHealthStore.requestAuthorization().
 //   - Skip is a muted text button in top-right; styled as text Pressable here.
-//   - On Android the screen is never shown — fail-silent skip TODO once flow
-//     gates on Platform.OS === 'ios'.
-import { Platform } from 'react-native';
+//
+// Android: HealthKit doesn't exist there. If anything routes here from
+// Android, fail-silently to /paywall — Health Connect is a Phase 3 item.
+import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { Heart } from 'lucide-react-native';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Platform, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Body, Button } from '@/components/ui';
@@ -27,6 +28,14 @@ const VALUE_PROPS = [
 export default function HealthkitConnect() {
   const router = useRouter();
   const finish = () => router.replace('/paywall');
+
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      router.replace('/paywall');
+    }
+  }, [router]);
+
+  if (Platform.OS === 'android') return null;
 
   return (
     <SafeAreaView className="flex-1 bg-surface-canvas">

@@ -17,6 +17,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: false,
     bundleIdentifier: 'com.honeapp.mobile',
+    usesAppleSignIn: true,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
     },
@@ -29,6 +30,17 @@ const config: ExpoConfig = {
     },
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
+    permissions: [
+      'android.permission.POST_NOTIFICATIONS',
+      'android.permission.USE_BIOMETRIC',
+      'android.permission.USE_FINGERPRINT',
+    ],
+    // FCM credentials drop in at build time. Set GOOGLE_SERVICES_JSON_PATH
+    // (relative to repo root) before `eas build` once the Firebase project
+    // exists — see docs/SHIP-CHECKLIST.md.
+    ...(process.env.GOOGLE_SERVICES_JSON_PATH
+      ? { googleServicesFile: process.env.GOOGLE_SERVICES_JSON_PATH }
+      : {}),
   },
   web: {
     favicon: './assets/favicon.png',
@@ -47,6 +59,13 @@ const config: ExpoConfig = {
         // The notification's `sound: false` is set per-message in
         // `lib/notifications.ts`.
         color: '#7C5CFF',
+      },
+    ],
+    [
+      'expo-local-authentication',
+      {
+        faceIDPermission:
+          'Allow Hone to use Face ID so you can quickly unlock your training data.',
       },
     ],
   ],
