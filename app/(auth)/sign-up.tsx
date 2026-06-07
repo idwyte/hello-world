@@ -5,15 +5,12 @@
 // value-prop list above the auth options. Same OAuth + magic-link options
 // underneath — server treats first-auth as user creation either way.
 //
-// FIGMA-DIFF (stub):
-//   - Real OAuth buttons (Apple/Google) + email input + Continue CTA not
-//     wired here yet; stub forwards user to /sign-in which already has
-//     them implemented. Promote to full Apple/Google + email split-out in
-//     a follow-up.
-//   - 20×20 success-green check badges in the value-prop rows rendered as
-//     bullets; full build uses lucide Check inside a success-tinted disc.
-//   - Back chev at (12, 56) handled by router.back() — no custom hit area.
+// Magic-link / OAuth all live in /sign-in (server treats first-auth as
+// account creation either way). This screen is the value-prop teaser
+// that funnels there; the dedicated split-out exists so future paid
+// up-sell variants have a place to attach.
 import { useRouter } from 'expo-router';
+import { Check } from 'lucide-react-native';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -58,14 +55,11 @@ export default function SignUp() {
                 className="w-5 h-5 rounded-full items-center justify-center"
                 style={{ backgroundColor: semantic.feedbackSuccess + '33' }}
               >
-                <Body
-                  size="xs"
-                  weight="semibold"
-                  color="success"
-                  style={{ fontSize: 12, lineHeight: 14 }}
-                >
-                  ✓
-                </Body>
+                <Check
+                  size={12}
+                  color={semantic.feedbackSuccess}
+                  strokeWidth={3}
+                />
               </View>
               <Body size="md" color="primary" style={{ fontSize: 15, lineHeight: 22 }}>
                 {p}
