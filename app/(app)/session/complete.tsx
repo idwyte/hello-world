@@ -11,12 +11,12 @@
 //   weekNumber — 1-8
 //
 // FIGMA-DIFF (remaining):
-//   - 4+ star App Store rating CTA is not wired to SKStoreReviewController
-//     (RN equivalent: react-native-store-review). 1-3 stars currently
+//   - 4+ star App Store rating CTA is not wired to native review
+//     (handled in Batch C — expo-store-review). 1-3 stars currently
 //     just swaps the headline to "Thanks for the feedback".
 //   - Streak delta is read from params verbatim — caller (player.tsx)
 //     computes the change.
-//   - Name is hardcoded to "friend" until auth profile read is wired.
+import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Check } from 'lucide-react-native';
 import { useState } from 'react';
@@ -24,6 +24,8 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Body, Button, Card, SectionLabel } from '@/components/ui';
+import { hasSupabaseConfig } from '@/lib/env';
+import { fetchUserDisplayName } from '@/lib/sessions';
 import { semantic } from '@/lib/theme';
 
 function formatDuration(s: number): string {
@@ -52,6 +54,13 @@ export default function SessionComplete() {
   const subhead = Number.isFinite(dayNumber) && Number.isFinite(weekNumber)
     ? `Day ${dayNumber} of Week ${weekNumber} · complete.`
     : 'Session complete.';
+
+  const nameQuery = useQuery({
+    queryKey: ['user', 'name'],
+    enabled: hasSupabaseConfig(),
+    queryFn: fetchUserDisplayName,
+  });
+  const userName = nameQuery.data || 'friend';
 
   const durationLabel = formatDuration(durationS);
   const repsLabel = Number.isFinite(reps) && reps > 0 ? reps.toString() : '—';
@@ -86,7 +95,7 @@ export default function SessionComplete() {
             className="mt-5 text-center"
             style={{ fontSize: 26, lineHeight: 32 }}
           >
-            Nice work, friend
+            Nice work, {userName}
           </Body>
           <Body
             color="muted"

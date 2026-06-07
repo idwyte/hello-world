@@ -1,48 +1,79 @@
 // Figma: 25 · exercise detail — node 110:348
 // https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/?node-id=110-348
-// Spec: docs/hone-roadmap-state.md line 109 (Figma-derived).
 //
-// Detail header "Quick flicks" · 7-dot tempo visualisation card + "1s ON ·
-// 1s OFF" label + description · HOW IT WORKS 3 numbered steps · TIPS 3
-// bullets · "Practice solo · 1 min" CTA (launches a single-exercise mini
-// session).
+// Real wiring: tempo summary computed from EXERCISES[exerciseId].phases
+// instead of hardcoded "1s ON · 1s OFF". Falls back to a "not found" view
+// when the slug is unknown.
 //
-// FIGMA-DIFF (stub):
-//   - 7-dot tempo visualisation rendered as text "● ● ● ● ● ● ●".
-//   - Exercise data hardcoded; promote to look up EXERCISES[exerciseId].
-//   - Practice solo CTA navigates to /session/today (no solo-mode flow yet).
+// Deferred:
+//   - Per-rep illustration (still 7 accent dots; Figma calls for a small
+//     square pulse visualisation).
+//   - Solo-mode session (Practice solo CTA currently lands on /session/today).
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Body, Button, Card, SectionLabel } from '@/components/ui';
+import { Body, Button, Card, ScreenHeader, SectionLabel } from '@/components/ui';
 
 import { EXERCISES } from '@/lib/exercises';
+import type { ExerciseTemplate } from '@/lib/types';
+
+function tempoSummary(ex: ExerciseTemplate): string {
+  // ON = active work (squeeze + hold), OFF = rest (release).
+  const onMs = ex.phases
+    .filter((p) => p.kind === 'squeeze' || p.kind === 'hold')
+    .reduce((a, p) => a + p.durationMs, 0);
+  const offMs = ex.phases
+    .filter((p) => p.kind === 'release')
+    .reduce((a, p) => a + p.durationMs, 0);
+  const fmt = (ms: number) => {
+    const s = ms / 1000;
+    return Number.isInteger(s) ? `${s}s` : `${s.toFixed(1)}s`;
+  };
+  return `${fmt(onMs)} ON · ${fmt(offMs)} OFF`;
+}
+
+const POSITION_LABEL: Record<
+  NonNullable<ExerciseTemplate['position']>,
+  string
+> = {
+  seated: 'Best done seated.',
+  standing: 'Best done standing.',
+  supine: 'Lying on your back.',
+  quadruped: 'On hands and knees.',
+  any: 'Sit upright, shoulders relaxed.',
+};
 
 export default function ExerciseDetail() {
   const router = useRouter();
   const { exerciseId } = useLocalSearchParams<{ exerciseId: string }>();
-  const ex = EXERCISES[exerciseId] ?? null;
+  const ex = exerciseId ? EXERCISES[exerciseId] : undefined;
+
+  if (!ex) {
+    return (
+      <SafeAreaView className="flex-1 bg-surface-canvas">
+        <ScreenHeader
+          kind="detail"
+          title="Exercise"
+          onBack={() => router.back()}
+        />
+        <View className="flex-1 px-6 py-8">
+          <Body color="muted">
+            We don&rsquo;t recognise this exercise. It may have been removed
+            from the catalog.
+          </Body>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-surface-canvas">
-      <View className="h-14 flex-row items-center px-4">
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={12}
-          accessibilityLabel="Back"
-          className="w-11 h-11 items-center justify-center"
-        >
-          <Body color="primary" style={{ fontSize: 20 }}>
-            ←
-          </Body>
-        </Pressable>
-        <View className="flex-1 items-center -ml-11">
-          <Body weight="semibold" color="primary" style={{ fontSize: 17, lineHeight: 24 }}>
-            {ex?.name ?? 'Exercise'}
-          </Body>
-        </View>
-      </View>
+      <ScreenHeader
+        kind="detail"
+        title={ex.name}
+        onBack={() => router.back()}
+      />
 
       <ScrollView className="flex-1" contentContainerClassName="px-6 pb-32">
         {/* Tempo visualisation card */}
@@ -51,10 +82,10 @@ export default function ExerciseDetail() {
             ● ● ● ● ● ● ●
           </Body>
           <Body size="sm" color="muted" className="mt-2">
-            1s ON · 1s OFF
+            {tempoSummary(ex)}
           </Body>
           <Body size="sm" color="muted" className="mt-3 text-center">
-            {ex?.description ?? 'A short, fast contraction.'}
+            {ex.description}
           </Body>
         </Card>
 
@@ -63,9 +94,11 @@ export default function ExerciseDetail() {
         </SectionLabel>
         <View className="gap-2 mt-3">
           {[
-            'Sit upright. Relax shoulders.',
-            'Squeeze pelvic-floor muscles briefly.',
-            'Release completely between reps.',
+            ex.position
+              ? POSITION_LABEL[ex.position]
+              : 'Sit upright, shoulders relaxed.',
+            'Squeeze the pelvic-floor muscles cleanly — no breath holding.',
+            'Release fully between reps. Quality beats count.',
           ].map((step, i) => (
             <View key={i} className="flex-row gap-3">
               <Body weight="semibold" color="accent">
@@ -83,9 +116,9 @@ export default function ExerciseDetail() {
         </SectionLabel>
         <View className="gap-2 mt-3">
           {[
-            'Breathe normally — don\'t hold your breath.',
+            "Breathe normally — don't hold your breath.",
             'Only the pelvic-floor muscles should move.',
-            'Quality of contraction > count.',
+            `Aim for ${ex.sets} ${ex.sets === 1 ? 'set' : 'sets'} × ${ex.reps} reps; stop early if form slips.`,
           ].map((tip, i) => (
             <View key={i} className="flex-row gap-2.5 items-start">
               <Body color="muted">·</Body>

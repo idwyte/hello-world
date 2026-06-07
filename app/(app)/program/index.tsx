@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Body, Card, Pill, ScreenHeader } from '@/components/ui';
 import { hasSupabaseConfig } from '@/lib/env';
 import { EXERCISES } from '@/lib/exercises';
+import { fetchCompletedDayIds } from '@/lib/sessions';
 import { getSupabase } from '@/lib/supabase';
 
 type ProgramDayRow = {
@@ -54,8 +55,14 @@ export default function Program() {
     enabled: hasSupabaseConfig(),
     queryFn: fetchActiveProgramDays,
   });
+  const completedQuery = useQuery({
+    queryKey: ['program-days', 'completed'],
+    enabled: hasSupabaseConfig(),
+    queryFn: fetchCompletedDayIds,
+  });
 
   const days = daysQuery.data ?? [];
+  const completedIds = completedQuery.data ?? new Set<string>();
 
   // Group days by week index for the week-card layout.
   const weeks: ProgramDayRow[][] = [];
@@ -93,7 +100,7 @@ export default function Program() {
         ) : (
           <View className="gap-3 mt-2">
             {weeks.map((week, wi) => {
-              const completed = 0; // TODO: cross-reference sessions to compute completion
+              const completed = week.filter((d) => completedIds.has(d.id)).length;
               const firstDay = week[0];
               return (
                 <Pressable

@@ -21,6 +21,7 @@ import {
   fetchRecentSessions,
   fetchStreak,
   fetchTodayProgramDay,
+  fetchUserDisplayName,
 } from '@/lib/sessions';
 import { semantic } from '@/lib/theme';
 import { useSessionStore } from '@/stores/session';
@@ -74,6 +75,12 @@ export default function Home() {
     enabled: hasSupabaseConfig(),
     queryFn: () => fetchIndexHistory(12),
   });
+  const nameQuery = useQuery({
+    queryKey: ['user', 'name'],
+    enabled: hasSupabaseConfig(),
+    queryFn: fetchUserDisplayName,
+  });
+  const userName = nameQuery.data || 'friend';
 
   const streak = streakQuery.data ?? {
     current: localStreak.current,
@@ -115,7 +122,7 @@ export default function Home() {
         <ScreenHeader
           kind="greeting"
           greeting={`${greeting},`}
-          name="friend"
+          name={userName}
           trailing={
             <Pill
               label={hasStreak ? `${streak.current} days` : 'Start your streak'}
