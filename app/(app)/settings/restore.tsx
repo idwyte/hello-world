@@ -1,4 +1,6 @@
-// Figma: 20 · restore purchase — node 104:479
+// Obsidian Kinetic: Settings · Restore purchase.
+// Originally Figma node 104:479 (legacy skin); re-skinned to the
+// state-screen patterns.
 //
 // Real wiring: kicks `restorePurchases()` from RevenueCat on mount,
 // transitions through 3 states — looking → restored / nothing-found.
@@ -7,13 +9,13 @@
 // ErrorState; we collapse it here to keep state count minimal).
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Check, RotateCw } from 'lucide-react-native';
 
-import { Body, Button, ScreenHeader } from '@/components/ui';
+import { Button, ScreenHeader } from '@/components/obsidian';
+import { color, radius, spacing, type } from '@/lib/obsidian/tokens';
 import { hasRevenueCatConfig, restorePurchases } from '@/lib/revenuecat';
-import { semantic } from '@/lib/theme';
 
 type Status = 'looking' | 'restored' | 'nothing';
 
@@ -51,120 +53,169 @@ export default function Restore() {
   }, [attemptKey]);
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-canvas">
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
       <ScreenHeader
-        kind="detail"
+        variant="back"
         title="Restore purchase"
-        onBack={() => router.back()}
+        onPress={() => router.back()}
       />
 
-      <View className="flex-1 items-center justify-center px-6">
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingHorizontal: 32,
+          gap: spacing.stackMd,
+        }}
+      >
         {status === 'looking' && (
           <>
             <View
-              className="w-[72px] h-[72px] rounded-full items-center justify-center"
-              style={{ backgroundColor: semantic.interactivePrimaryPressed }}
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: radius.full,
+                borderWidth: 2,
+                borderColor: color.outlineVariant,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
             >
-              <ActivityIndicator color={semantic.textPrimary} />
+              <ActivityIndicator color={color.primaryContainer} />
             </View>
-            <Body
-              weight="semibold"
-              color="primary"
-              className="mt-4 text-center"
-              style={{ fontSize: 22, lineHeight: 28 }}
+            <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
+              RESTORE
+            </Text>
+            <Text
+              style={{
+                ...type.headlineMd,
+                color: color.onSurface,
+                textAlign: 'center',
+              }}
             >
               Checking your account…
-            </Body>
-            <Body
-              color="muted"
-              className="mt-2 text-center"
-              style={{ fontSize: 15, lineHeight: 22 }}
+            </Text>
+            <Text
+              style={{
+                ...type.bodyMd,
+                color: color.onSurfaceVariant,
+                textAlign: 'center',
+              }}
             >
               This takes a few seconds.
-            </Body>
+            </Text>
           </>
         )}
 
         {status === 'restored' && (
           <>
             <View
-              className="w-[72px] h-[72px] rounded-full items-center justify-center"
-              style={{ backgroundColor: semantic.feedbackSuccess + '33' }}
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: radius.full,
+                borderWidth: 2,
+                borderColor: color.primaryContainer,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
             >
-              <Check size={36} color={semantic.feedbackSuccess} strokeWidth={3} />
+              <Check size={36} color={color.primaryContainer} strokeWidth={3} />
             </View>
-            <Body
-              weight="semibold"
-              color="primary"
-              className="mt-4 text-center"
-              style={{ fontSize: 22, lineHeight: 28 }}
+            <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
+              RESTORE
+            </Text>
+            <Text
+              style={{
+                ...type.headlineMd,
+                color: color.onSurface,
+                textAlign: 'center',
+              }}
             >
               Purchase restored.
-            </Body>
-            <Body
-              color="muted"
-              className="mt-2 text-center"
-              style={{ fontSize: 15, lineHeight: 22 }}
+            </Text>
+            <Text
+              style={{
+                ...type.bodyMd,
+                color: color.onSurfaceVariant,
+                textAlign: 'center',
+              }}
             >
               You&rsquo;re all set — every feature is unlocked.
-            </Body>
+            </Text>
           </>
         )}
 
         {status === 'nothing' && (
           <>
             <View
-              className="w-[72px] h-[72px] rounded-full items-center justify-center"
-              style={{ backgroundColor: semantic.surfaceRaised }}
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: radius.full,
+                borderWidth: 2,
+                borderColor: color.outlineVariant,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
             >
-              <RotateCw size={32} color={semantic.textMuted} />
+              <RotateCw size={32} color={color.onSurfaceVariant} />
             </View>
-            <Body
-              weight="semibold"
-              color="primary"
-              className="mt-4 text-center"
-              style={{ fontSize: 22, lineHeight: 28 }}
+            <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
+              RESTORE
+            </Text>
+            <Text
+              style={{
+                ...type.headlineMd,
+                color: color.onSurface,
+                textAlign: 'center',
+              }}
             >
               No purchases to restore.
-            </Body>
-            <Body
-              color="muted"
-              className="mt-2 text-center"
-              style={{ fontSize: 15, lineHeight: 22 }}
+            </Text>
+            <Text
+              style={{
+                ...type.bodyMd,
+                color: color.onSurfaceVariant,
+                textAlign: 'center',
+              }}
             >
               We couldn&rsquo;t find a previous purchase tied to this
               account. If you bought with a different account, sign in
               with that one and try again.
-            </Body>
+            </Text>
           </>
         )}
       </View>
 
-      <View className="px-6 pb-8">
+      <View
+        style={{
+          paddingHorizontal: spacing.containerPadding,
+          paddingBottom: spacing.stackLg + spacing.stackSm,
+          gap: spacing.stackSm,
+        }}
+      >
         {status === 'nothing' ? (
           <>
             <Button
               label="Try again"
-              variant="primary"
-              size="lg"
-              radius="cta"
               onPress={() => setAttemptKey((k) => k + 1)}
+              style={{ width: '100%' }}
             />
             <Button
               label="Back"
               variant="ghost"
-              size="md"
-              className="mt-2"
               onPress={() => router.back()}
+              style={{ width: '100%' }}
             />
           </>
         ) : (
           <Button
             label={status === 'restored' ? 'Done' : 'Cancel'}
-            variant={status === 'restored' ? 'primary' : 'secondary'}
-            size="lg"
-            radius="cta"
+            variant={status === 'restored' ? 'primary' : 'ghost'}
             onPress={() => router.back()}
+            style={{ width: '100%' }}
           />
         )}
       </View>

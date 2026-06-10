@@ -1,9 +1,25 @@
+// Obsidian Kinetic: Settings · Subscription. No dedicated Figma frame —
+// derived from the glass card + Button patterns. RevenueCat wiring and
+// store-management deep links unchanged.
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Linking, Platform, Pressable, Text, View } from 'react-native';
+import {
+  Alert,
+  Linking,
+  Platform,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { hasRevenueCatConfig, restorePurchases, useEntitlement } from '@/lib/revenuecat';
+import { Button, ScreenHeader } from '@/components/obsidian';
+import { color, glass, radius, spacing, type } from '@/lib/obsidian/tokens';
+import {
+  hasRevenueCatConfig,
+  restorePurchases,
+  useEntitlement,
+} from '@/lib/revenuecat';
 
 export default function Subscription() {
   const router = useRouter();
@@ -17,7 +33,9 @@ export default function Subscription() {
       const e = await restorePurchases();
       Alert.alert(
         e.isPro ? 'Restored' : 'Nothing to restore',
-        e.isPro ? 'Your subscription is active.' : 'No active subscription found on this account.',
+        e.isPro
+          ? 'Your subscription is active.'
+          : 'No active subscription found on this account.',
       );
     } catch (err) {
       Alert.alert(
@@ -50,61 +68,67 @@ export default function Subscription() {
         : 'No active subscription';
 
   return (
-    <SafeAreaView className="flex-1 bg-bg">
-      <View className="flex-1 px-6 pt-4">
-        <Pressable
-          onPress={() => router.back()}
-          className="self-start py-3 px-3 -ml-3 active:opacity-60"
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
+      <ScreenHeader
+        variant="back"
+        title="Subscription"
+        onPress={() => router.back()}
+      />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackMd,
+          paddingBottom: 40,
+          gap: spacing.stackMd,
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: color.surfaceContainerLow,
+            borderColor: glass.border,
+            borderWidth: glass.borderWidth,
+            borderRadius: radius.xl,
+            padding: spacing.stackMd,
+            gap: spacing.stackSm,
+          }}
         >
-          <Text className="text-muted">← Back</Text>
-        </Pressable>
-
-        <Text className="text-ink text-3xl font-semibold mt-2">Subscription</Text>
-
-        <View className="bg-surface border border-border rounded-xl p-4 mt-6">
-          <Text className="text-muted text-xs uppercase tracking-wider">
+          <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
             Status
           </Text>
-          <Text className="text-ink text-base mt-1">{status}</Text>
+          <Text style={{ ...type.bodyLg, color: color.onSurface }}>
+            {status}
+          </Text>
         </View>
 
-        <View className="mt-6 gap-3">
-          {!entitlement.isPro && hasRevenueCatConfig() ? (
-            <Pressable
-              onPress={() => router.push('/paywall')}
-              accessibilityRole="button"
-              accessibilityLabel="See plans"
-              className="bg-accent rounded-xl py-4 items-center active:opacity-80"
-            >
-              <Text className="text-ink font-semibold">See plans</Text>
-            </Pressable>
-          ) : null}
+        {!entitlement.isPro && hasRevenueCatConfig() ? (
+          <Button
+            label="See plans"
+            onPress={() => router.push('/paywall')}
+            accessibilityLabel="See plans"
+            style={{ width: '100%' }}
+          />
+        ) : null}
 
-          <Pressable
-            onPress={onRestore}
-            disabled={busy}
-            accessibilityRole="button"
-            accessibilityLabel="Restore previous purchases"
-            className="bg-surface border border-border rounded-xl py-4 items-center active:opacity-80"
-          >
-            <Text className="text-ink">Restore purchases</Text>
-          </Pressable>
+        <Button
+          label="Restore purchases"
+          variant="ghost"
+          onPress={onRestore}
+          disabled={busy}
+          accessibilityLabel="Restore previous purchases"
+          style={{ width: '100%' }}
+        />
 
-          {entitlement.isPro ? (
-            <Pressable
-              onPress={openStoreManagement}
-              accessibilityRole="button"
-              accessibilityLabel="Manage subscription in the App Store"
-              className="bg-surface border border-border rounded-xl py-4 items-center active:opacity-80"
-            >
-              <Text className="text-ink">Manage in {Platform.OS === 'ios' ? 'App Store' : 'Play Store'}</Text>
-            </Pressable>
-          ) : null}
-        </View>
-      </View>
+        {entitlement.isPro ? (
+          <Button
+            label={`Manage in ${Platform.OS === 'ios' ? 'App Store' : 'Play Store'}`}
+            variant="ghost"
+            onPress={openStoreManagement}
+            accessibilityLabel="Manage subscription in the App Store"
+            style={{ width: '100%' }}
+          />
+        ) : null}
+      </ScrollView>
     </SafeAreaView>
   );
 }

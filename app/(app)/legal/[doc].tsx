@@ -24,11 +24,11 @@
 //   - "Last updated" timestamp is a hardcoded ISO string — move to a
 //     build constant when the legal review lands.
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Body, ScreenHeader } from '@/components/ui';
-import { semantic } from '@/lib/theme';
+import { ScreenHeader } from '@/components/obsidian';
+import { color, radius, spacing, type } from '@/lib/obsidian/tokens';
 
 // Body is an array of paragraphs (Figma 17 renders each as a separate
 // 14/22 muted block with an 8 px gap, not one wall of text).
@@ -259,47 +259,58 @@ export default function Legal() {
   const content = DOCS[slug] ?? TERMS;
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-canvas">
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
       <ScreenHeader
-        kind="detail"
+        variant="back"
         title={content.title}
-        onBack={() => router.back()}
+        onPress={() => router.back()}
       />
 
-      <ScrollView className="flex-1" contentContainerClassName="px-6 pt-2 pb-12">
-        <Body
-          weight="medium"
-          color="muted"
-          style={{ fontSize: 12, lineHeight: 16 }}
-        >
-          Last updated · {content.lastUpdated}
-        </Body>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackSm,
+          paddingBottom: spacing.stackLg * 2,
+        }}
+      >
+        <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
+          LAST UPDATED · {content.lastUpdated}
+        </Text>
         <View
-          className="mt-3 rounded-md px-3 py-2"
-          style={{ backgroundColor: semantic.feedbackDanger + '20' }}
+          style={{
+            marginTop: spacing.gutter,
+            borderRadius: radius.lg,
+            borderWidth: 1,
+            borderColor: color.error,
+            paddingHorizontal: spacing.gutter,
+            paddingVertical: spacing.stackSm,
+          }}
         >
-          <Body color="muted" style={{ fontSize: 12, lineHeight: 16 }}>
+          <Text
+            style={{
+              ...type.bodyMd,
+              fontSize: 14,
+              lineHeight: 20,
+              color: color.error,
+            }}
+          >
             Draft — pending legal review before production.
-          </Body>
+          </Text>
         </View>
-        <View className="mt-5" style={{ gap: 20 }}>
+        <View style={{ marginTop: spacing.containerPadding, gap: spacing.containerPadding }}>
           {content.sections.map((s) => (
-            <View key={s.heading} style={{ gap: 8 }}>
-              <Body
-                weight="semibold"
-                color="primary"
-                style={{ fontSize: 17, lineHeight: 24 }}
-              >
+            <View key={s.heading} style={{ gap: spacing.stackSm }}>
+              <Text style={{ ...type.headlineMd, fontSize: 20, lineHeight: 26, color: color.onSurface }}>
                 {s.heading}
-              </Body>
+              </Text>
               {s.body.map((para, i) => (
-                <Body
+                <Text
                   key={i}
-                  color="muted"
-                  style={{ fontSize: 14, lineHeight: 22 }}
+                  style={{ ...type.bodyMd, fontSize: 15, lineHeight: 22, color: color.onSurfaceVariant }}
                 >
                   {para}
-                </Body>
+                </Text>
               ))}
             </View>
           ))}

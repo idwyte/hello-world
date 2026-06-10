@@ -1,10 +1,15 @@
+// Obsidian Kinetic: Settings · Security. No dedicated Figma frame —
+// derived from the glass card + Button patterns. Biometric toggle and
+// identity-linking wiring unchanged.
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, ScrollView, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button, ScreenHeader } from '@/components/obsidian';
 import { linkIdentityToCurrent } from '@/lib/auth';
 import { useAuth } from '@/lib/auth';
+import { color, glass, radius, spacing, type } from '@/lib/obsidian/tokens';
 import { useSettingsStore } from '@/stores/settings';
 
 async function biometricsAvailable(): Promise<boolean> {
@@ -63,81 +68,126 @@ export default function SecurityScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-bg">
-      <ScrollView className="flex-1 px-6 pt-6" contentContainerClassName="pb-12">
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          hitSlop={12}
-          className="self-start py-3 px-3 -ml-3 active:opacity-60"
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
+      <ScreenHeader
+        variant="back"
+        title="Security"
+        onPress={() => router.back()}
+      />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackMd,
+          paddingBottom: 40,
+          gap: spacing.stackMd,
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: color.surfaceContainerLow,
+            borderColor: glass.border,
+            borderWidth: glass.borderWidth,
+            borderRadius: radius.xl,
+            padding: spacing.stackMd,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.gutter,
+          }}
         >
-          <Text className="text-muted">← Back</Text>
-        </Pressable>
-
-        <Text className="text-ink text-3xl font-semibold mt-4">Security</Text>
-
-        <View className="bg-surface border border-border rounded-2xl mt-8 px-4 py-4">
-          <View className="flex-row items-center justify-between">
-            <View className="flex-1 pr-3">
-              <Text className="text-ink text-base font-semibold">
-                Require Face ID / Touch ID
-              </Text>
-              <Text className="text-muted text-xs mt-1 leading-5">
-                {biometricSupported === false
-                  ? 'No biometrics or passcode set on this device.'
-                  : 'Unlock Hone with Face ID, Touch ID, or your device passcode every time you open the app.'}
-              </Text>
-            </View>
-            <Switch
-              value={settings.biometricLocked}
-              onValueChange={toggleBiometric}
-              disabled={!hydrated || biometricSupported === false}
-              accessibilityLabel="Biometric lock"
-              trackColor={{ false: '#2A2A36', true: '#7C5CFF' }}
-              thumbColor="#F5F5F7"
-            />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={{ ...type.bodyLg, color: color.onSurface }}>
+              Require Face ID / Touch ID
+            </Text>
+            <Text
+              style={{
+                ...type.bodyMd,
+                fontSize: 14,
+                lineHeight: 20,
+                color: color.onSurfaceVariant,
+              }}
+            >
+              {biometricSupported === false
+                ? 'No biometrics or passcode set on this device.'
+                : 'Unlock Hone with Face ID, Touch ID, or your device passcode every time you open the app.'}
+            </Text>
           </View>
+          <Switch
+            value={settings.biometricLocked}
+            onValueChange={toggleBiometric}
+            disabled={!hydrated || biometricSupported === false}
+            accessibilityLabel="Biometric lock"
+            trackColor={{
+              true: color.primaryContainer,
+              false: color.surfaceContainerHigh,
+            }}
+            thumbColor="#fff"
+          />
         </View>
 
         {auth.isAnonymous ? (
           <>
-            <Text className="text-muted text-xs uppercase tracking-wider mt-10 mb-3">
+            <Text
+              style={{
+                ...type.labelCaps,
+                color: color.onSurfaceVariant,
+                marginTop: spacing.stackSm,
+              }}
+            >
               Save your data
             </Text>
-            <View className="bg-surface border border-border rounded-2xl px-4 py-4">
-              <Text className="text-ink text-base font-semibold">
+            <View
+              style={{
+                backgroundColor: color.surfaceContainerLow,
+                borderColor: glass.border,
+                borderWidth: glass.borderWidth,
+                borderRadius: radius.xl,
+                padding: spacing.stackMd,
+                gap: spacing.stackSm,
+              }}
+            >
+              <Text style={{ ...type.bodyLg, color: color.onSurface }}>
                 Link an account
               </Text>
-              <Text className="text-muted text-xs mt-1 leading-5">
+              <Text
+                style={{
+                  ...type.bodyMd,
+                  fontSize: 14,
+                  lineHeight: 20,
+                  color: color.onSurfaceVariant,
+                }}
+              >
                 Your training history lives only on this device today. Link
                 Apple or Google to sync across devices — no email required.
               </Text>
-              <View className="gap-2 mt-4">
-                <Pressable
-                  disabled={linking !== null}
+              <View style={{ gap: spacing.stackSm, marginTop: spacing.stackSm }}>
+                <Button
+                  label={linking === 'apple' ? 'Linking…' : 'Link Apple ID'}
                   onPress={() => link('apple')}
-                  accessibilityRole="button"
-                  accessibilityLabel="Link Apple ID"
-                  className="bg-ink rounded-xl py-3 items-center active:opacity-80"
-                >
-                  <Text className="text-bg font-semibold">
-                    {linking === 'apple' ? 'Linking…' : 'Link Apple ID'}
-                  </Text>
-                </Pressable>
-                <Pressable
                   disabled={linking !== null}
+                  accessibilityLabel="Link Apple ID"
+                  style={{ width: '100%' }}
+                />
+                <Button
+                  label={
+                    linking === 'google' ? 'Linking…' : 'Link Google account'
+                  }
+                  variant="ghost"
                   onPress={() => link('google')}
-                  accessibilityRole="button"
+                  disabled={linking !== null}
                   accessibilityLabel="Link Google account"
-                  className="bg-surface2 border border-border rounded-xl py-3 items-center active:opacity-80"
-                >
-                  <Text className="text-ink font-semibold">
-                    {linking === 'google' ? 'Linking…' : 'Link Google account'}
-                  </Text>
-                </Pressable>
+                  style={{ width: '100%' }}
+                />
               </View>
-              <Text className="text-muted text-[11px] mt-3 leading-4">
+              <Text
+                style={{
+                  ...type.bodyMd,
+                  fontSize: 12,
+                  lineHeight: 16,
+                  color: color.onSurfaceVariant,
+                  marginTop: spacing.stackSm,
+                }}
+              >
                 If the chosen account is already linked to a different Hone
                 profile we&apos;ll surface a friendly error — conflict-merging
                 is a v1.2 feature.

@@ -1,38 +1,30 @@
-// Figma: 24 · day detail — node 109:345
-// https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/?node-id=109-345
-//
-// Detail of a single program day. Reached by tapping a day cell on /program.
-// Hero (kicker + title + meta chips) + exercise list + state-aware CTA.
-//
-// State variants come from `fetchProgramDay` (lib/sessions.ts):
-//   - today      → "Start session" CTA
-//   - completed  → "Review" CTA → /program/day/[id]/review
-//   - upcoming   → CTA disabled with muted "Available on Day N" caption
-//   - rest       → no exercise list, "Rest day" copy, no CTA
+// Obsidian Kinetic: program day detail. No dedicated frame ("still to
+// design") — derived from the Today-hero + list-row patterns. The
+// 4-state logic (today/completed/upcoming/rest) and fetchProgramDay
+// wiring are unchanged.
 import { useQuery } from '@tanstack/react-query';
-import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronRight, Play } from 'lucide-react-native';
-import { Pressable, ScrollView, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ChevronRight } from 'lucide-react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Body, Button, Pill, ScreenHeader, SectionLabel } from '@/components/ui';
+import { Button, Chip, ScreenHeader } from '@/components/obsidian';
 import { hasSupabaseConfig } from '@/lib/env';
+import { color, glass, radius, spacing, type } from '@/lib/obsidian/tokens';
 import { fetchProgramDay } from '@/lib/sessions';
-import { semantic } from '@/lib/theme';
 import type { ExerciseTemplate } from '@/lib/types';
 
 function dayThemeName(exercises: ExerciseTemplate[]): string {
   if (exercises.length === 0) return 'Rest';
-  // First two exercise names joined by "+" — same pattern as the home card.
   return exercises.slice(0, 2).map((e) => e.name).join(' + ');
 }
 
 function exerciseDescriptor(ex: ExerciseTemplate): string {
   const holdPhase = ex.phases.find((p) => p.kind === 'hold');
   if (holdPhase) {
-    return `${ex.sets} × ${Math.round(holdPhase.durationMs / 1000)} s`;
+    return `${ex.sets} × ${Math.round(holdPhase.durationMs / 1000)}s`;
   }
-  return `${ex.sets} × ${ex.reps} reps`;
+  return `${ex.sets} × ${ex.reps}`;
 }
 
 export default function DayDetail() {
@@ -51,210 +43,162 @@ export default function DayDetail() {
   const minutes = day ? Math.round(day.targetDurationS / 60) : 0;
   const totalReps = exercises.reduce((acc, ex) => acc + ex.sets * ex.reps, 0);
 
-  // Kicker varies by status. Figma uses the accent for today, success for
-  // completed, muted for the others.
-  let kicker: string;
-  let kickerClassName: string;
-  if (status === 'completed') {
-    kicker = `COMPLETED · WEEK ${day?.weekNumber ?? 1}`;
-    kickerClassName = 'text-feedback-success';
-  } else if (status === 'upcoming') {
-    kicker = `DAY ${day?.dayNumber ?? '?'} · WEEK ${day?.weekNumber ?? 1}`;
-    kickerClassName = 'text-text-muted';
-  } else if (status === 'rest') {
-    kicker = `REST · WEEK ${day?.weekNumber ?? 1}`;
-    kickerClassName = 'text-text-muted';
-  } else {
-    kicker = `TODAY · WEEK ${day?.weekNumber ?? 1}`;
-    kickerClassName = 'text-interactive-primary';
-  }
+  const kicker =
+    status === 'completed'
+      ? `COMPLETED · WEEK ${day?.weekNumber ?? 1}`
+      : status === 'upcoming'
+        ? `DAY ${day?.dayNumber ?? '?'} · WEEK ${day?.weekNumber ?? 1}`
+        : status === 'rest'
+          ? `REST · WEEK ${day?.weekNumber ?? 1}`
+          : `TODAY · WEEK ${day?.weekNumber ?? 1}`;
+  const kickerColor =
+    status === 'completed'
+      ? color.primaryFixedDim
+      : status === 'today'
+        ? color.primaryContainer
+        : color.onSurfaceVariant;
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-canvas">
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
       <ScreenHeader
-        kind="detail"
+        variant="back"
         title={day ? `Day ${day.dayNumber}` : 'Day'}
-        onBack={() => router.back()}
+        onPress={() => router.back()}
       />
-
-      <ScrollView className="flex-1" contentContainerClassName="px-6 pb-32">
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackMd,
+          paddingBottom: spacing.stackLg + spacing.stackMd,
+          gap: spacing.stackMd,
+        }}
+      >
         {!hasSupabaseConfig() ? (
-          <Body color="muted" className="mt-4">
+          <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
             Sign in to see your program.
-          </Body>
+          </Text>
         ) : dayQuery.isLoading ? (
-          <Body color="muted" className="mt-4">
+          <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
             Loading…
-          </Body>
+          </Text>
         ) : !day ? (
-          <Body color="muted" className="mt-4">
-            We couldn&rsquo;t find this day. It may have been replaced when your
-            program regenerated.
-          </Body>
+          <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
+            We couldn&rsquo;t find this day. It may have been replaced when
+            your program regenerated.
+          </Text>
         ) : (
           <>
-            <SectionLabel tracking="wide" className={kickerClassName}>
+            <Text style={{ ...type.labelCaps, color: kickerColor }}>
               {kicker}
-            </SectionLabel>
-            <Body
-              weight="semibold"
-              color="primary"
-              className="mt-3"
-              style={{ fontSize: 30, lineHeight: 38 }}
-            >
+            </Text>
+            <Text style={{ ...type.headlineLg, color: color.onSurface }}>
               {dayThemeName(exercises)}
-            </Body>
+            </Text>
             {status === 'rest' ? (
-              <Body color="muted" size="sm" className="mt-3">
+              <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
                 Recovery day. No exercises scheduled — your tissues adapt
                 between sessions, not during them.
-              </Body>
+              </Text>
             ) : (
-              <Body color="muted" size="sm" className="mt-3">
-                {exercises.length} exercise{exercises.length === 1 ? '' : 's'},
-                {' '}
-                {minutes} min total. Best done seated.
-              </Body>
-            )}
-
-            {status !== 'rest' && (
-              <View className="flex-row gap-2 mt-4">
-                <Pill
-                  label={`${minutes} min`}
-                  tone="surface"
-                  size="sm"
-                  bordered
-                  textColor="primary"
-                />
-                <Pill
-                  label={`${exercises.length} exercises`}
-                  tone="surface"
-                  size="sm"
-                  bordered
-                  textColor="primary"
-                />
-                <Pill
-                  label={`${totalReps} reps total`}
-                  tone="surface"
-                  size="sm"
-                  bordered
-                  textColor="primary"
-                />
-              </View>
-            )}
-
-            {status !== 'rest' && (
               <>
-                <SectionLabel tracking="wide" className="mt-8">
-                  {status === 'completed' ? 'WHAT YOU DID' : "TODAY’S EXERCISES"}
-                </SectionLabel>
-                <View className="gap-2.5 mt-3">
+                <Text
+                  style={{ ...type.bodyMd, color: color.onSurfaceVariant }}
+                >
+                  {minutes} min · {exercises.length} exercise
+                  {exercises.length === 1 ? '' : 's'} · {totalReps} reps total
+                </Text>
+
+                <View style={{ gap: 10, marginTop: spacing.stackSm }}>
                   {exercises.map((ex) => (
-                    <Link
+                    <Pressable
                       key={ex.slug}
-                      href={`/program/exercise/${ex.slug}`}
-                      asChild
+                      onPress={() =>
+                        router.push(`/program/exercise/${ex.slug}`)
+                      }
+                      accessibilityRole="button"
+                      accessibilityLabel={`${ex.name}, ${exerciseDescriptor(ex)}`}
+                      style={({ pressed }) => ({
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: spacing.gutter,
+                        backgroundColor: color.surfaceContainerLow,
+                        borderColor: glass.border,
+                        borderWidth: glass.borderWidth,
+                        borderRadius: radius.xl,
+                        padding: spacing.stackMd,
+                        opacity: pressed ? 0.8 : 1,
+                      })}
                     >
-                      <Pressable
-                        className="flex-row items-center bg-surface-raised rounded-[14px] px-3.5 py-3.5 active:opacity-80"
-                        accessibilityLabel={`${ex.name}, ${exerciseDescriptor(ex)}`}
-                      >
-                        <View
-                          className="w-10 h-10 rounded-full items-center justify-center"
+                      <View style={{ flex: 1, gap: 2 }}>
+                        <Text
                           style={{
-                            backgroundColor: semantic.interactivePrimaryPressed,
+                            ...type.labelButton,
+                            color: color.onSurface,
                           }}
                         >
-                          <View
-                            className="w-2 h-2 rounded-full"
-                            style={{
-                              backgroundColor: semantic.interactivePrimary,
-                            }}
-                          />
-                        </View>
-                        <View className="ml-3.5 flex-1">
-                          <Body
-                            weight="semibold"
-                            color="primary"
-                            style={{ fontSize: 15, lineHeight: 22 }}
-                          >
-                            {ex.name}
-                          </Body>
-                          <Body
-                            color="muted"
-                            style={{ fontSize: 13, lineHeight: 18 }}
-                          >
-                            {ex.description.split('.')[0]}.
-                          </Body>
-                        </View>
-                        <Body
-                          color="muted"
-                          style={{ fontSize: 13, lineHeight: 18 }}
-                          className="mr-2"
+                          {ex.name}
+                        </Text>
+                        <Text
+                          numberOfLines={1}
+                          style={{
+                            ...type.bodyMd,
+                            fontSize: 14,
+                            lineHeight: 20,
+                            color: color.onSurfaceVariant,
+                          }}
                         >
-                          {exerciseDescriptor(ex)}
-                        </Body>
-                        <ChevronRight size={16} color={semantic.textMuted} />
-                      </Pressable>
-                    </Link>
+                          {ex.description.split('.')[0]}.
+                        </Text>
+                      </View>
+                      <Text
+                        style={{
+                          ...type.labelCaps,
+                          color: color.onSurfaceVariant,
+                        }}
+                      >
+                        {exerciseDescriptor(ex)}
+                      </Text>
+                      <ChevronRight size={16} color={color.onSurfaceVariant} />
+                    </Pressable>
                   ))}
                 </View>
               </>
             )}
+
+            <View style={{ flex: 1 }} />
+
+            {status === 'today' && (
+              <Button
+                label="Start session"
+                onPress={() => router.push('/session/today')}
+                style={{ width: '100%' }}
+              />
+            )}
+            {status === 'completed' && (
+              <Button
+                label="Review session"
+                onPress={() =>
+                  router.push(`/program/day/${day.programDayId}/review`)
+                }
+                style={{ width: '100%' }}
+              />
+            )}
+            {status === 'upcoming' && (
+              <View style={{ gap: spacing.stackSm, alignItems: 'center' }}>
+                <Button
+                  label={`Available on Day ${day.dayNumber}`}
+                  disabled
+                  onPress={() => undefined}
+                  style={{ width: '100%' }}
+                />
+                <Chip label="DAYS UNLOCK AS YOU REACH THEM" variant="muted" />
+              </View>
+            )}
           </>
         )}
       </ScrollView>
-
-      {day && status !== 'rest' && (
-        <View className="absolute bottom-0 left-0 right-0 px-6 pb-8">
-          {status === 'today' && (
-            <Button
-              label="Start session"
-              variant="primary"
-              size="lg"
-              radius="cta"
-              leadingIcon={
-                <Play
-                  size={14}
-                  color={semantic.textPrimary}
-                  fill={semantic.textPrimary}
-                />
-              }
-              onPress={() => router.push('/session/today')}
-            />
-          )}
-          {status === 'completed' && (
-            <Button
-              label="Review session"
-              variant="primary"
-              size="lg"
-              radius="cta"
-              onPress={() =>
-                router.push(`/program/day/${day.programDayId}/review`)
-              }
-            />
-          )}
-          {status === 'upcoming' && (
-            <>
-              <Button
-                label={`Available on Day ${day.dayNumber}`}
-                variant="primary"
-                size="lg"
-                radius="cta"
-                disabled
-                onPress={() => undefined}
-              />
-              <Body
-                color="muted"
-                size="sm"
-                className="text-center mt-2"
-              >
-                Days unlock as you reach them.
-              </Body>
-            </>
-          )}
-        </View>
-      )}
     </SafeAreaView>
   );
 }

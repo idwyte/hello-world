@@ -1,19 +1,16 @@
-// Figma: 21 · maintenance — node 104:551
-//
-// End-of-program celebration. Shows the user's actual before/after Pelvic
-// Floor Index delta (first measurement vs latest), pulled from the
-// `pelvic_floor_assessments` table via fetchIndexHistory. The medal +
-// halo is rendered with lucide Award + a tinted disc instead of an emoji.
+// Obsidian Kinetic: end-of-program celebration. Derived from the
+// stat-tile + value-reveal patterns. Real before/after delta from
+// fetchIndexHistory; counts up on reveal (motion spec §3.3).
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Award } from 'lucide-react-native';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Body, Button, Card, SectionLabel, Stat } from '@/components/ui';
+import { Button, CountUp } from '@/components/obsidian';
 import { hasSupabaseConfig } from '@/lib/env';
+import { color, glass, radius, spacing, type } from '@/lib/obsidian/tokens';
 import { fetchIndexHistory } from '@/lib/sessions';
-import { semantic } from '@/lib/theme';
 
 export default function Maintenance() {
   const router = useRouter();
@@ -24,79 +21,134 @@ export default function Maintenance() {
   });
 
   const history = historyQuery.data ?? [];
-  // fetchIndexHistory returns oldest-first, so [0] is the baseline and the
-  // last entry is the most recent. Fall back to nominal numbers when
-  // there's no real data — the screen is still meaningful as a preview.
   const before = history[0]?.composite ?? 50;
   const after = history.at(-1)?.composite ?? 78;
   const delta = Math.max(0, Math.round(after - before));
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-canvas">
-      <ScrollView className="flex-1" contentContainerClassName="px-4 pb-12">
-        <View className="items-center mt-16">
-          {/* Medal hero — 120 px halo + 80 px disc + Award glyph */}
-          <View
-            className="w-[120px] h-[120px] rounded-full items-center justify-center"
-            style={{ backgroundColor: semantic.interactivePrimary + '33' }}
-          >
-            <View
-              className="w-20 h-20 rounded-full items-center justify-center"
-              style={{ backgroundColor: semantic.interactivePrimary }}
-            >
-              <Award
-                size={44}
-                color={semantic.textPrimary}
-                strokeWidth={2.5}
-              />
-            </View>
-          </View>
-          <SectionLabel tracking="wide" className="mt-5">
-            8 WEEKS COMPLETE
-          </SectionLabel>
-          <Body
-            weight="semibold"
-            color="primary"
-            className="mt-2 text-center"
-            style={{ fontSize: 26, lineHeight: 32 }}
-          >
-            You finished your program.
-          </Body>
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackLg * 2,
+          paddingBottom: spacing.stackLg + spacing.stackMd,
+          gap: spacing.stackMd,
+          alignItems: 'center',
+        }}
+      >
+        <View
+          style={{
+            width: 96,
+            height: 96,
+            borderRadius: radius.full,
+            borderWidth: 2,
+            borderColor: color.primaryContainer,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Award size={44} color={color.primaryContainer} strokeWidth={2} />
         </View>
+        <Text style={{ ...type.labelCaps, color: color.primaryFixedDim }}>
+          8 WEEKS COMPLETE
+        </Text>
+        <Text
+          style={{
+            ...type.headlineLg,
+            color: color.onSurface,
+            textAlign: 'center',
+          }}
+        >
+          You finished your program
+        </Text>
 
-        <View className="flex-row gap-3 mt-8 self-center">
-          <Stat kicker="THEN" value={String(Math.round(before))} />
-          <Stat
-            kicker="NOW"
-            value={String(Math.round(after))}
+        <View
+          style={{
+            flexDirection: 'row',
+            gap: spacing.gutter,
+            width: '100%',
+            marginTop: spacing.stackSm,
+          }}
+        >
+          <StatTile label="THEN" value={Math.round(before)} />
+          <StatTile
+            label="NOW"
+            value={Math.round(after)}
             sub={`+${delta} in 8 weeks`}
+            accent
           />
         </View>
 
-        <Card padding="lg" radius="card" className="mt-6">
-          <SectionLabel tracking="wide">WHAT&rsquo;S NEXT</SectionLabel>
-          <Body
-            weight="semibold"
-            color="primary"
-            className="mt-2"
-            style={{ fontSize: 18, lineHeight: 26 }}
-          >
-            Maintenance schedule (recommended)
-          </Body>
-          <Body size="sm" color="muted" className="mt-2">
+        <View
+          style={{
+            width: '100%',
+            backgroundColor: color.surfaceContainerLow,
+            borderColor: glass.border,
+            borderWidth: glass.borderWidth,
+            borderRadius: radius.xl,
+            padding: spacing.stackMd,
+            gap: 4,
+          }}
+        >
+          <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
+            WHAT&rsquo;S NEXT
+          </Text>
+          <Text style={{ ...type.headlineMd, fontSize: 20, lineHeight: 26, color: color.onSurface }}>
+            Maintenance schedule
+          </Text>
+          <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
             3 sessions / week instead of 7. Keeps strength without burnout.
-          </Body>
-        </Card>
+          </Text>
+        </View>
 
+        <View style={{ flex: 1 }} />
         <Button
           label="Continue with maintenance"
-          variant="primary"
-          size="lg"
-          radius="cta"
-          className="mt-6"
           onPress={() => router.replace('/home')}
+          style={{ width: '100%' }}
         />
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function StatTile({
+  label,
+  value,
+  sub,
+  accent = false,
+}: {
+  label: string;
+  value: number;
+  sub?: string;
+  accent?: boolean;
+}) {
+  return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: color.surfaceContainerLow,
+        borderColor: accent ? color.primaryContainer : glass.border,
+        borderWidth: accent ? 1.5 : glass.borderWidth,
+        borderRadius: radius.xl,
+        padding: spacing.stackMd,
+        gap: 4,
+      }}
+    >
+      <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
+        {label}
+      </Text>
+      <CountUp
+        value={value}
+        style={{ ...type.metricLg, color: color.onSurface }}
+      />
+      {sub ? (
+        <Text style={{ ...type.bodyMd, color: color.primaryFixedDim }}>
+          {sub}
+        </Text>
+      ) : null}
+    </View>
   );
 }

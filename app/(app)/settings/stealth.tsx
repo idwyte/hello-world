@@ -1,10 +1,23 @@
+// Obsidian Kinetic: Settings · Stealth Mode. No dedicated Figma frame —
+// derived from the OptionRow + glass card patterns. Settings-store
+// wiring unchanged. The COVERS swatch hexes are decoy-artwork preview
+// colors (domain data tied to DecoyCover keys), not theme tokens.
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { Platform, Pressable, Switch, Text, View } from 'react-native';
+import {
+  Platform,
+  Pressable,
+  ScrollView,
+  Switch,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ScreenHeader } from '@/components/obsidian';
 import type { CueStyle } from '@/lib/audio/cues';
 import type { DecoyCover } from '@/lib/audio/decoy-track';
+import { color, glass, radius, spacing, type } from '@/lib/obsidian/tokens';
 import { useSettingsStore } from '@/stores/settings';
 
 const COVERS: Array<{ key: DecoyCover; label: string; color: string }> = [
@@ -30,45 +43,61 @@ export default function StealthSettings() {
   }, [hydrate, hydrated]);
 
   return (
-    <SafeAreaView className="flex-1 bg-bg">
-      <View className="flex-1 px-6 pt-4">
-        <Pressable
-          onPress={() => router.back()}
-          className="self-start py-3 px-3 -ml-3 active:opacity-60"
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-        >
-          <Text className="text-muted">← Back</Text>
-        </Pressable>
-
-        <Text className="text-ink text-3xl font-semibold mt-2">
-          Stealth Mode
-        </Text>
-        <Text className="text-muted mt-2 leading-5">
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
+      <ScreenHeader
+        variant="back"
+        title="Stealth Mode"
+        onPress={() => router.back()}
+      />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackMd,
+          paddingBottom: 40,
+          gap: spacing.stackMd,
+        }}
+      >
+        <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
           These preferences stay on this device and never sync.
         </Text>
 
         {Platform.OS === 'android' ? (
           <View
-            className="bg-surface2 border border-border rounded-xl p-3 mt-4"
             accessibilityRole="alert"
+            style={{
+              backgroundColor: color.surfaceContainerLow,
+              borderColor: glass.border,
+              borderWidth: glass.borderWidth,
+              borderRadius: radius.xl,
+              padding: spacing.stackMd,
+              gap: 4,
+            }}
           >
-            <Text className="text-ink text-sm font-semibold">Beta on Android</Text>
-            <Text className="text-muted text-xs mt-1 leading-5">
+            <Text style={{ ...type.labelButton, color: color.onSurface }}>
+              Beta on Android
+            </Text>
+            <Text
+              style={{
+                ...type.bodyMd,
+                fontSize: 14,
+                lineHeight: 20,
+                color: color.onSurfaceVariant,
+              }}
+            >
               Stealth Mode works best on iPhone. Android haptic precision
-              varies by device — VibrationEffect amplitude control isn't
+              varies by device — VibrationEffect amplitude control isn&apos;t
               universal. Audio cues and the lockscreen disguise work the
               same on both platforms.
             </Text>
           </View>
         ) : null}
 
-        <View className="mt-6">
-          <Text className="text-muted text-xs uppercase tracking-wider">
+        <View style={{ gap: spacing.stackSm }}>
+          <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
             Default mode
           </Text>
-          <View className="flex-row gap-2 mt-2">
+          <View style={{ flexDirection: 'row', gap: spacing.stackSm }}>
             {(['normal', 'stealth'] as const).map((m) => {
               const active = settings.defaultMode === m;
               return (
@@ -78,12 +107,25 @@ export default function StealthSettings() {
                   accessibilityRole="radio"
                   accessibilityState={{ checked: active }}
                   accessibilityLabel={`Default to ${m} mode`}
-                  className={`flex-1 py-3 px-4 rounded-xl border active:opacity-80 ${
-                    active ? 'bg-accent border-accent' : 'bg-surface border-border'
-                  }`}
+                  style={({ pressed }) => ({
+                    flex: 1,
+                    backgroundColor: color.surfaceContainerLow,
+                    borderColor: active
+                      ? color.primaryContainer
+                      : glass.border,
+                    borderWidth: active ? 2 : 1,
+                    borderRadius: radius.xl,
+                    paddingVertical: 14,
+                    paddingHorizontal: spacing.stackMd,
+                    opacity: pressed ? 0.8 : 1,
+                  })}
                 >
                   <Text
-                    className={`text-center ${active ? 'text-ink font-semibold' : 'text-ink'}`}
+                    style={{
+                      ...(active ? type.labelButton : type.bodyLg),
+                      color: active ? color.primaryFixedDim : color.onSurface,
+                      textAlign: 'center',
+                    }}
                   >
                     {m === 'normal' ? 'Normal' : 'Stealth'}
                   </Text>
@@ -93,11 +135,11 @@ export default function StealthSettings() {
           </View>
         </View>
 
-        <View className="mt-6">
-          <Text className="text-muted text-xs uppercase tracking-wider">
+        <View style={{ gap: spacing.stackSm }}>
+          <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
             Haptic intensity
           </Text>
-          <View className="flex-row gap-2 mt-2">
+          <View style={{ flexDirection: 'row', gap: spacing.stackSm }}>
             {INTENSITIES.map((i) => {
               const active = Math.abs(settings.hapticIntensity - i) < 0.05;
               return (
@@ -107,11 +149,25 @@ export default function StealthSettings() {
                   accessibilityRole="radio"
                   accessibilityState={{ checked: active }}
                   accessibilityLabel={`Haptic intensity ${Math.round(i * 100)} percent`}
-                  className={`flex-1 py-3 rounded-xl border active:opacity-80 ${
-                    active ? 'bg-accent border-accent' : 'bg-surface border-border'
-                  }`}
+                  style={({ pressed }) => ({
+                    flex: 1,
+                    backgroundColor: color.surfaceContainerLow,
+                    borderColor: active
+                      ? color.primaryContainer
+                      : glass.border,
+                    borderWidth: active ? 2 : 1,
+                    borderRadius: radius.xl,
+                    paddingVertical: 14,
+                    opacity: pressed ? 0.8 : 1,
+                  })}
                 >
-                  <Text className="text-ink text-center">
+                  <Text
+                    style={{
+                      ...type.bodyMd,
+                      color: active ? color.primaryFixedDim : color.onSurface,
+                      textAlign: 'center',
+                    }}
+                  >
                     {Math.round(i * 100)}%
                   </Text>
                 </Pressable>
@@ -120,11 +176,11 @@ export default function StealthSettings() {
           </View>
         </View>
 
-        <View className="mt-6">
-          <Text className="text-muted text-xs uppercase tracking-wider">
+        <View style={{ gap: spacing.stackSm }}>
+          <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
             Audio cues
           </Text>
-          <View className="gap-2 mt-2">
+          <View style={{ gap: spacing.stackSm }}>
             {CUE_STYLES.map((c) => {
               const active = settings.cueStyle === c.key;
               return (
@@ -134,21 +190,56 @@ export default function StealthSettings() {
                   accessibilityRole="radio"
                   accessibilityState={{ checked: active }}
                   accessibilityLabel={c.label}
-                  className={`py-3 px-4 rounded-xl border active:opacity-80 ${
-                    active ? 'bg-accent border-accent' : 'bg-surface border-border'
-                  }`}
+                  style={({ pressed }) => ({
+                    backgroundColor: color.surfaceContainerLow,
+                    borderColor: active
+                      ? color.primaryContainer
+                      : glass.border,
+                    borderWidth: active ? 2 : 1,
+                    borderRadius: radius.xl,
+                    paddingVertical: 14,
+                    paddingHorizontal: spacing.stackMd,
+                    opacity: pressed ? 0.8 : 1,
+                  })}
                 >
-                  <Text className="text-ink">{c.label}</Text>
+                  <Text
+                    style={{
+                      ...(active ? type.labelButton : type.bodyLg),
+                      color: active ? color.primaryFixedDim : color.onSurface,
+                    }}
+                  >
+                    {c.label}
+                  </Text>
                 </Pressable>
               );
             })}
           </View>
         </View>
 
-        <View className="mt-6 flex-row items-center justify-between bg-surface border border-border rounded-xl p-4">
-          <View className="flex-1 pr-4">
-            <Text className="text-ink">Block speaker output</Text>
-            <Text className="text-muted text-xs mt-1 leading-5">
+        <View
+          style={{
+            backgroundColor: color.surfaceContainerLow,
+            borderColor: glass.border,
+            borderWidth: glass.borderWidth,
+            borderRadius: radius.xl,
+            padding: spacing.stackMd,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.gutter,
+          }}
+        >
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={{ ...type.bodyLg, color: color.onSurface }}>
+              Block speaker output
+            </Text>
+            <Text
+              style={{
+                ...type.bodyMd,
+                fontSize: 14,
+                lineHeight: 20,
+                color: color.onSurfaceVariant,
+              }}
+            >
               Audio cues only play through AirPods or wired headphones, never
               the phone speaker.
             </Text>
@@ -156,16 +247,20 @@ export default function StealthSettings() {
           <Switch
             value={settings.bluetoothOnly}
             onValueChange={(v) => update({ bluetoothOnly: v })}
-            trackColor={{ true: '#7C5CFF', false: '#2A2A36' }}
+            trackColor={{
+              true: color.primaryContainer,
+              false: color.surfaceContainerHigh,
+            }}
+            thumbColor="#fff"
             accessibilityLabel="Block speaker output"
           />
         </View>
 
-        <View className="mt-6">
-          <Text className="text-muted text-xs uppercase tracking-wider">
+        <View style={{ gap: spacing.stackSm }}>
+          <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
             Lockscreen cover
           </Text>
-          <View className="flex-row gap-3 mt-2">
+          <View style={{ flexDirection: 'row', gap: spacing.gutter }}>
             {COVERS.map((c) => {
               const active = settings.decoyCover === c.key;
               return (
@@ -175,13 +270,35 @@ export default function StealthSettings() {
                   accessibilityRole="radio"
                   accessibilityState={{ checked: active }}
                   accessibilityLabel={c.label}
-                  className={`flex-1 rounded-xl border ${active ? 'border-accent' : 'border-border'} p-2 active:opacity-80`}
+                  style={({ pressed }) => ({
+                    flex: 1,
+                    backgroundColor: color.surfaceContainerLow,
+                    borderColor: active
+                      ? color.primaryContainer
+                      : glass.border,
+                    borderWidth: active ? 2 : 1,
+                    borderRadius: radius.xl,
+                    padding: spacing.stackSm,
+                    opacity: pressed ? 0.8 : 1,
+                  })}
                 >
                   <View
-                    style={{ backgroundColor: c.color, aspectRatio: 1 }}
-                    className="rounded-lg"
+                    style={{
+                      backgroundColor: c.color,
+                      aspectRatio: 1,
+                      borderRadius: radius.lg,
+                    }}
                   />
-                  <Text className="text-ink text-xs text-center mt-2">
+                  <Text
+                    style={{
+                      ...type.bodyMd,
+                      fontSize: 12,
+                      lineHeight: 16,
+                      color: active ? color.primaryFixedDim : color.onSurface,
+                      textAlign: 'center',
+                      marginTop: spacing.stackSm,
+                    }}
+                  >
                     {c.label}
                   </Text>
                 </Pressable>
@@ -189,7 +306,7 @@ export default function StealthSettings() {
             })}
           </View>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

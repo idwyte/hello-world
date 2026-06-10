@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 
-import { semantic } from '@/lib/theme';
+import { color } from '@/lib/obsidian/tokens';
 
 // Nests program/index.tsx + day/[dayId] + exercise/[exerciseId] +
 // intro/[slug] under one Stack so the dynamic sub-routes don't auto-
@@ -10,7 +10,7 @@ export default function ProgramLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: semantic.surfaceCanvas },
+        contentStyle: { backgroundColor: color.background },
       }}
     />
   );

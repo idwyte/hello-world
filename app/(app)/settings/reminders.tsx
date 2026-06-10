@@ -1,19 +1,18 @@
+// Obsidian Kinetic: Settings · Reminders. No dedicated Figma frame —
+// derived from the glass card + OptionRow patterns. Notification
+// scheduling + settings-store wiring unchanged.
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ScreenHeader } from '@/components/obsidian';
 import {
   cancelDailyReminder,
   ensureNotificationPermission,
   scheduleDailyReminder,
 } from '@/lib/notifications';
+import { color, glass, radius, spacing, type } from '@/lib/obsidian/tokens';
 import { useSettingsStore } from '@/stores/settings';
 
 const PRESETS: { label: string; value: string }[] = [
@@ -98,63 +97,94 @@ export default function RemindersScreen() {
 
   if (!hydrated) {
     return (
-      <SafeAreaView className="flex-1 bg-bg">
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-muted">Loading…</Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
+        <ScreenHeader
+          variant="back"
+          title="Reminders"
+          onPress={() => router.back()}
+        />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
+            Loading…
+          </Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-bg">
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
+      <ScreenHeader
+        variant="back"
+        title="Reminders"
+        onPress={() => router.back()}
+      />
       <ScrollView
-        className="flex-1 px-6 pt-6"
-        contentContainerClassName="pb-12"
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackMd,
+          paddingBottom: 40,
+          gap: spacing.stackMd,
+        }}
       >
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          hitSlop={12}
-          className="self-start py-3 px-3 -ml-3 active:opacity-60"
-        >
-          <Text className="text-muted">← Back</Text>
-        </Pressable>
-
-        <Text className="text-ink text-3xl font-semibold mt-4">Reminders</Text>
-        <Text className="text-muted mt-2 leading-5">
+        <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
           One quiet daily nudge. Hone never names itself in the notification —
           it reads as a focus session.
         </Text>
 
-        <View className="bg-surface border border-border rounded-2xl mt-6 px-4 py-4">
-          <View className="flex-row items-center justify-between">
-            <View className="flex-1 pr-3">
-              <Text className="text-ink text-base font-semibold">
-                Daily reminder
-              </Text>
-              <Text className="text-muted text-xs mt-1">
-                {settings.reminderEnabled
-                  ? `On · ${formatLabel(settings.reminderTime)}`
-                  : 'Off'}
-              </Text>
-            </View>
-            <Switch
-              value={settings.reminderEnabled}
-              onValueChange={toggleEnabled}
-              disabled={busy}
-              accessibilityLabel="Daily reminder"
-              trackColor={{ false: '#2A2A36', true: '#7C5CFF' }}
-              thumbColor="#F5F5F7"
-            />
+        <View
+          style={{
+            backgroundColor: color.surfaceContainerLow,
+            borderColor: glass.border,
+            borderWidth: glass.borderWidth,
+            borderRadius: radius.xl,
+            padding: spacing.stackMd,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.gutter,
+          }}
+        >
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={{ ...type.bodyLg, color: color.onSurface }}>
+              Daily reminder
+            </Text>
+            <Text
+              style={{
+                ...type.bodyMd,
+                fontSize: 14,
+                lineHeight: 20,
+                color: color.onSurfaceVariant,
+              }}
+            >
+              {settings.reminderEnabled
+                ? `On · ${formatLabel(settings.reminderTime)}`
+                : 'Off'}
+            </Text>
           </View>
+          <Switch
+            value={settings.reminderEnabled}
+            onValueChange={toggleEnabled}
+            disabled={busy}
+            accessibilityLabel="Daily reminder"
+            trackColor={{
+              true: color.primaryContainer,
+              false: color.surfaceContainerHigh,
+            }}
+            thumbColor="#fff"
+          />
         </View>
 
-        <Text className="text-muted text-xs uppercase tracking-wider mt-8 mb-3">
+        <Text
+          style={{
+            ...type.labelCaps,
+            color: color.onSurfaceVariant,
+            marginTop: spacing.stackSm,
+          }}
+        >
           Time
         </Text>
-        <View className="gap-2">
+        <View style={{ gap: spacing.stackSm }}>
           {PRESETS.map((p) => {
             const selected = currentTime === p.value;
             return (
@@ -165,34 +195,76 @@ export default function RemindersScreen() {
                 accessibilityRole="radio"
                 accessibilityState={{ selected }}
                 accessibilityLabel={`Reminder at ${p.label}`}
-                className={`rounded-xl px-4 py-4 border flex-row items-center justify-between active:opacity-80 ${
-                  selected
-                    ? 'bg-accent border-accent'
-                    : 'bg-surface border-border'
-                }`}
+                style={({ pressed }) => ({
+                  backgroundColor: color.surfaceContainerLow,
+                  borderColor: selected ? color.primaryContainer : glass.border,
+                  borderWidth: selected ? 2 : 1,
+                  borderRadius: radius.xl,
+                  padding: spacing.stackMd,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: spacing.gutter,
+                  opacity: pressed ? 0.8 : 1,
+                })}
               >
                 <Text
-                  className={`text-base ${
-                    selected ? 'text-ink font-semibold' : 'text-ink'
-                  }`}
+                  style={{
+                    ...(selected ? type.labelButton : type.bodyLg),
+                    color: selected ? color.primaryFixedDim : color.onSurface,
+                  }}
                 >
                   {p.label}
                 </Text>
-                {selected ? (
-                  <Text className="text-ink text-sm">Selected</Text>
-                ) : null}
+                <View
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: radius.full,
+                    borderWidth: selected ? 0 : 1.5,
+                    borderColor: color.outline,
+                    backgroundColor: selected
+                      ? color.primaryContainer
+                      : 'transparent',
+                  }}
+                />
               </Pressable>
             );
           })}
         </View>
 
         {error ? (
-          <View className="bg-surface2 border border-danger rounded-xl mt-6 px-4 py-3">
-            <Text className="text-danger text-sm leading-5">{error}</Text>
+          <View
+            style={{
+              backgroundColor: color.surfaceContainerLow,
+              borderColor: color.error,
+              borderWidth: 1,
+              borderRadius: radius.xl,
+              padding: spacing.stackMd,
+            }}
+          >
+            <Text
+              style={{
+                ...type.bodyMd,
+                fontSize: 14,
+                lineHeight: 20,
+                color: color.error,
+              }}
+            >
+              {error}
+            </Text>
           </View>
         ) : null}
 
-        <Text className="text-muted text-xs leading-5 mt-8">
+        <Text
+          style={{
+            ...type.bodyMd,
+            fontSize: 14,
+            lineHeight: 20,
+            color: color.onSurfaceVariant,
+            marginTop: spacing.stackSm,
+          }}
+        >
           The notification reads &ldquo;Focus Session — a quiet 3 minutes for
           yourself&rdquo;. No app branding, no health language.
         </Text>

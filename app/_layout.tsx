@@ -4,11 +4,6 @@ import {
   ArchivoNarrow_600SemiBold,
   ArchivoNarrow_700Bold,
 } from '@expo-google-fonts/archivo-narrow';
-import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-} from '@expo-google-fonts/inter';
 import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
@@ -28,13 +23,9 @@ export default function RootLayout() {
   const queryClient = useMemo(() => createQueryClient(), []);
   const hydrate = useSettingsStore((s) => s.hydrate);
   const hydrated = useSettingsStore((s) => s.hydrated);
-  // Inter carries the legacy screens through the Obsidian Kinetic
-  // migration; Archivo Narrow + JetBrains Mono are the new system
-  // (lib/obsidian/tokens.ts). Drop Inter once the last screen migrates.
+  // Obsidian Kinetic fonts (lib/obsidian/tokens.ts). The legacy Inter
+  // set was dropped with the last legacy screen.
   const [fontsLoaded] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
     ArchivoNarrow_400Regular,
     ArchivoNarrow_600SemiBold,
     ArchivoNarrow_700Bold,
@@ -58,7 +49,7 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#0B0B0F' }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#131314' }}>
       <SafeAreaProvider>
         <ErrorBoundary>
           <QueryClientProvider client={queryClient}>
@@ -67,7 +58,7 @@ export default function RootLayout() {
               <Stack
                 screenOptions={{
                   headerShown: false,
-                  contentStyle: { backgroundColor: '#0B0B0F' },
+                  contentStyle: { backgroundColor: '#131314' },
                 }}
               />
             </BiometricGate>

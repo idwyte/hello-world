@@ -1,13 +1,13 @@
 import { Stack } from 'expo-router';
 
-import { semantic } from '@/lib/theme';
+import { color } from '@/lib/obsidian/tokens';
 
 export default function SessionLayout() {
   return (
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: semantic.surfaceCanvas },
+        contentStyle: { backgroundColor: color.background },
       }}
     />
   );

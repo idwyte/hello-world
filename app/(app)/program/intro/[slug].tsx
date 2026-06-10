@@ -1,16 +1,12 @@
-// Figma: 32 · exercise intro — node 126:363
-//
-// Generic "New in your program" intro shell. Driven by EXERCISES[slug]:
-// title, description, position-aware "HOW TO DO IT" step 1, sets/reps
-// surfaced as a TIP. Falls back to the reverse-Kegel copy if the slug
-// is unknown so this stays a useful preview when the user lands here
-// from an old deeplink.
+// Obsidian Kinetic: "New in your program" exercise intro. Derived from
+// the glass-card pattern. EXERCISES[slug]-driven content unchanged.
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Body, Button, Card, ScreenHeader, SectionLabel } from '@/components/ui';
+import { Button, ScreenHeader } from '@/components/obsidian';
 import { EXERCISES } from '@/lib/exercises';
+import { color, radius, spacing, type } from '@/lib/obsidian/tokens';
 import type { ExerciseTemplate } from '@/lib/types';
 
 const POSITION_FIRST_STEP: Record<
@@ -24,110 +20,123 @@ const POSITION_FIRST_STEP: Record<
   any: 'Get comfortable, shoulders relaxed.',
 };
 
-function descriptorPhasePattern(ex: ExerciseTemplate): {
-  primary: string;
-  secondary: string;
-} {
-  const hasHold = ex.phases.some((p) => p.kind === 'hold');
-  if (ex.slug.startsWith('reverse')) {
-    return { primary: 'RELEASE', secondary: 'EXPAND' };
-  }
-  if (hasHold) {
-    return { primary: 'SQUEEZE', secondary: 'HOLD' };
-  }
-  return { primary: 'PULSE', secondary: 'RELEASE' };
+function patternLabels(ex: ExerciseTemplate): [string, string] {
+  if (ex.slug.startsWith('reverse')) return ['RELEASE', 'EXPAND'];
+  if (ex.phases.some((p) => p.kind === 'hold')) return ['SQUEEZE', 'HOLD'];
+  return ['PULSE', 'RELEASE'];
 }
 
 export default function ExerciseIntro() {
   const router = useRouter();
   const { slug } = useLocalSearchParams<{ slug: string }>();
-  const safeSlug = slug ?? 'reverse_kegels';
-  const ex = EXERCISES[safeSlug] ?? EXERCISES.reverse_kegels;
-
-  const pattern = descriptorPhasePattern(ex);
-  const positionStep =
-    POSITION_FIRST_STEP[ex.position ?? 'any'];
+  const ex = EXERCISES[slug ?? 'reverse_kegels'] ?? EXERCISES.reverse_kegels;
+  const [primary, secondary] = patternLabels(ex);
+  const isRelease = ex.slug.startsWith('reverse');
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-canvas">
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
       <ScreenHeader
-        kind="detail"
+        variant="back"
         title="New exercise"
-        onBack={() => router.back()}
+        onPress={() => router.back()}
       />
-
-      <ScrollView className="flex-1" contentContainerClassName="px-4 pb-32">
-        <Card padding="lg" radius="card" className="mt-2">
-          <SectionLabel tracking="wide" className="text-interactive-primary">
-            NEW IN YOUR PROGRAM
-          </SectionLabel>
-          <Body
-            weight="semibold"
-            color="primary"
-            className="mt-2"
-            style={{ fontSize: 28, lineHeight: 36 }}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackMd,
+          paddingBottom: spacing.stackLg + spacing.stackMd,
+          gap: spacing.stackMd,
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: color.surfaceContainerLow,
+            borderColor: isRelease
+              ? color.secondaryContainer
+              : color.primaryContainer,
+            borderWidth: 1.5,
+            borderRadius: radius.xl,
+            padding: spacing.containerPadding,
+            gap: spacing.stackSm,
+          }}
+        >
+          <Text
+            style={{
+              ...type.labelCaps,
+              color: isRelease
+                ? color.secondaryContainer
+                : color.primaryFixedDim,
+            }}
           >
+            NEW IN YOUR PROGRAM
+          </Text>
+          <Text style={{ ...type.headlineLg, color: color.onSurface }}>
             {ex.name}
-          </Body>
-          <View className="flex-row items-center justify-between mt-4">
-            <Body color="muted" style={{ fontSize: 28, letterSpacing: 4 }}>
-              ○ ○ ○ ○ ○ ○ ○
-            </Body>
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+            {Array.from({ length: 7 }, (_, i) => (
+              <View
+                key={i}
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: radius.full,
+                  borderWidth: 1.5,
+                  borderColor: isRelease
+                    ? color.secondaryContainer
+                    : color.primaryContainer,
+                  backgroundColor: 'transparent',
+                }}
+              />
+            ))}
           </View>
-          <View className="flex-row items-center mt-2 gap-3">
-            <Body size="xs" weight="medium" color="muted">
-              {pattern.primary}
-            </Body>
-            <Body size="xs" weight="medium" color="muted">
-              ·
-            </Body>
-            <Body size="xs" weight="medium" color="muted">
-              {pattern.secondary}
-            </Body>
-          </View>
-        </Card>
+          <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
+            {primary} · {secondary}
+          </Text>
+        </View>
 
-        <SectionLabel tracking="wide" className="mt-6">
+        <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
           WHY IT MATTERS
-        </SectionLabel>
-        <Body color="primary" className="mt-3">
+        </Text>
+        <Text style={{ ...type.bodyMd, color: color.onSurface }}>
           {ex.description}
-        </Body>
+        </Text>
 
-        <SectionLabel tracking="wide" className="mt-6">
+        <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
           HOW TO DO IT
-        </SectionLabel>
-        <View className="gap-3 mt-3">
+        </Text>
+        <View style={{ gap: spacing.stackSm }}>
           {[
-            positionStep,
-            ex.slug.startsWith('reverse')
+            POSITION_FIRST_STEP[ex.position ?? 'any'],
+            isRelease
               ? 'Inhale and gently bear down — like the start of a bowel movement.'
               : 'Squeeze the pelvic-floor muscles cleanly, no breath holding.',
             `Stop if you feel pressure or strain. Aim for ${ex.sets} × ${ex.reps}; less is more here.`,
           ].map((step, i) => (
-            <View key={i} className="flex-row gap-3">
-              <Body weight="semibold" color="accent">
+            <View key={i} style={{ flexDirection: 'row', gap: spacing.gutter }}>
+              <Text
+                style={{ ...type.labelButton, color: color.primaryFixedDim }}
+              >
                 {i + 1}.
-              </Body>
-              <Body color="primary" className="flex-1">
+              </Text>
+              <Text
+                style={{ ...type.bodyMd, color: color.onSurface, flex: 1 }}
+              >
                 {step}
-              </Body>
+              </Text>
             </View>
           ))}
         </View>
-      </ScrollView>
 
-      <View className="absolute bottom-0 left-0 right-0 px-4 pb-8">
+        <View style={{ flex: 1 }} />
         <Button
-          label="I get it · let's try"
-          variant="primary"
-          size="lg"
-          radius="cta"
-          onPress={() =>
-            router.replace(`/program/exercise/${ex.slug}`)
-          }
+          label="I get it — let's try"
+          onPress={() => router.replace(`/program/exercise/${ex.slug}`)}
+          style={{ width: '100%' }}
         />
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

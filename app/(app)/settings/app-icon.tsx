@@ -1,9 +1,21 @@
+// Obsidian Kinetic: Settings · App icon. No dedicated Figma frame —
+// derived from the OptionRow pattern. Alternate-icon swap wiring
+// unchanged.
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ScreenHeader } from '@/components/obsidian';
 import { setAlternateAppIcon, type AppIconVariant } from '@/lib/app-icon';
+import { color, glass, radius, spacing, type } from '@/lib/obsidian/tokens';
 import { useSettingsStore } from '@/stores/settings';
 
 type Variant = { key: AppIconVariant; label: string; hint: string };
@@ -47,25 +59,27 @@ export default function AppIconScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-bg">
-      <ScrollView className="flex-1 px-6 pt-6" contentContainerClassName="pb-12">
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          hitSlop={12}
-          className="self-start py-3 px-3 -ml-3 active:opacity-60"
-        >
-          <Text className="text-muted">← Back</Text>
-        </Pressable>
-
-        <Text className="text-ink text-3xl font-semibold mt-4">App icon</Text>
-        <Text className="text-muted mt-2 leading-5">
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
+      <ScreenHeader
+        variant="back"
+        title="App icon"
+        onPress={() => router.back()}
+      />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackMd,
+          paddingBottom: 40,
+          gap: spacing.stackMd,
+        }}
+      >
+        <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
           Pick a different home-screen icon. Useful if you want Hone to read as
           a focus app at a glance.
         </Text>
 
-        <View className="mt-6 gap-2">
+        <View style={{ gap: spacing.stackSm }}>
           {VARIANTS.map((v) => {
             const selected = settings.appIconVariant === v.key;
             return (
@@ -76,34 +90,82 @@ export default function AppIconScreen() {
                 accessibilityRole="radio"
                 accessibilityState={{ selected }}
                 accessibilityLabel={`${v.label} app icon`}
-                className={`rounded-xl px-4 py-4 border flex-row items-center justify-between active:opacity-80 ${
-                  selected ? 'bg-accent border-accent' : 'bg-surface border-border'
-                }`}
+                style={({ pressed }) => ({
+                  backgroundColor: color.surfaceContainerLow,
+                  borderColor: selected
+                    ? color.primaryContainer
+                    : glass.border,
+                  borderWidth: selected ? 2 : 1,
+                  borderRadius: radius.xl,
+                  padding: spacing.stackMd,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: spacing.gutter,
+                  opacity: pressed ? 0.8 : 1,
+                })}
               >
-                <View>
+                <View style={{ flex: 1, gap: 2 }}>
                   <Text
-                    className={`text-base ${selected ? 'text-ink font-semibold' : 'text-ink'}`}
+                    style={{
+                      ...(selected ? type.labelButton : type.bodyLg),
+                      color: selected
+                        ? color.primaryFixedDim
+                        : color.onSurface,
+                    }}
                   >
                     {v.label}
                   </Text>
                   <Text
-                    className={`text-xs mt-0.5 ${selected ? 'text-ink/80' : 'text-muted'}`}
+                    style={{
+                      ...type.bodyMd,
+                      fontSize: 14,
+                      lineHeight: 20,
+                      color: color.onSurfaceVariant,
+                    }}
                   >
                     {v.hint}
                   </Text>
                 </View>
                 {busy === v.key ? (
-                  <Text className="text-ink text-sm">Applying…</Text>
-                ) : selected ? (
-                  <Text className="text-ink text-sm">Selected</Text>
-                ) : null}
+                  <Text
+                    style={{
+                      ...type.bodyMd,
+                      fontSize: 14,
+                      color: color.onSurfaceVariant,
+                    }}
+                  >
+                    Applying…
+                  </Text>
+                ) : (
+                  <View
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: radius.full,
+                      borderWidth: selected ? 0 : 1.5,
+                      borderColor: color.outline,
+                      backgroundColor: selected
+                        ? color.primaryContainer
+                        : 'transparent',
+                    }}
+                  />
+                )}
               </Pressable>
             );
           })}
         </View>
 
         {Platform.OS !== 'ios' ? (
-          <Text className="text-muted text-xs mt-6 leading-5">
+          <Text
+            style={{
+              ...type.bodyMd,
+              fontSize: 14,
+              lineHeight: 20,
+              color: color.onSurfaceVariant,
+              marginTop: spacing.stackSm,
+            }}
+          >
             Alternate icons are an iOS-only feature for v1.1.
           </Text>
         ) : null}

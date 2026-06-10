@@ -1,25 +1,15 @@
-// Figma: 25 · exercise detail — node 110:348
-// https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/?node-id=110-348
-//
-// Real wiring: tempo summary computed from EXERCISES[exerciseId].phases
-// instead of hardcoded "1s ON · 1s OFF". Falls back to a "not found" view
-// when the slug is unknown.
-//
-// Deferred:
-//   - Per-rep illustration (still 7 accent dots; Figma calls for a small
-//     square pulse visualisation).
-//   - Solo-mode session (Practice solo CTA currently lands on /session/today).
+// Obsidian Kinetic: exercise detail. Derived from glass-card + numbered
+// steps patterns. EXERCISES[slug] lookup + tempo computation unchanged.
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Body, Button, Card, ScreenHeader, SectionLabel } from '@/components/ui';
-
+import { Button, ScreenHeader } from '@/components/obsidian';
 import { EXERCISES } from '@/lib/exercises';
+import { color, glass, radius, spacing, type } from '@/lib/obsidian/tokens';
 import type { ExerciseTemplate } from '@/lib/types';
 
 function tempoSummary(ex: ExerciseTemplate): string {
-  // ON = active work (squeeze + hold), OFF = rest (release).
   const onMs = ex.phases
     .filter((p) => p.kind === 'squeeze' || p.kind === 'hold')
     .reduce((a, p) => a + p.durationMs, 0);
@@ -28,7 +18,7 @@ function tempoSummary(ex: ExerciseTemplate): string {
     .reduce((a, p) => a + p.durationMs, 0);
   const fmt = (ms: number) => {
     const s = ms / 1000;
-    return Number.isInteger(s) ? `${s}s` : `${s.toFixed(1)}s`;
+    return Number.isInteger(s) ? `${s}S` : `${s.toFixed(1)}S`;
   };
   return `${fmt(onMs)} ON · ${fmt(offMs)} OFF`;
 }
@@ -37,11 +27,11 @@ const POSITION_LABEL: Record<
   NonNullable<ExerciseTemplate['position']>,
   string
 > = {
-  seated: 'Best done seated.',
-  standing: 'Best done standing.',
-  supine: 'Lying on your back.',
-  quadruped: 'On hands and knees.',
-  any: 'Sit upright, shoulders relaxed.',
+  seated: 'Sit upright, shoulders relaxed.',
+  standing: 'Stand tall, weight even across both feet.',
+  supine: 'Lie on your back, knees bent.',
+  quadruped: 'On hands and knees, neutral spine.',
+  any: 'Get comfortable, shoulders relaxed.',
 };
 
 export default function ExerciseDetail() {
@@ -51,48 +41,87 @@ export default function ExerciseDetail() {
 
   if (!ex) {
     return (
-      <SafeAreaView className="flex-1 bg-surface-canvas">
+      <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
         <ScreenHeader
-          kind="detail"
+          variant="back"
           title="Exercise"
-          onBack={() => router.back()}
+          onPress={() => router.back()}
         />
-        <View className="flex-1 px-6 py-8">
-          <Body color="muted">
+        <View style={{ flex: 1, padding: spacing.containerPadding }}>
+          <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
             We don&rsquo;t recognise this exercise. It may have been removed
             from the catalog.
-          </Body>
+          </Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-canvas">
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
       <ScreenHeader
-        kind="detail"
+        variant="back"
         title={ex.name}
-        onBack={() => router.back()}
+        onPress={() => router.back()}
       />
-
-      <ScrollView className="flex-1" contentContainerClassName="px-6 pb-32">
-        {/* Tempo visualisation card */}
-        <Card padding="lg" radius="card" className="mt-2 items-center">
-          <Body color="primary" style={{ fontSize: 28, letterSpacing: 4 }}>
-            ● ● ● ● ● ● ●
-          </Body>
-          <Body size="sm" color="muted" className="mt-2">
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackMd,
+          paddingBottom: spacing.stackLg + spacing.stackMd,
+          gap: spacing.stackMd,
+        }}
+      >
+        {/* Tempo card */}
+        <View
+          style={{
+            backgroundColor: color.surfaceContainerLow,
+            borderColor: glass.border,
+            borderWidth: glass.borderWidth,
+            borderRadius: radius.xl,
+            padding: spacing.containerPadding,
+            alignItems: 'center',
+            gap: spacing.stackSm,
+          }}
+        >
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {Array.from({ length: 7 }, (_, i) => (
+              <View
+                key={i}
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: radius.full,
+                  backgroundColor:
+                    i % 2 === 0
+                      ? color.primaryContainer
+                      : color.surfaceContainerHigh,
+                }}
+              />
+            ))}
+          </View>
+          <Text
+            style={{ ...type.labelCaps, color: color.primaryFixedDim }}
+          >
             {tempoSummary(ex)}
-          </Body>
-          <Body size="sm" color="muted" className="mt-3 text-center">
+          </Text>
+          <Text
+            style={{
+              ...type.bodyMd,
+              color: color.onSurfaceVariant,
+              textAlign: 'center',
+            }}
+          >
             {ex.description}
-          </Body>
-        </Card>
+          </Text>
+        </View>
 
-        <SectionLabel tracking="wide" className="mt-6">
+        <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
           HOW IT WORKS
-        </SectionLabel>
-        <View className="gap-2 mt-3">
+        </Text>
+        <View style={{ gap: spacing.stackSm }}>
           {[
             ex.position
               ? POSITION_LABEL[ex.position]
@@ -100,45 +129,46 @@ export default function ExerciseDetail() {
             'Squeeze the pelvic-floor muscles cleanly — no breath holding.',
             'Release fully between reps. Quality beats count.',
           ].map((step, i) => (
-            <View key={i} className="flex-row gap-3">
-              <Body weight="semibold" color="accent">
+            <View key={i} style={{ flexDirection: 'row', gap: spacing.gutter }}>
+              <Text
+                style={{ ...type.labelButton, color: color.primaryFixedDim }}
+              >
                 {i + 1}.
-              </Body>
-              <Body color="primary" className="flex-1">
+              </Text>
+              <Text
+                style={{ ...type.bodyMd, color: color.onSurface, flex: 1 }}
+              >
                 {step}
-              </Body>
+              </Text>
             </View>
           ))}
         </View>
 
-        <SectionLabel tracking="wide" className="mt-6">
+        <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
           TIPS
-        </SectionLabel>
-        <View className="gap-2 mt-3">
+        </Text>
+        <View style={{ gap: spacing.stackSm }}>
           {[
             "Breathe normally — don't hold your breath.",
             'Only the pelvic-floor muscles should move.',
             `Aim for ${ex.sets} ${ex.sets === 1 ? 'set' : 'sets'} × ${ex.reps} reps; stop early if form slips.`,
           ].map((tip, i) => (
-            <View key={i} className="flex-row gap-2.5 items-start">
-              <Body color="muted">·</Body>
-              <Body color="primary" className="flex-1">
-                {tip}
-              </Body>
-            </View>
+            <Text
+              key={i}
+              style={{ ...type.bodyMd, color: color.onSurfaceVariant }}
+            >
+              · {tip}
+            </Text>
           ))}
         </View>
-      </ScrollView>
 
-      <View className="absolute bottom-0 left-0 right-0 px-6 pb-8">
+        <View style={{ flex: 1 }} />
         <Button
           label="Practice solo · 1 min"
-          variant="primary"
-          size="lg"
-          radius="cta"
           onPress={() => router.push('/session/today')}
+          style={{ width: '100%' }}
         />
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

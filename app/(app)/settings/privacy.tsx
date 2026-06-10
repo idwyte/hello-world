@@ -1,10 +1,15 @@
+// Obsidian Kinetic: Settings · Privacy. No dedicated Figma frame —
+// derived from the glass card pattern. Supabase settings query +
+// analytics opt-in wiring unchanged.
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, Switch, Text, View } from 'react-native';
+import { Alert, ScrollView, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ScreenHeader } from '@/components/obsidian';
 import { hasSupabaseConfig } from '@/lib/env';
+import { color, glass, radius, spacing, type } from '@/lib/obsidian/tokens';
 import { getSupabase } from '@/lib/supabase';
 
 export default function Privacy() {
@@ -55,28 +60,50 @@ export default function Privacy() {
   const optIn = settingsQuery.data?.analyticsOptIn ?? false;
 
   return (
-    <SafeAreaView className="flex-1 bg-bg">
-      <View className="flex-1 px-6 pt-4">
-        <Pressable
-          onPress={() => router.back()}
-          className="self-start py-3 px-3 -ml-3 active:opacity-60"
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-        >
-          <Text className="text-muted">← Back</Text>
-        </Pressable>
-
-        <Text className="text-ink text-3xl font-semibold mt-2">Privacy</Text>
-        <Text className="text-muted mt-2 leading-5">
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
+      <ScreenHeader
+        variant="back"
+        title="Privacy"
+        onPress={() => router.back()}
+      />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackMd,
+          paddingBottom: 40,
+          gap: spacing.stackMd,
+        }}
+      >
+        <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
           We never log your assessment answers, session content, or anything
           that could identify your training to a third party.
         </Text>
 
-        <View className="bg-surface border border-border rounded-xl p-4 mt-6 flex-row items-center justify-between">
-          <View className="flex-1 pr-4">
-            <Text className="text-ink">Anonymous product analytics</Text>
-            <Text className="text-muted text-xs mt-1 leading-5">
+        <View
+          style={{
+            backgroundColor: color.surfaceContainerLow,
+            borderColor: glass.border,
+            borderWidth: glass.borderWidth,
+            borderRadius: radius.xl,
+            padding: spacing.stackMd,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.gutter,
+          }}
+        >
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={{ ...type.bodyLg, color: color.onSurface }}>
+              Anonymous product analytics
+            </Text>
+            <Text
+              style={{
+                ...type.bodyMd,
+                fontSize: 14,
+                lineHeight: 20,
+                color: color.onSurfaceVariant,
+              }}
+            >
               Off by default. If on, we record only structural events
               (session_started, session_completed, duration_bucket) — never
               assessment answers or stealth-mode details. Scrubbed server-side.
@@ -86,17 +113,29 @@ export default function Privacy() {
             value={optIn}
             disabled={updating || !hasSupabaseConfig()}
             onValueChange={toggle}
-            trackColor={{ true: '#7C5CFF', false: '#2A2A36' }}
+            trackColor={{
+              true: color.primaryContainer,
+              false: color.surfaceContainerHigh,
+            }}
+            thumbColor="#fff"
             accessibilityLabel="Anonymous product analytics"
           />
         </View>
 
-        <Text className="text-muted text-xs mt-6 leading-5">
+        <Text
+          style={{
+            ...type.bodyMd,
+            fontSize: 14,
+            lineHeight: 20,
+            color: color.onSurfaceVariant,
+            marginTop: spacing.stackSm,
+          }}
+        >
           Data export and account deletion are handled in Settings → Account.
           Stealth-mode preferences (haptic intensity, cue style, decoy cover)
           stay on this device and never sync.
         </Text>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

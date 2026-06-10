@@ -1,15 +1,12 @@
-// Figma: 33 · education — node 129:347
-//
-// Article shell parameterised by slug. Content + read-time pulled from
-// `lib/education.ts`; the accent-soft key-fact callout is rendered as a
-// proper accent-pressed Card with an accent left border.
+// Obsidian Kinetic: education article shell. lib/education.ts lookup +
+// read-time unchanged; key-fact callout is a cyan-stroked card.
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Body, Button, Card, ScreenHeader, SectionLabel } from '@/components/ui';
+import { Button, ScreenHeader } from '@/components/obsidian';
 import { getArticle, readTimeMinutes } from '@/lib/education';
-import { semantic } from '@/lib/theme';
+import { color, radius, spacing, type } from '@/lib/obsidian/tokens';
 
 export default function Education() {
   const router = useRouter();
@@ -18,125 +15,106 @@ export default function Education() {
 
   if (!article) {
     return (
-      <SafeAreaView className="flex-1 bg-surface-canvas">
+      <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
         <ScreenHeader
-          kind="detail"
+          variant="back"
           title="Education"
-          onBack={() => router.back()}
+          onPress={() => router.back()}
         />
-        <View className="flex-1 px-6 py-8">
-          <Body color="muted">
+        <View style={{ flex: 1, padding: spacing.containerPadding }}>
+          <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
             We don&rsquo;t have an article for that yet.
-          </Body>
+          </Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  const readMin = readTimeMinutes(article);
-
-  // Splice the key-fact card between section 1 and section 2 if present,
-  // matching the Figma layout (Body 1 → Callout → Body 2).
   const [first, ...rest] = article.sections;
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-canvas">
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
       <ScreenHeader
-        kind="detail"
+        variant="back"
         title="Education"
-        onBack={() => router.back()}
+        onPress={() => router.back()}
       />
-
-      <ScrollView className="flex-1" contentContainerClassName="px-4 pb-32">
-        <SectionLabel
-          tracking="wide"
-          className="text-interactive-primary mt-2"
-        >
-          EDUCATION · {readMin} MIN READ
-        </SectionLabel>
-        <Body
-          weight="semibold"
-          color="primary"
-          className="mt-2"
-          style={{ fontSize: 26, lineHeight: 32 }}
-        >
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackMd,
+          paddingBottom: spacing.stackLg + spacing.stackMd,
+          gap: spacing.stackMd,
+        }}
+      >
+        <Text style={{ ...type.labelCaps, color: color.primaryFixedDim }}>
+          EDUCATION · {readTimeMinutes(article)} MIN READ
+        </Text>
+        <Text style={{ ...type.headlineLg, color: color.onSurface }}>
           {article.title}
-        </Body>
+        </Text>
 
         {first && (
-          <>
-            <Body
-              weight="semibold"
-              color="primary"
-              className="mt-6"
-              style={{ fontSize: 17, lineHeight: 24 }}
-            >
-              {first.heading}
-            </Body>
-            <Body
-              color="primary"
-              className="mt-2"
-              style={{ fontSize: 14, lineHeight: 22 }}
-            >
-              {first.body}
-            </Body>
-          </>
+          <ArticleSection heading={first.heading} body={first.body} />
         )}
 
         {article.keyFact && (
-          <Card
-            padding="lg"
-            radius="card"
-            className="mt-6"
+          <View
             style={{
-              backgroundColor: semantic.interactivePrimaryPressed,
-              borderLeftWidth: 3,
-              borderLeftColor: semantic.interactivePrimary,
+              backgroundColor: color.surfaceContainerLow,
+              borderColor: color.secondaryContainer,
+              borderWidth: 1.5,
+              borderRadius: radius.xl,
+              padding: spacing.stackMd,
+              gap: 4,
             }}
           >
-            <Body
-              weight="semibold"
-              color="primary"
-              style={{ fontSize: 28, lineHeight: 36 }}
+            <Text
+              style={{
+                ...type.metricLg,
+                fontSize: 32,
+                lineHeight: 36,
+                color: color.secondaryContainer,
+              }}
             >
               {article.keyFact.headline}
-            </Body>
-            <Body size="sm" color="primary" className="mt-1">
+            </Text>
+            <Text style={{ ...type.bodyMd, color: color.onSurface }}>
               {article.keyFact.body}
-            </Body>
-          </Card>
+            </Text>
+          </View>
         )}
 
         {rest.map((section) => (
-          <View key={section.heading}>
-            <Body
-              weight="semibold"
-              color="primary"
-              className="mt-6"
-              style={{ fontSize: 17, lineHeight: 24 }}
-            >
-              {section.heading}
-            </Body>
-            <Body
-              color="primary"
-              className="mt-2"
-              style={{ fontSize: 14, lineHeight: 22 }}
-            >
-              {section.body}
-            </Body>
-          </View>
+          <ArticleSection
+            key={section.heading}
+            heading={section.heading}
+            body={section.body}
+          />
         ))}
-      </ScrollView>
 
-      <View className="absolute bottom-0 left-0 right-0 px-4 pb-8">
+        <View style={{ flex: 1 }} />
         <Button
-          label="Got it · keep training"
-          variant="primary"
-          size="lg"
-          radius="cta"
+          label="Got it — keep training"
           onPress={() => router.back()}
+          style={{ width: '100%' }}
         />
-      </View>
+      </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function ArticleSection({ heading, body }: { heading: string; body: string }) {
+  return (
+    <View style={{ gap: spacing.stackSm }}>
+      <Text style={{ ...type.headlineMd, color: color.onSurface }}>
+        {heading}
+      </Text>
+      <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
+        {body}
+      </Text>
+    </View>
   );
 }

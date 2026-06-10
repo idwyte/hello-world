@@ -1,4 +1,6 @@
-// Figma: 29 · delete account — node 113:348
+// Obsidian Kinetic: Settings · Delete account.
+// Originally Figma node 113:348 (legacy skin); re-skinned to the glass
+// card + Input + error-palette patterns.
 //
 // Real wiring: type "DELETE" to enable the destructive button → confirm
 // Alert → calls deleteAccount() (lib/auth.ts → delete-account Edge
@@ -6,12 +8,12 @@
 // routes to /welcome. Apple App Store guideline 5.1.1(v) compliance.
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Alert, ScrollView, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Body, Button, Card, ScreenHeader, SectionLabel } from '@/components/ui';
+import { Button, Input, ScreenHeader } from '@/components/obsidian';
 import { deleteAccount } from '@/lib/auth';
-import { semantic } from '@/lib/theme';
+import { color, glass, radius, spacing, type } from '@/lib/obsidian/tokens';
 
 const CONFIRM_PHRASE = 'DELETE';
 
@@ -60,101 +62,143 @@ export default function DeleteAccount() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-canvas">
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
       <ScreenHeader
-        kind="detail"
+        variant="back"
         title="Delete account"
-        onBack={() => router.back()}
+        onPress={() => router.back()}
       />
-
-      <ScrollView className="flex-1" contentContainerClassName="px-6 pb-12">
-        <View className="items-center mt-6">
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackMd,
+          paddingBottom: 40,
+          gap: spacing.stackMd,
+        }}
+      >
+        <View style={{ alignItems: 'center', gap: spacing.stackMd }}>
           <View
-            className="w-[72px] h-[72px] rounded-full items-center justify-center"
-            style={{ backgroundColor: semantic.feedbackDanger + '33' }}
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: radius.full,
+              borderWidth: 2,
+              borderColor: color.error,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
-            <Body weight="semibold" color="danger" style={{ fontSize: 36 }}>
+            <Text
+              style={{ ...type.headlineLg, color: color.error, lineHeight: 36 }}
+            >
               !
-            </Body>
+            </Text>
           </View>
-          <Body
-            weight="semibold"
-            color="primary"
-            className="mt-5 text-center"
-            style={{ fontSize: 22, lineHeight: 28 }}
+          <Text
+            style={{
+              ...type.headlineMd,
+              color: color.onSurface,
+              textAlign: 'center',
+            }}
           >
             This can&rsquo;t be undone.
-          </Body>
+          </Text>
         </View>
 
-        <Card padding="lg" radius="card" bordered className="mt-6">
-          <SectionLabel tracking="tight">WHAT&rsquo;S DELETED</SectionLabel>
-          <View className="gap-2 mt-3">
-            {DELETED.map((d, i) => (
-              <View key={i} className="flex-row items-start gap-3">
-                <Body weight="semibold" color="danger">
-                  ✕
-                </Body>
-                <Body color="primary" className="flex-1">
-                  {d}
-                </Body>
-              </View>
-            ))}
-          </View>
-        </Card>
+        <View
+          style={{
+            backgroundColor: color.surfaceContainerLow,
+            borderColor: glass.border,
+            borderWidth: glass.borderWidth,
+            borderRadius: radius.xl,
+            padding: spacing.stackMd,
+            gap: spacing.gutter,
+          }}
+        >
+          <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
+            WHAT&rsquo;S DELETED
+          </Text>
+          {DELETED.map((d, i) => (
+            <View
+              key={i}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'flex-start',
+                gap: spacing.gutter,
+              }}
+            >
+              <Text style={{ ...type.labelButton, color: color.error }}>✕</Text>
+              <Text
+                style={{ ...type.bodyMd, flex: 1, color: color.onSurface }}
+              >
+                {d}
+              </Text>
+            </View>
+          ))}
+        </View>
 
-        <Body size="sm" color="muted" className="mt-4 text-center px-4">
+        <Text
+          style={{
+            ...type.bodyMd,
+            fontSize: 14,
+            lineHeight: 20,
+            color: color.onSurfaceVariant,
+            textAlign: 'center',
+            paddingHorizontal: spacing.stackMd,
+          }}
+        >
           Your in-app purchases stay attached to your Apple ID or Google
           Account — you can restore them on any new account.
-        </Body>
+        </Text>
 
-        <SectionLabel tracking="wide" className="mt-8">
-          TYPE “{CONFIRM_PHRASE}” TO CONFIRM
-        </SectionLabel>
-        <TextInput
+        <Input
+          label={`TYPE “${CONFIRM_PHRASE}” TO CONFIRM`}
+          error={armed ? 'Armed — this cannot be undone' : undefined}
           value={typed}
           onChangeText={setTyped}
           autoCapitalize="characters"
           autoCorrect={false}
           editable={!busy}
           placeholder={CONFIRM_PHRASE}
-          placeholderTextColor={semantic.textMuted}
           accessibilityLabel="Type the word DELETE to confirm"
-          style={{
-            marginTop: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: armed
-              ? semantic.feedbackDanger
-              : semantic.borderDefault,
-            backgroundColor: semantic.surfaceRaised,
-            color: semantic.textPrimary,
-            fontSize: 16,
-            letterSpacing: 1,
-          }}
+          containerStyle={{ marginTop: spacing.stackSm }}
         />
 
-        <View className="flex-row gap-3 mt-8">
+        <View
+          style={{
+            flexDirection: 'row',
+            gap: spacing.gutter,
+            marginTop: spacing.stackSm,
+          }}
+        >
           <Button
             label="Cancel"
-            variant="secondary"
-            size="lg"
-            radius="cta"
-            className="flex-1"
+            variant="ghost"
             disabled={busy}
             onPress={() => router.back()}
+            style={{ flex: 1 }}
           />
-          <Button
-            label={busy ? 'Deleting…' : 'Delete forever'}
-            variant="destructive"
-            size="lg"
-            radius="cta"
-            className="flex-1"
-            disabled={!armed || busy}
+          <Pressable
             onPress={confirmAndDelete}
-          />
+            disabled={!armed || busy}
+            accessibilityRole="button"
+            accessibilityLabel={busy ? 'Deleting…' : 'Delete forever'}
+            accessibilityState={{ disabled: !armed || busy }}
+            style={({ pressed }) => ({
+              flex: 1,
+              height: 56,
+              borderRadius: radius.xl,
+              backgroundColor: color.errorContainer,
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: !armed || busy ? 0.4 : pressed ? 0.8 : 1,
+            })}
+          >
+            <Text style={{ ...type.labelButton, color: color.onErrorContainer }}>
+              {busy ? 'Deleting…' : 'Delete forever'}
+            </Text>
+          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>

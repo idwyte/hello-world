@@ -1,10 +1,14 @@
+// Obsidian Kinetic: Settings · Account. No dedicated Figma frame —
+// derived from the glass card + Button patterns. Auth wiring unchanged.
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button, ScreenHeader } from '@/components/obsidian';
 import { deleteAccount, signOut, useAuth } from '@/lib/auth';
 import { hasSupabaseConfig } from '@/lib/env';
+import { color, glass, radius, spacing, type } from '@/lib/obsidian/tokens';
 
 export default function Account() {
   const router = useRouter();
@@ -58,60 +62,87 @@ export default function Account() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-bg">
-      <View className="flex-1 px-6 pt-4">
-        <Pressable
-          onPress={() => router.back()}
-          className="self-start py-3 px-3 -ml-3 active:opacity-60"
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-        >
-          <Text className="text-muted">← Back</Text>
-        </Pressable>
-
-        <Text className="text-ink text-3xl font-semibold mt-2">Account</Text>
-
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
+      <ScreenHeader
+        variant="back"
+        title="Account"
+        onPress={() => router.back()}
+      />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackMd,
+          paddingBottom: 40,
+          gap: spacing.stackMd,
+        }}
+      >
         {configured && user ? (
-          <View className="bg-surface rounded-xl p-4 border border-border mt-6">
-            <Text className="text-muted text-xs uppercase tracking-wider">
+          <View
+            style={{
+              backgroundColor: color.surfaceContainerLow,
+              borderColor: glass.border,
+              borderWidth: glass.borderWidth,
+              borderRadius: radius.xl,
+              padding: spacing.stackMd,
+              gap: spacing.stackSm,
+            }}
+          >
+            <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
               Signed in as
             </Text>
-            <Text className="text-ink mt-1">{user.email ?? 'Anonymous'}</Text>
+            <Text style={{ ...type.bodyLg, color: color.onSurface }}>
+              {user.email ?? 'Anonymous'}
+            </Text>
           </View>
         ) : null}
 
-        <View className="mt-6 gap-3">
-          <Pressable
-            onPress={onSignOut}
-            disabled={busy || !configured}
-            accessibilityRole="button"
-            accessibilityLabel="Sign out"
-            className="bg-surface border border-border rounded-xl py-4 items-center active:opacity-80"
-          >
-            <Text className="text-ink">Sign out</Text>
-          </Pressable>
+        <Button
+          label="Sign out"
+          variant="ghost"
+          onPress={onSignOut}
+          disabled={busy || !configured}
+          accessibilityLabel="Sign out"
+          style={{ width: '100%' }}
+        />
 
-          {/* Routes to /settings/delete-account (Figma 29) instead of an
-              inline Alert — the stub provides the type-to-confirm flow that
-              App Store policy requires. confirmDelete() retained as the
-              underlying RPC for the stub to call once promoted. */}
-          <Pressable
-            onPress={() => router.push('/settings/delete-account')}
-            disabled={busy || !configured}
-            accessibilityRole="button"
-            accessibilityLabel="Delete account"
-            className="border border-danger rounded-xl py-4 items-center active:opacity-80"
-          >
-            <Text className="text-danger">Delete account</Text>
-          </Pressable>
-        </View>
+        {/* Routes to /settings/delete-account (Figma 29) instead of an
+            inline Alert — the stub provides the type-to-confirm flow that
+            App Store policy requires. confirmDelete() retained as the
+            underlying RPC for the stub to call once promoted. */}
+        <Pressable
+          onPress={() => router.push('/settings/delete-account')}
+          disabled={busy || !configured}
+          accessibilityRole="button"
+          accessibilityLabel="Delete account"
+          style={({ pressed }) => ({
+            height: 56,
+            borderRadius: radius.xl,
+            borderWidth: 1.5,
+            borderColor: color.error,
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: busy || !configured ? 0.4 : pressed ? 0.7 : 1,
+          })}
+        >
+          <Text style={{ ...type.labelButton, color: color.error }}>
+            Delete account
+          </Text>
+        </Pressable>
 
-        <Text className="text-muted text-xs mt-6 leading-5">
-          Deletion is required by Apple's guidelines and removes all data
+        <Text
+          style={{
+            ...type.bodyMd,
+            fontSize: 14,
+            lineHeight: 20,
+            color: color.onSurfaceVariant,
+            marginTop: spacing.stackSm,
+          }}
+        >
+          Deletion is required by Apple&apos;s guidelines and removes all data
           associated with your account, including assessments and progress.
         </Text>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
