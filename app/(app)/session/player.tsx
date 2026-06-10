@@ -1,16 +1,24 @@
+// Obsidian Kinetic: 11 · Active Session (handoff §4 Phase A).
+// PhaseRing hero (glow = live), phase word + countdown inside the ring,
+// exercise progress dots, SET/REP/TIME meta row, lime pause disc, muted
+// End link. Pause sheet is "still to design" in Figma (handoff §4) so it
+// reuses the same token styling in-place.
+//
+// All engine + persistence logic is unchanged from the pre-redesign
+// player: session-engine runner, 50ms tick, Supabase logging, RPE
+// routing with the inserted session id.
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Pause, Play } from 'lucide-react-native';
+import { Pause } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Alert, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PacerRing } from '@/components/session/PacerRing';
-import { PhaseLabel, colorForPhase } from '@/components/session/PhaseLabel';
-import { Body, Button } from '@/components/ui';
+import { Button, PhaseRing } from '@/components/obsidian';
 import { hasSupabaseConfig } from '@/lib/env';
 import { EXERCISES, getExercise } from '@/lib/exercises';
 import { play, patternForPhase } from '@/lib/haptics';
+import { color, overlay, radius, spacing, type } from '@/lib/obsidian/tokens';
 import {
   type SessionState,
   type SessionRunner,
@@ -18,7 +26,6 @@ import {
   createSessionRunner,
 } from '@/lib/session-engine';
 import { fetchTodayProgramDay, logCompletedSession } from '@/lib/sessions';
-import { semantic } from '@/lib/theme';
 import type { ExerciseTemplate, PhaseKind, ProgramDay } from '@/lib/types';
 import { useSessionStore } from '@/stores/session';
 
@@ -52,6 +59,20 @@ function phaseAnnouncement(kind: PhaseKind): string {
   }
 }
 
+// Work phases carry the lime; release is cyan ("system feedback");
+// prep/rest stay muted. Used for the phase caption above the ring.
+function phaseColor(kind: PhaseKind): string {
+  switch (kind) {
+    case 'squeeze':
+    case 'hold':
+      return color.primaryContainer;
+    case 'release':
+      return color.secondaryContainer;
+    default:
+      return color.onSurfaceVariant;
+  }
+}
+
 export default function Player() {
   const router = useRouter();
   const logSession = useSessionStore((s) => s.logSession);
@@ -76,9 +97,8 @@ export default function Player() {
   }
 
   function handleEnd() {
-    // Per Figma 30 spec: double-confirm because the End-session affordance
-    // is small + muted but the action is destructive (this session's
-    // progress won't be saved). Default to Cancel.
+    // Double-confirm: the affordance is small + muted but the action is
+    // destructive (this session's progress won't be saved).
     Alert.alert(
       'End this session?',
       "Your progress for this day won't be saved.",
@@ -202,15 +222,24 @@ export default function Player() {
 
   if (!state) {
     return (
-      <SafeAreaView className="flex-1 bg-bg items-center justify-center">
-        <Text className="text-ink">Loading…</Text>
+      <SafeAreaView
+        style={{
+          flex: 1,
+          backgroundColor: color.background,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
+          Loading…
+        </Text>
       </SafeAreaView>
     );
   }
 
   if (state.status === 'done') {
-    // Pass session stats as router params to the celebration screen so it
-    // can render DURATION / REPS / DAY · WEEK without re-querying.
+    // Pass session stats as router params: player → RPE → complete. The
+    // RPE screen attaches the effort rating to the just-logged session row.
     const durationS = Math.max(
       0,
       Math.floor((Date.now() - startedAtRef.current) / 1000),
@@ -221,18 +250,30 @@ export default function Player() {
     );
     const todayMeta = todayDayQuery.data;
     return (
-      <SafeAreaView className="flex-1 bg-bg">
-        <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-success text-3xl font-semibold">
+      <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
+        <View
+          style={{
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingHorizontal: spacing.containerPadding,
+          }}
+        >
+          <Text style={{ ...type.headlineLg, color: color.primaryContainer }}>
             Session complete
           </Text>
-          <Text className="text-muted mt-2 text-center">
+          <Text
+            style={{
+              ...type.bodyMd,
+              color: color.onSurfaceVariant,
+              marginTop: spacing.stackSm,
+              textAlign: 'center',
+            }}
+          >
             Nice. Consistency is the whole game.
           </Text>
-          {/* Route through /session/rpe (Figma 34) → /session/complete
-              (Figma 14). The RPE screen attaches the effort rating to
-              the just-logged session row and forwards the same params. */}
-          <Pressable
+          <Button
+            label="Continue"
             onPress={() =>
               router.replace({
                 pathname: '/session/rpe',
@@ -245,12 +286,8 @@ export default function Player() {
                 },
               })
             }
-            className="bg-accent rounded-xl mt-8 py-4 px-8 active:opacity-80"
-            accessibilityRole="button"
-            accessibilityLabel="Continue"
-          >
-            <Text className="text-ink font-semibold">Continue</Text>
-          </Pressable>
+            style={{ marginTop: spacing.stackLg, alignSelf: 'stretch' }}
+          />
         </View>
       </SafeAreaView>
     );
@@ -267,76 +304,105 @@ export default function Player() {
     (state.phase.durationMs - state.phaseElapsedMs) / 1000,
   );
   const elapsedLabel = formatElapsed(Math.floor(state.totalElapsedMs / 1000));
-  // Header context: "Day N · Short Holds" when we know the day from the
-  // user's program; just the exercise name in the dev/no-Supabase fallback.
   const headerLabel = currentExercise
     ? dayNumber
-      ? `Day ${dayNumber} · ${currentExercise.name}`
+      ? `DAY ${dayNumber} · ${currentExercise.name}`
       : currentExercise.name
     : dayNumber
-      ? `Day ${dayNumber}`
+      ? `DAY ${dayNumber}`
       : '';
   const setLabel = currentExercise
-    ? `${state.phase.setIndex + 1} / ${currentExercise.sets}`
+    ? `${state.phase.setIndex + 1}/${currentExercise.sets}`
     : '—';
   const repLabel = currentExercise
-    ? `${state.phase.repIndex + 1} / ${currentExercise.reps}`
+    ? `${state.phase.repIndex + 1}/${currentExercise.reps}`
     : '—';
 
   return (
-    <SafeAreaView className="flex-1 bg-bg">
-      <View className="flex-1 items-center justify-between px-6 py-8">
-        {/* Context header — Figma 99:239 (Day N · exercise) */}
-        <View className="items-center" style={{ minHeight: 24 }}>
-          <Body
-            weight="medium"
-            color="muted"
-            style={{ fontSize: 14, lineHeight: 20, letterSpacing: 0.5 }}
-          >
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: spacing.containerPadding,
+          paddingVertical: spacing.stackLg,
+        }}
+      >
+        {/* Context header */}
+        <View style={{ alignItems: 'center', minHeight: 24 }}>
+          <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
             {headerLabel}
-          </Body>
+          </Text>
         </View>
 
-        {/* Phase label above the ring + big seconds countdown inside it */}
+        {/* Hero: phase word above the ring, ring carries countdown +
+            SECONDS caption. Glow only while live (motion spec §4). */}
         <View
-          className="items-center"
+          style={{ alignItems: 'center' }}
           accessibilityLabel={`${phaseAnnouncement(state.phase.kind)}, ${countdownS} seconds remaining`}
           accessibilityLiveRegion="polite"
         >
-          <PhaseLabel kind={state.phase.kind} />
-          <View className="items-center justify-center" style={{ marginTop: 24 }}>
-            <PacerRing
+          <Text
+            style={{
+              ...type.headlineMd,
+              color: phaseColor(state.phase.kind),
+              textTransform: 'uppercase',
+              letterSpacing: 2,
+            }}
+          >
+            {phaseAnnouncement(state.phase.kind)}
+          </Text>
+          <View style={{ marginTop: spacing.stackLg }}>
+            <PhaseRing
               progress={phaseProgress}
-              color={colorForPhase(state.phase.kind)}
+              glow={!isPaused}
+              time={String(countdownS)}
+              caption="seconds"
+              durationMs={state.phase.durationMs}
             />
-            <View className="absolute inset-0 items-center justify-center">
-              <Body
-                weight="semibold"
-                color="primary"
-                style={{ fontSize: 112, lineHeight: 120 }}
-              >
-                {countdownS}
-              </Body>
-              <Text
-                style={{
-                  fontFamily: 'Inter',
-                  fontWeight: '500',
-                  fontSize: 11,
-                  lineHeight: 14,
-                  letterSpacing: 1.4,
-                  color: semantic.textMuted,
-                  marginTop: 4,
-                }}
-              >
-                SECONDS
-              </Text>
-            </View>
+          </View>
+          {/* Exercise progress dots — done dim-lime · current lime ·
+              upcoming outline */}
+          <View
+            style={{
+              flexDirection: 'row',
+              gap: spacing.stackSm,
+              marginTop: spacing.stackLg,
+            }}
+          >
+            {day.exercises.map((ex, i) => {
+              const dotColor =
+                i < state.phase.exerciseIndex
+                  ? color.primaryFixedDim
+                  : i === state.phase.exerciseIndex
+                    ? color.primaryContainer
+                    : color.outlineVariant;
+              return (
+                <View
+                  key={`${ex.slug}-${i}`}
+                  style={{
+                    width: i === state.phase.exerciseIndex ? 20 : 6,
+                    height: 6,
+                    borderRadius: radius.full,
+                    backgroundColor: dotColor,
+                  }}
+                />
+              );
+            })}
           </View>
         </View>
 
-        {/* Bottom controls: meta row · round Pause · End session link */}
-        <View className="items-center">
-          <View className="flex-row items-center justify-center" style={{ gap: 24 }}>
+        {/* Bottom: meta row · lime pause disc · End link */}
+        <View style={{ alignItems: 'center' }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: spacing.stackLg,
+            }}
+          >
             <StatCol kicker="SET" value={setLabel} />
             <DividerDot />
             <StatCol kicker="REP" value={repLabel} />
@@ -349,21 +415,21 @@ export default function Player() {
             accessibilityRole="button"
             accessibilityLabel="Pause session"
             hitSlop={8}
-            className="active:opacity-80"
-            style={{
-              marginTop: 32,
+            style={({ pressed }) => ({
+              marginTop: spacing.stackLg + spacing.stackSm,
               width: 72,
               height: 72,
-              borderRadius: 36,
+              borderRadius: radius.full,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: semantic.interactivePrimary,
-            }}
+              backgroundColor: color.primaryContainer,
+              opacity: pressed ? 0.85 : 1,
+            })}
           >
             <Pause
               size={28}
-              color={semantic.textPrimary}
-              fill={semantic.textPrimary}
+              color={color.onPrimaryFixed}
+              fill={color.onPrimaryFixed}
             />
           </Pressable>
 
@@ -372,12 +438,14 @@ export default function Player() {
             accessibilityRole="button"
             accessibilityLabel="End session"
             hitSlop={8}
-            className="active:opacity-60"
-            style={{ marginTop: 16 }}
+            style={({ pressed }) => ({
+              marginTop: spacing.stackMd,
+              opacity: pressed ? 0.6 : 1,
+            })}
           >
-            <Body color="muted" weight="medium" style={{ fontSize: 15, lineHeight: 22 }}>
+            <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
               End session
-            </Body>
+            </Text>
           </Pressable>
         </View>
       </View>
@@ -394,14 +462,10 @@ export default function Player() {
   );
 }
 
-// Pause sheet (Figma 30 · node 114:336) — modal overlay on /session/player.
-// Replaces the dead /session/pause route, which lost runner state on mount.
-// Layout cross-referenced against the live Figma node 2026-05-22:
-// 55% black scrim, sheet pinned to bottom with 24 px top corners and
-// bg-page fill, 36×5 grabber at 50% opacity, accent PAUSED kicker (11 px
-// medium, tracking 2 px) → 6 px gap → 64/72 elapsed timer → 20 px gap →
-// stats row with 4 px ellipse dividers → flex spacer → 60 px Resume CTA
-// with play glyph → 12 px gap → muted "End session" text link.
+// Pause sheet — modal overlay on /session/player (keeps runner state
+// alive; a separate route would lose it on mount). Obsidian Kinetic
+// restyle of the v1.2 sheet; the dedicated Figma pause sheet is still
+// to design (handoff §4) so this is the token-faithful interim.
 function PauseOverlay({
   state,
   exercise,
@@ -417,64 +481,75 @@ function PauseOverlay({
   // of pause via the `pausedAt - sessionStartedAt - totalPausedMs` branch.
   const elapsedS = Math.max(0, Math.floor(state.totalElapsedMs / 1000));
   const elapsedLabel = formatElapsed(elapsedS);
-  // Stats show current/total per Figma ("2 / 3"). prep/rest phases
-  // pre-empt exercise activity so we fall back to "—" when no exercise
-  // is meaningful (timeline guards exerciseIndex within bounds otherwise).
-  const setLabel = exercise ? `${state.phase.setIndex + 1} / ${exercise.sets}` : '—';
-  const repLabel = exercise ? `${state.phase.repIndex + 1} / ${exercise.reps}` : '—';
+  const setLabel = exercise
+    ? `${state.phase.setIndex + 1}/${exercise.sets}`
+    : '—';
+  const repLabel = exercise
+    ? `${state.phase.repIndex + 1}/${exercise.reps}`
+    : '—';
   const phaseLabel = shortPhaseLabel(state.phase.kind);
 
   return (
     <View
-      className="absolute inset-0 items-center justify-end"
-      style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
+      style={{
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        backgroundColor: overlay.scrim,
+      }}
       accessibilityViewIsModal
     >
       <View
-        className="w-full px-6 pb-7"
         style={{
-          paddingTop: 12,
-          backgroundColor: semantic.surfaceCanvas,
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
+          width: '100%',
+          paddingHorizontal: spacing.containerPadding,
+          paddingBottom: 28,
+          paddingTop: spacing.gutter,
+          backgroundColor: color.surfaceContainerLow,
+          borderTopLeftRadius: spacing.stackLg,
+          borderTopRightRadius: spacing.stackLg,
         }}
       >
         <View
-          className="self-center"
           style={{
+            alignSelf: 'center',
             width: 36,
             height: 5,
             borderRadius: 2.5,
-            backgroundColor: semantic.textMuted,
+            backgroundColor: color.outline,
             opacity: 0.5,
           }}
         />
 
-        <View className="items-center" style={{ marginTop: 16 }}>
+        <View style={{ alignItems: 'center', marginTop: spacing.stackMd }}>
+          <Text style={{ ...type.labelCaps, color: color.primaryContainer }}>
+            Paused
+          </Text>
           <Text
             style={{
-              fontFamily: 'Inter',
-              fontWeight: '500',
-              fontSize: 11,
-              lineHeight: 14,
-              letterSpacing: 2,
-              color: semantic.interactivePrimary,
+              ...type.display,
+              fontSize: 64,
+              lineHeight: 72,
+              color: color.onSurface,
+              marginTop: 6,
             }}
           >
-            PAUSED
-          </Text>
-          <Body
-            weight="semibold"
-            color="primary"
-            style={{ fontSize: 64, lineHeight: 72, marginTop: 6 }}
-          >
             {elapsedLabel}
-          </Body>
+          </Text>
         </View>
 
         <View
-          className="flex-row items-center justify-center"
-          style={{ marginTop: 20, gap: 24 }}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginTop: spacing.stackMd + 4,
+            gap: spacing.stackLg,
+          }}
         >
           <StatCol kicker="SET" value={setLabel} />
           <DividerDot />
@@ -483,36 +558,30 @@ function PauseOverlay({
           <StatCol kicker="PHASE" value={phaseLabel} />
         </View>
 
-        <View style={{ marginTop: 32 }}>
-          <Button
-            label="Resume"
-            variant="primary"
-            size="lg"
-            radius="cta"
-            leadingIcon={
-              <Play size={14} color={semantic.textPrimary} fill={semantic.textPrimary} />
-            }
-            onPress={onResume}
-          />
+        <View style={{ marginTop: spacing.stackLg + spacing.stackSm }}>
+          <Button label="Resume" onPress={onResume} />
           <Pressable
             onPress={onEnd}
             accessibilityRole="button"
             accessibilityLabel="End session"
-            className="active:opacity-60"
-            style={{
+            style={({ pressed }) => ({
               height: 28,
-              marginTop: 12,
+              marginTop: spacing.gutter,
               alignItems: 'center',
               justifyContent: 'center',
-            }}
+              opacity: pressed ? 0.6 : 1,
+            })}
           >
-            <Body
-              color="muted"
-              weight="medium"
-              style={{ fontSize: 14, lineHeight: 20 }}
+            <Text
+              style={{
+                ...type.bodyMd,
+                fontSize: 14,
+                lineHeight: 20,
+                color: color.onSurfaceVariant,
+              }}
             >
               End session
-            </Body>
+            </Text>
           </Pressable>
         </View>
       </View>
@@ -522,26 +591,20 @@ function PauseOverlay({
 
 function StatCol({ kicker, value }: { kicker: string; value: string }) {
   return (
-    <View className="items-center" style={{ gap: 4 }}>
-      <Text
-        style={{
-          fontFamily: 'Inter',
-          fontWeight: '500',
-          fontSize: 10,
-          lineHeight: 14,
-          letterSpacing: 1.2,
-          color: semantic.textMuted,
-        }}
-      >
+    <View style={{ alignItems: 'center', gap: 4 }}>
+      <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
         {kicker}
       </Text>
-      <Body
-        weight="semibold"
-        color="primary"
-        style={{ fontSize: 22, lineHeight: 28 }}
+      <Text
+        style={{
+          ...type.metricLg,
+          fontSize: 22,
+          lineHeight: 28,
+          color: color.onSurface,
+        }}
       >
         {value}
-      </Body>
+      </Text>
     </View>
   );
 }
@@ -553,7 +616,7 @@ function DividerDot() {
         width: 4,
         height: 4,
         borderRadius: 2,
-        backgroundColor: semantic.textMuted,
+        backgroundColor: color.outline,
         opacity: 0.5,
       }}
     />

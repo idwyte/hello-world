@@ -1,33 +1,29 @@
-// Figma: 14 · session/complete — node 100:273
-// https://www.figma.com/design/qgY3Qcf7gP7w5V5A6uQTL4/?node-id=100-273
+// Obsidian Kinetic: 13 · Session Complete (handoff §4 Phase A).
+// Success hero + DURATION/REPS/STREAK glass stats + the post-session
+// Index-impact card (ambient measurement: the Hone Index surfaced at
+// the moment of payoff) + rating prompt + Done.
 //
-// Post-session celebration: success badge + name greeting + 3-up stats
-// (DURATION / REPS / STREAK) + RatingPrompt + Done CTA.
-//
-// Entry params (from /session/player onComplete):
-//   durationS  — total elapsed seconds for the session
-//   reps       — total reps completed
-//   dayNumber  — 1-indexed day within the 8-week program (1-56)
-//   weekNumber — 1-8
-//
-// FIGMA-DIFF (remaining):
-//   - 4+ star App Store rating CTA is not wired to native review
-//     (handled in Batch C — expo-store-review). 1-3 stars currently
-//     just swaps the headline to "Thanks for the feedback".
-//   - Streak delta is read from params verbatim — caller (player.tsx)
-//     computes the change.
+// Wiring (unchanged): params from player→RPE→here; user display name
+// from auth metadata; expo-store-review for the 4+ star path;
+// notificationSuccess haptic on mount = "earned closure" (spec §2).
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
 import { Check } from 'lucide-react-native';
-import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Body, Button, Card, SectionLabel } from '@/components/ui';
+import { Button, Card } from '@/components/obsidian';
 import { hasSupabaseConfig } from '@/lib/env';
-import { fetchUserDisplayName } from '@/lib/sessions';
-import { semantic } from '@/lib/theme';
+import { fireHaptic } from '@/lib/obsidian/haptics';
+import { color, glass, radius, spacing, type } from '@/lib/obsidian/tokens';
+import {
+  RETEST_INTERVAL_DAYS,
+  daysSinceLastIndex,
+  fetchIndexHistory,
+  fetchUserDisplayName,
+} from '@/lib/sessions';
 
 function formatDuration(s: number): string {
   if (!Number.isFinite(s) || s < 0) return '—';
@@ -44,6 +40,7 @@ export default function SessionComplete() {
     dayNumber?: string;
     weekNumber?: string;
     streakDelta?: string;
+    rpe?: string;
   }>();
   const durationS = Number(params.durationS);
   const reps = Number(params.reps);
@@ -52,10 +49,6 @@ export default function SessionComplete() {
   // Default streak delta = +1 (session completed extends today's streak).
   const streakDelta = Number(params.streakDelta ?? '1');
 
-  const subhead = Number.isFinite(dayNumber) && Number.isFinite(weekNumber)
-    ? `Day ${dayNumber} of Week ${weekNumber} · complete.`
-    : 'Session complete.';
-
   const nameQuery = useQuery({
     queryKey: ['user', 'name'],
     enabled: hasSupabaseConfig(),
@@ -63,178 +56,240 @@ export default function SessionComplete() {
   });
   const userName = nameQuery.data || 'friend';
 
+  const indexQuery = useQuery({
+    queryKey: ['index', 'history'],
+    enabled: hasSupabaseConfig(),
+    queryFn: () => fetchIndexHistory(12),
+  });
+  const history = indexQuery.data ?? [];
+  const latest = history.at(-1) ?? null;
+  const prior = history.at(-2) ?? null;
+  const indexDelta =
+    latest && prior ? Math.round(latest.composite - prior.composite) : null;
+  const daysSince = daysSinceLastIndex(history);
+  const retestDue = daysSince !== null && daysSince >= RETEST_INTERVAL_DAYS;
+
+  // Earned closure — one success notification as the screen lands.
+  useEffect(() => {
+    void fireHaptic('sessionComplete');
+  }, []);
+
+  const subhead =
+    Number.isFinite(dayNumber) && Number.isFinite(weekNumber)
+      ? `Day ${dayNumber} of Week ${weekNumber} · complete.`
+      : 'Session complete.';
+
   const durationLabel = formatDuration(durationS);
   const repsLabel = Number.isFinite(reps) && reps > 0 ? reps.toString() : '—';
-  const streakLabel = streakDelta > 0 ? `+${streakDelta}` : streakDelta === 0 ? '—' : streakDelta.toString();
-  const streakIsPositive = streakDelta > 0;
+  const streakLabel =
+    streakDelta > 0
+      ? `+${streakDelta}`
+      : streakDelta === 0
+        ? '—'
+        : streakDelta.toString();
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-canvas">
-      <ScrollView className="flex-1" contentContainerClassName="px-4 pb-12">
-        {/* Hero — 96 × 96 success-green check + 120 × 120 halo + greeting */}
-        <View className="items-center mt-16">
-          {/* Halo: 120×120 success-tinted disc behind the check */}
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.containerPadding,
+          paddingBottom: 120,
+        }}
+      >
+        {/* Hero — lime success disc + halo (glow = the one live element) */}
+        <View style={{ alignItems: 'center', marginTop: spacing.stackLg * 2 }}>
           <View
-            className="w-[120px] h-[120px] rounded-full items-center justify-center"
-            style={{ backgroundColor: semantic.feedbackSuccess + '40' /* ~25% */ }}
+            style={{
+              width: 120,
+              height: 120,
+              borderRadius: radius.full,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(195, 244, 0, 0.18)',
+            }}
           >
-            {/* Badge: 96×96 success-green disc with lucide Check */}
             <View
-              className="w-24 h-24 rounded-full items-center justify-center"
-              style={{ backgroundColor: semantic.feedbackSuccess }}
+              style={{
+                width: 96,
+                height: 96,
+                borderRadius: radius.full,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: color.primaryContainer,
+              }}
             >
-              <Check
-                size={48}
-                color={semantic.textPrimary}
-                strokeWidth={3}
-              />
+              <Check size={48} color={color.onPrimaryFixed} strokeWidth={3} />
             </View>
           </View>
-          <Body
-            weight="semibold"
-            color="primary"
-            className="mt-5 text-center"
-            style={{ fontSize: 26, lineHeight: 32 }}
+          <Text
+            style={{
+              ...type.headlineLg,
+              color: color.onSurface,
+              marginTop: spacing.stackLg,
+              textAlign: 'center',
+            }}
           >
             Nice work, {userName}
-          </Body>
-          <Body
-            color="muted"
-            className="mt-2 text-center"
-            style={{ fontSize: 15, lineHeight: 22 }}
+          </Text>
+          <Text
+            style={{
+              ...type.bodyMd,
+              color: color.onSurfaceVariant,
+              marginTop: spacing.stackSm,
+              textAlign: 'center',
+            }}
           >
             {subhead}
-          </Body>
+          </Text>
         </View>
 
-        {/* 3-up stats — Figma `100:250` (gap-10, p-14, rounded-14) */}
-        <View className="flex-row mt-10" style={{ gap: 10 }}>
-          <StatTile kicker="DURATION" value={durationLabel} />
-          <StatTile kicker="REPS" value={repsLabel} />
-          <StatTile
-            kicker="STREAK"
-            value={streakLabel}
-            valueColor={streakIsPositive ? 'success' : 'primary'}
-          />
+        {/* 3-up glass stats */}
+        <View
+          style={{
+            flexDirection: 'row',
+            gap: spacing.gutter,
+            marginTop: spacing.stackLg + spacing.stackSm,
+          }}
+        >
+          <Card label="Duration" value={durationLabel} compact style={{ flex: 1 }} />
+          <Card label="Reps" value={repsLabel} compact style={{ flex: 1 }} />
+          <Card label="Streak" value={streakLabel} compact style={{ flex: 1 }} />
         </View>
 
-        {/* RatingPrompt — Figma `55:765` (320×auto, surface + border, radius 20) */}
-        <View className="items-center mt-8">
+        {/* Post-session Index-impact card — ambient measurement. Shown
+            only when there's at least one real measurement. */}
+        {latest && (
+          <Card label="Hone Index" style={{ marginTop: spacing.gutter }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'flex-end',
+                justifyContent: 'space-between',
+                marginTop: spacing.stackSm,
+              }}
+            >
+              <Text style={{ ...type.metricLg, color: color.onSurface }}>
+                {Math.round(latest.composite)}
+              </Text>
+              {indexDelta !== null && (
+                <Text
+                  style={{
+                    ...type.labelCaps,
+                    color:
+                      indexDelta >= 0
+                        ? color.primaryContainer
+                        : color.onSurfaceVariant,
+                    paddingBottom: 6,
+                  }}
+                >
+                  {indexDelta >= 0 ? `▲ +${indexDelta}` : `▼ ${indexDelta}`}
+                </Text>
+              )}
+            </View>
+            <Text
+              style={{
+                ...type.bodyMd,
+                fontSize: 14,
+                lineHeight: 20,
+                color: color.onSurfaceVariant,
+                marginTop: spacing.stackSm,
+              }}
+            >
+              {retestDue
+                ? 'Retest due — two minutes refreshes your trend.'
+                : daysSince !== null
+                  ? `Next retest in ${Math.max(0, RETEST_INTERVAL_DAYS - daysSince)} days. Consistent sessions move this number.`
+                  : 'Consistent sessions move this number.'}
+            </Text>
+          </Card>
+        )}
+
+        <View style={{ alignItems: 'center', marginTop: spacing.stackLg }}>
           <RatingPrompt />
         </View>
       </ScrollView>
 
-      {/* Done CTA — accent, w-342, h-56, rounded-14 */}
-      <View className="absolute bottom-0 left-0 right-0 px-6 pb-8">
-        <Button
-          label="Done"
-          variant="primary"
-          size="lg"
-          radius="cta"
-          onPress={() => router.replace('/home')}
-        />
+      <View
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          paddingHorizontal: spacing.containerPadding,
+          paddingBottom: spacing.stackLg + spacing.stackSm,
+        }}
+      >
+        <Button label="Done" onPress={() => router.replace('/home')} />
       </View>
     </SafeAreaView>
   );
 }
 
-function StatTile({
-  kicker,
-  value,
-  valueColor = 'primary',
-}: {
-  kicker: string;
-  value: string;
-  valueColor?: 'primary' | 'success';
-}) {
-  return (
-    <Card padding="sm" radius="card-tight" className="flex-1 items-center">
-      <SectionLabel tracking="tight">{kicker}</SectionLabel>
-      <Body
-        weight="semibold"
-        color={valueColor}
-        className="mt-1"
-        style={{ fontSize: 22, lineHeight: 28 }}
-      >
-        {value}
-      </Body>
-    </Card>
-  );
-}
-
-// Rating widget — value 0 = awaiting tap; 1-3 = thanks; 4-5 = App Store
-// CTA. Full state machine per Figma `55:765` notes.
+// Rating widget — value 0 = awaiting tap; 1-3 = thanks; 4-5 = store
+// review CTA via expo-store-review (SKStoreReviewController on iOS,
+// Play in-app review on Android; both throttle silently).
 function RatingPrompt() {
   const [value, setValue] = useState(0);
   const isSubmitted = value > 0;
   const isHighRating = value >= 4;
 
+  const headline = !isSubmitted
+    ? 'How was your session?'
+    : isHighRating
+      ? 'Glad it landed.'
+      : 'Thanks for the feedback.';
+  const body = !isSubmitted
+    ? 'Tap a star to rate. It helps us tune the program.'
+    : isHighRating
+      ? 'Would you mind rating Hone on the App Store? Takes 10 seconds.'
+      : 'We’ll keep tuning the program from your retest data.';
+
   return (
-    <Card
-      padding="lg"
-      radius="card-hero"
-      bordered
-      className="w-[320px] items-center"
-      style={{ paddingVertical: 28 }}
+    <View
+      style={{
+        width: '100%',
+        alignItems: 'center',
+        backgroundColor: glass.fill,
+        borderColor: glass.border,
+        borderWidth: glass.borderWidth,
+        borderRadius: radius.xl,
+        paddingVertical: 28,
+        paddingHorizontal: spacing.stackLg,
+      }}
     >
-      {!isSubmitted ? (
-        <>
-          <Body
-            weight="semibold"
-            color="primary"
-            className="text-center"
-            style={{ fontSize: 18, lineHeight: 26 }}
-          >
-            How was your session?
-          </Body>
-          <Body
-            color="muted"
-            className="mt-2 text-center"
-            style={{ fontSize: 14, lineHeight: 20 }}
-          >
-            Tap a star to rate. It helps us tune the program.
-          </Body>
-        </>
-      ) : isHighRating ? (
-        <>
-          <Body
-            weight="semibold"
-            color="primary"
-            className="text-center"
-            style={{ fontSize: 18, lineHeight: 26 }}
-          >
-            Glad it landed.
-          </Body>
-          <Body
-            color="muted"
-            className="mt-2 text-center"
-            style={{ fontSize: 14, lineHeight: 20 }}
-          >
-            Would you mind rating Hone on the App Store? Takes 10 seconds.
-          </Body>
-        </>
-      ) : (
-        <>
-          <Body
-            weight="semibold"
-            color="primary"
-            className="text-center"
-            style={{ fontSize: 18, lineHeight: 26 }}
-          >
-            Thanks for the feedback.
-          </Body>
-          <Body
-            color="muted"
-            className="mt-2 text-center"
-            style={{ fontSize: 14, lineHeight: 20 }}
-          >
-            We&rsquo;ll keep tuning the program from your retest data.
-          </Body>
-        </>
-      )}
+      <Text
+        style={{
+          ...type.headlineMd,
+          fontSize: 18,
+          lineHeight: 26,
+          color: color.onSurface,
+          textAlign: 'center',
+        }}
+      >
+        {headline}
+      </Text>
+      <Text
+        style={{
+          ...type.bodyMd,
+          fontSize: 14,
+          lineHeight: 20,
+          color: color.onSurfaceVariant,
+          marginTop: spacing.stackSm,
+          textAlign: 'center',
+        }}
+      >
+        {body}
+      </Text>
 
       {/* 5 stars — interactive even after submit so users can change */}
-      <View className="flex-row mt-6 gap-2">
+      <View
+        style={{
+          flexDirection: 'row',
+          marginTop: spacing.stackLg,
+          gap: spacing.stackSm,
+        }}
+      >
         {[1, 2, 3, 4, 5].map((n) => (
           <Pressable
             key={n}
@@ -244,34 +299,23 @@ function RatingPrompt() {
             accessibilityLabel={`${n} star${n === 1 ? '' : 's'}`}
             accessibilityState={{ selected: n <= value }}
           >
-            <Body
+            <Text
               style={{
                 fontSize: 28,
                 lineHeight: 32,
                 color:
-                  n <= value
-                    ? semantic.interactivePrimary
-                    : semantic.borderDefault,
+                  n <= value ? color.primaryContainer : color.outlineVariant,
               }}
             >
               {n <= value ? '★' : '☆'}
-            </Body>
+            </Text>
           </Pressable>
         ))}
       </View>
 
       {isHighRating ? (
         <Button
-          // Cross-platform: expo-store-review opens the App Store rating
-          // sheet on iOS (SKStoreReviewController) and the Play in-app
-          // review sheet on Android. Both surfaces silently no-op if
-          // their per-user / per-version throttle has been hit, so
-          // there's no need to gate this call ourselves.
           label="Rate on the App Store"
-          variant="primary"
-          size="md"
-          radius="cta"
-          className="mt-5 self-stretch"
           onPress={() => {
             void (async () => {
               try {
@@ -283,8 +327,9 @@ function RatingPrompt() {
               }
             })();
           }}
+          style={{ marginTop: spacing.stackLg, alignSelf: 'stretch' }}
         />
       ) : null}
-    </Card>
+    </View>
   );
 }

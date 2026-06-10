@@ -1,32 +1,11 @@
+// Obsidian Kinetic tab bar (Figma: Tab Bar [4] — Home / Program /
+// Streaks / Settings). Active tab = lime icon + faint glow disc; glow
+// is a state, only the active tab carries it.
 import { Tabs } from 'expo-router';
-import {
-  CalendarDays,
-  Home,
-  LineChart,
-  Settings,
-} from 'lucide-react-native';
-import { View } from 'react-native';
+import { CalendarDays, Flame, Home, Settings } from 'lucide-react-native';
 
-import { semantic } from '@/lib/theme';
-
-// Figma `81:35` / `92:230` / `94:299` — h-50, no labels, 4 flex-1 cells with
-// a 40×32 active-state pill behind the icon. Active = accent bg + ink icon;
-// inactive = transparent bg + muted icon.
-function tabIcon(
-  Icon: React.ComponentType<{ color?: string; size?: number }>,
-) {
-  function TabBarIcon({ focused }: { focused: boolean }) {
-    const iconColor = focused ? semantic.textPrimary : semantic.textMuted;
-    return (
-      <View
-        className={`w-10 h-8 rounded-[10px] items-center justify-center ${focused ? 'bg-interactive-primary' : ''}`}
-      >
-        <Icon color={iconColor} size={20} />
-      </View>
-    );
-  }
-  return TabBarIcon;
-}
+import { obsidianTabBarStyle, obsidianTabIcon } from '@/components/obsidian';
+import { color } from '@/lib/obsidian/tokens';
 
 export default function AppLayout() {
   return (
@@ -34,43 +13,35 @@ export default function AppLayout() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarStyle: {
-          backgroundColor: semantic.surfaceRaised,
-          borderTopColor: semantic.borderDefault,
-          borderTopWidth: 1,
-          height: 50,
-          paddingTop: 9,
-          paddingBottom: 9,
-          paddingHorizontal: 4,
-        },
-        sceneStyle: { backgroundColor: semantic.surfaceCanvas },
+        tabBarStyle: obsidianTabBarStyle,
+        sceneStyle: { backgroundColor: color.background },
       }}
     >
       <Tabs.Screen
         name="home"
         options={{
-          tabBarIcon: tabIcon(Home),
-          tabBarAccessibilityLabel: 'Today',
+          tabBarIcon: obsidianTabIcon(Home),
+          tabBarAccessibilityLabel: 'Home',
         }}
       />
       <Tabs.Screen
         name="program"
         options={{
-          tabBarIcon: tabIcon(CalendarDays),
-          tabBarAccessibilityLabel: 'Plan',
+          tabBarIcon: obsidianTabIcon(CalendarDays),
+          tabBarAccessibilityLabel: 'Program',
         }}
       />
       <Tabs.Screen
         name="progress"
         options={{
-          tabBarIcon: tabIcon(LineChart),
-          tabBarAccessibilityLabel: 'Progress',
+          tabBarIcon: obsidianTabIcon(Flame),
+          tabBarAccessibilityLabel: 'Streaks',
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          tabBarIcon: tabIcon(Settings),
+          tabBarIcon: obsidianTabIcon(Settings),
           tabBarAccessibilityLabel: 'Settings',
         }}
       />
@@ -78,7 +49,7 @@ export default function AppLayout() {
           expo-router auto-registers every top-level (app)/* file/folder, so
           each non-tab destination needs an explicit href: null. */}
       {/* Session is immersive — hide the tab bar so the user's focus stays
-          on the ring and they can't navigate away mid-set (Figma 13). */}
+          on the ring and they can't navigate away mid-set. */}
       <Tabs.Screen
         name="session"
         options={{ href: null, tabBarStyle: { display: 'none' } }}

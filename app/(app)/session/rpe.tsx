@@ -1,25 +1,18 @@
-// Figma: 34 · RPE slider — node 131:363
+// Obsidian Kinetic: 12 · RPE Capture (handoff §4 Phase A).
+// 1–10 effort, big metric number, discrete slider, Submit/Skip.
 //
-// Effort-rating screen between /session/player and /session/complete. The
-// player logs the session row first and forwards the new id here; this
-// screen patches the row's perceived_effort column (1–10 Borg CR10 — see
-// migration 0007_rpe_1_10.sql) and forwards every param to /complete so
-// the celebration can render without re-querying.
-//
-// FIGMA-DIFF (intentional):
-//   - Renders as a full screen rather than a 460 px bottom sheet. A real
-//     sheet would require restructuring the session navigation; the
-//     visual rhythm here (sheet-like card, ample top breathing room)
-//     mirrors Figma 34's affordance pair: Submit (primary) + Skip (ghost).
+// Wiring (unchanged): the player logs the session row and forwards its
+// id; Submit patches perceived_effort (1–10 Borg CR10, migration
+// 0007_rpe_1_10.sql) then forwards every param to /session/complete.
 import { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Slider from '@react-native-community/slider';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Body, Button, SectionLabel } from '@/components/ui';
+import { Button } from '@/components/obsidian';
+import { color, font, spacing, type } from '@/lib/obsidian/tokens';
 import { updateSessionRpe } from '@/lib/sessions';
-import { semantic } from '@/lib/theme';
 
 type Params = {
   sessionId?: string;
@@ -64,79 +57,104 @@ export default function RpeSlider() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-canvas">
-      <ScrollView className="flex-1" contentContainerClassName="px-6 pb-12">
-        <View className="items-center mt-16">
-          <SectionLabel tracking="wide" className="text-interactive-primary">
-            EFFORT CHECK
-          </SectionLabel>
-          <Body
-            weight="semibold"
-            color="primary"
-            className="mt-3 text-center"
-            style={{ fontSize: 26, lineHeight: 32 }}
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.containerPadding,
+          paddingBottom: spacing.stackLg * 2,
+          flexGrow: 1,
+          justifyContent: 'center',
+        }}
+      >
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ ...type.labelCaps, color: color.primaryContainer }}>
+            Effort check
+          </Text>
+          <Text
+            style={{
+              ...type.headlineLg,
+              color: color.onSurface,
+              marginTop: spacing.gutter,
+              textAlign: 'center',
+            }}
           >
             How hard was that?
-          </Body>
+          </Text>
         </View>
 
-        <View className="items-center mt-12">
-          <View className="flex-row items-end">
-            <Body
-              weight="semibold"
-              color="primary"
-              style={{ fontSize: 96, lineHeight: 104 }}
+        {/* Big number — value reveal, metric upright */}
+        <View style={{ alignItems: 'center', marginTop: spacing.stackLg * 2 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+            <Text
+              style={{
+                fontFamily: font.bold,
+                fontSize: 96,
+                lineHeight: 100,
+                color: color.onSurface,
+              }}
             >
               {value}
-            </Body>
-            <Body
-              color="muted"
-              style={{ fontSize: 32, lineHeight: 56 }}
-              className="pb-3"
+            </Text>
+            <Text
+              style={{
+                fontFamily: font.regular,
+                fontSize: 32,
+                lineHeight: 56,
+                color: color.onSurfaceVariant,
+                paddingBottom: spacing.gutter,
+              }}
             >
               /10
-            </Body>
+            </Text>
           </View>
         </View>
 
-        <View className="mt-10 px-2">
+        <View
+          style={{
+            marginTop: spacing.stackLg + spacing.stackSm,
+            paddingHorizontal: spacing.stackSm,
+          }}
+        >
           <Slider
             value={value}
             onValueChange={(v) => setValue(Math.round(v))}
             minimumValue={1}
             maximumValue={10}
             step={1}
-            minimumTrackTintColor={semantic.interactivePrimary}
-            maximumTrackTintColor={semantic.borderDefault}
-            thumbTintColor={semantic.interactivePrimary}
+            minimumTrackTintColor={color.primaryContainer}
+            maximumTrackTintColor={color.outlineVariant}
+            thumbTintColor={color.primaryContainer}
             accessibilityLabel={`Effort ${value} of 10`}
           />
-          <View className="flex-row justify-between mt-2">
-            <Body size="xs" color="muted">
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              marginTop: spacing.stackSm,
+            }}
+          >
+            <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
               Easy
-            </Body>
-            <Body size="xs" color="muted">
+            </Text>
+            <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
               All-out
-            </Body>
+            </Text>
           </View>
         </View>
 
         <Button
           label={saving ? 'Saving…' : 'Submit'}
-          variant="primary"
-          size="lg"
-          radius="cta"
-          className="mt-12"
           disabled={saving}
-          onPress={handleSubmit}
+          onPress={() => void handleSubmit()}
+          style={{ marginTop: spacing.stackLg * 2 }}
         />
         <Button
           label="Skip"
           variant="ghost"
-          size="md"
-          className="mt-2"
           disabled={saving}
           onPress={() => forwardToComplete()}
+          style={{ marginTop: spacing.gutter }}
         />
       </ScrollView>
     </SafeAreaView>
