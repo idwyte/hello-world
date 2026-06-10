@@ -15,8 +15,9 @@ import { useState } from 'react';
 import { Alert, Linking, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, ScreenHeader } from '@/components/obsidian';
+import { AxisBars, Button, ScreenHeader } from '@/components/obsidian';
 import {
+  axisScores,
   buildProfileV2,
   type AssessmentV2Answers,
 } from '@/lib/assessment-v2';
@@ -44,6 +45,9 @@ export default function PlanPreview() {
   const archetype = isV2Complete(v2)
     ? buildProfileV2(v2 as AssessmentV2Answers).archetype
     : 'strengthening';
+  const profileScores = isV2Complete(v2)
+    ? axisScores(v2 as AssessmentV2Answers)
+    : null;
 
   if (!generated || !index) {
     return (
@@ -243,12 +247,15 @@ export default function PlanPreview() {
     );
   }
 
-  // — Strengthening / foundation preview (Figma 30:50) —
+  // — Strengthening / foundation preview (Figma 37:151 Bars default;
+  // 64:201 rule-based variant) —
   const composite = Math.round(index.composite);
+  const isRuleBased = generated.source === 'rules';
   const phaseName =
     archetype === 'foundation' ? 'Foundation Phase' : 'Build Phase';
-  const phaseBlurb =
-    archetype === 'foundation'
+  const phaseBlurb = isRuleBased
+    ? "Built from your measurements using our standard training rules. It's a full, structured plan — it just won't adapt as finely as the AI-personalised version."
+    : archetype === 'foundation'
       ? `Your starting index is ${composite}. This phase rebuilds awareness and clean technique before adding load.`
       : `Your starting index is ${composite}. This phase rebuilds responsiveness before adding endurance load.`;
   const perWeek = 5;
@@ -283,7 +290,7 @@ export default function PlanPreview() {
           }}
         >
           <Text style={{ ...type.labelCaps, color: color.onPrimaryFixed }}>
-            BUILT FROM YOUR INDEX
+            BUILT FROM YOUR BASELINE
           </Text>
         </View>
         <Text style={{ ...type.display, color: color.onSurface }}>
@@ -293,11 +300,58 @@ export default function PlanPreview() {
           {phaseBlurb}
         </Text>
 
+        {/* Five-axis profile — Bars variant ships as default (handoff
+            §4); the Radar stays for the retest before/after. */}
+        {profileScores && (
+          <View
+            style={{
+              backgroundColor: color.surfaceContainerLow,
+              borderColor: glass.border,
+              borderWidth: glass.borderWidth,
+              borderRadius: radius.xl,
+              padding: spacing.stackMd,
+              gap: spacing.gutter,
+              alignItems: 'center',
+            }}
+          >
+            <Text
+              style={{ ...type.labelCaps, color: color.onSurfaceVariant }}
+            >
+              YOUR PROFILE
+            </Text>
+            <AxisBars scores={profileScores} />
+          </View>
+        )}
+
         <View style={{ flexDirection: 'row', gap: spacing.gutter }}>
           <StatTile label="WEEKS" value="8" />
           <StatTile label="PER WEEK" value={String(perWeek)} />
           <StatTile label="MINS" value={String(minutes)} />
         </View>
+
+        {/* Rule-based decline path: honest, non-punitive (Figma 64:201) */}
+        {isRuleBased && (
+          <View
+            style={{
+              backgroundColor: color.surfaceContainerLow,
+              borderColor: color.secondaryContainer,
+              borderWidth: 1.5,
+              borderRadius: radius.xl,
+              padding: spacing.stackMd,
+              gap: 4,
+            }}
+          >
+            <Text
+              style={{ ...type.labelCaps, color: color.secondaryContainer }}
+            >
+              WANT IT TAILORED?
+            </Text>
+            <Text style={{ ...type.bodyMd, color: color.onSurface }}>
+              You can switch on AI personalisation anytime in Settings —
+              your measurements are already saved.
+            </Text>
+          </View>
+        )}
 
         {/* Program emphases from the generator */}
         {generated.focuses.length > 0 && (
@@ -340,8 +394,8 @@ export default function PlanPreview() {
             WEEK 8
           </Text>
           <Text style={{ ...type.bodyMd, color: color.onSurface }}>
-            Forced retest — your index gets remeasured and the next phase
-            is built from the result.
+            Your first retest — all five measures again, and your next
+            phase is built from the result.
           </Text>
         </View>
 

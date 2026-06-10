@@ -177,6 +177,32 @@ export function buildProfileV2(
 }
 
 /**
+ * Five-axis profile scores (0–1) for the Bars/Radar visuals (Figma
+ * 37:151 / 37:100). Honest-imprecision rule: these drive a VISUAL, not
+ * a clinical claim — bands, not decimals. Control derives from how many
+ * compensation flags fired (clean = strong, each flag knocks it down).
+ */
+export function axisScores(answers: {
+  strengthOxford: number;
+  enduranceSeconds: number;
+  repCeiling: number;
+  fastCount: number;
+  coordinationFlags: CoordinationFlag[];
+}): Array<{ label: string; value: number }> {
+  const clamp = (v: number) => Math.max(0.06, Math.min(1, v));
+  return [
+    { label: 'STRENGTH', value: clamp(answers.strengthOxford / 4) },
+    { label: 'STAMINA', value: clamp(answers.enduranceSeconds / HOLD_CAP_S) },
+    { label: 'REPEAT', value: clamp(answers.repCeiling / 10) },
+    { label: 'SPEED', value: clamp(answers.fastCount / 20) },
+    {
+      label: 'CONTROL',
+      value: clamp(1 - answers.coordinationFlags.length * 0.22),
+    },
+  ];
+}
+
+/**
  * Continuity shim for the existing Hone Index: the v2 battery measures
  * a superset of the old 2-test battery, so the composite keeps working
  * by mapping fast_count (15 s) → pulses-equivalent (30 s, ×2) and the

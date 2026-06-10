@@ -1,162 +1,140 @@
+// Obsidian Kinetic: Settings tab. No dedicated Figma frame ("still to
+// design") — derived from ListRow/ListSection. Adds the AI
+// personalisation row (consent withdraw/grant per the consent screen's
+// "Your control" promise). Navigation + data wiring unchanged.
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import {
-  Body,
-  Card,
-  ListRow,
-  ScreenHeader,
-  SectionLabel,
-} from '@/components/ui';
+import { ListRow, ListSection } from '@/components/obsidian';
+import { hasSupabaseConfig } from '@/lib/env';
+import { hasAiConsent } from '@/lib/persistence';
 import { useEntitlement } from '@/lib/revenuecat';
-import { semantic } from '@/lib/theme';
+import { color, spacing, type } from '@/lib/obsidian/tokens';
 import { useSettingsStore } from '@/stores/settings';
-
-type Row = {
-  label: string;
-  sublabel?: string;
-  href?: string;
-  destructive?: boolean;
-  showChevron?: boolean;
-  trailing?: React.ReactNode;
-};
-
-type Group = {
-  label: string | null;
-  rows: Row[];
-};
 
 export default function SettingsIndex() {
   const router = useRouter();
   const { entitlement } = useEntitlement();
   const { settings, hydrated } = useSettingsStore();
+  const aiConsentQuery = useQuery({
+    queryKey: ['ai-consent'],
+    enabled: hasSupabaseConfig(),
+    queryFn: hasAiConsent,
+  });
   const reminderHint = !hydrated
     ? 'Daily nudge'
     : settings.reminderEnabled
       ? `Daily · ${formatLabel(settings.reminderTime)}`
       : 'Off';
 
-  const groups: Group[] = [
-    {
-      label: 'ACCOUNT',
-      rows: [
-        {
-          label: 'Account',
-          sublabel: 'Email, sign out, delete account',
-          href: '/settings/account',
-          showChevron: true,
-        },
-      ],
-    },
-    {
-      label: 'TRAINING',
-      rows: [
-        {
-          label: 'Reminders',
-          sublabel: reminderHint,
-          href: '/settings/reminders',
-          showChevron: true,
-        },
-        {
-          label: 'Stealth Mode',
-          sublabel: 'Haptic intensity, AirPods cues',
-          href: '/settings/stealth',
-          showChevron: true,
-        },
-        {
-          label: 'App icon',
-          sublabel:
-            settings.appIconVariant === 'default'
-              ? 'Default'
-              : settings.appIconVariant.charAt(0).toUpperCase() +
-                settings.appIconVariant.slice(1),
-          href: '/settings/app-icon',
-          showChevron: true,
-        },
-      ],
-    },
-    {
-      label: 'SUBSCRIPTION',
-      rows: [
-        {
-          label: 'Subscription',
-          sublabel: entitlement.isPro
-            ? entitlement.isInTrial
-              ? 'Trial'
-              : 'Active'
-            : 'Free',
-          href: '/settings/subscription',
-          showChevron: true,
-        },
-      ],
-    },
-    {
-      label: 'ABOUT',
-      rows: [
-        {
-          label: 'Privacy',
-          sublabel: 'Analytics, data export, deletion',
-          href: '/settings/privacy',
-          showChevron: true,
-        },
-        {
-          label: 'Security',
-          sublabel: settings.biometricLocked ? 'Face ID lock on' : 'Face ID lock',
-          href: '/settings/security',
-          showChevron: true,
-        },
-      ],
-    },
-  ];
-
   return (
-    <SafeAreaView className="flex-1 bg-surface-canvas">
-      <ScreenHeader kind="large-title" title="Settings" />
-
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
       <ScrollView
-        className="flex-1"
-        contentContainerClassName="pb-12 px-4"
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackLg,
+          paddingBottom: 24,
+          gap: spacing.stackLg,
+        }}
       >
-        <View className="gap-6">
-          {groups.map((g) => (
-            <View key={g.label ?? Math.random()}>
-              {g.label ? (
-                <SectionLabel tracking="tight" className="mb-2 px-0.5">
-                  {g.label}
-                </SectionLabel>
-              ) : null}
-              <Card padding="none" radius="card-tight" className="w-[358px] self-center">
-                {g.rows.map((r, i) => (
-                  <View key={r.label}>
-                    {i > 0 ? (
-                      <View
-                        className="h-px w-full"
-                        style={{ backgroundColor: semantic.borderDefault }}
-                      />
-                    ) : null}
-                    <ListRow
-                      label={r.label}
-                      sublabel={r.sublabel}
-                      destructive={r.destructive}
-                      showChevron={r.showChevron}
-                      trailing={r.trailing}
-                      onPress={
-                        r.href ? () => router.push(r.href as never) : undefined
-                      }
-                    />
-                  </View>
-                ))}
-              </Card>
-            </View>
-          ))}
-        </View>
+        <Text style={{ ...type.headlineMd, color: color.onSurface }}>
+          Settings
+        </Text>
 
-        <Body size="xs" color="muted" className="mt-8 text-center">
-          Hone v0.1.0
-        </Body>
+        <ListSection title="ACCOUNT">
+          <ListRow
+            label="Account"
+            sub="Email, sign out, delete account"
+            onPress={() => router.push('/settings/account')}
+          />
+        </ListSection>
+
+        <ListSection title="TRAINING">
+          <ListRow
+            label="Reminders"
+            sub={reminderHint}
+            onPress={() => router.push('/settings/reminders')}
+          />
+          <Hairline />
+          <ListRow
+            label="Stealth Mode"
+            sub="Haptic intensity, AirPods cues"
+            onPress={() => router.push('/settings/stealth')}
+          />
+          <Hairline />
+          <ListRow
+            label="App icon"
+            sub={
+              settings.appIconVariant === 'default'
+                ? 'Default'
+                : settings.appIconVariant.charAt(0).toUpperCase() +
+                  settings.appIconVariant.slice(1)
+            }
+            onPress={() => router.push('/settings/app-icon')}
+          />
+        </ListSection>
+
+        <ListSection title="SUBSCRIPTION">
+          <ListRow
+            label="Subscription"
+            sub={
+              entitlement.isPro
+                ? entitlement.isInTrial
+                  ? 'Trial'
+                  : 'Active'
+                : 'Free'
+            }
+            onPress={() => router.push('/settings/subscription')}
+          />
+        </ListSection>
+
+        <ListSection title="PRIVACY & SECURITY">
+          <ListRow
+            label="AI personalisation"
+            sub={
+              aiConsentQuery.data === undefined
+                ? 'Plan generation consent'
+                : aiConsentQuery.data
+                  ? 'On — withdraw anytime'
+                  : 'Off — rule-based plans'
+            }
+            onPress={() => router.push('/settings/privacy')}
+          />
+          <Hairline />
+          <ListRow
+            label="Privacy"
+            sub="Analytics, data export, deletion"
+            onPress={() => router.push('/settings/privacy')}
+          />
+          <Hairline />
+          <ListRow
+            label="Security"
+            sub={settings.biometricLocked ? 'Biometric lock on' : 'Biometric lock'}
+            onPress={() => router.push('/settings/security')}
+          />
+        </ListSection>
+
+        <Text
+          style={{
+            ...type.labelCaps,
+            color: color.onSurfaceVariant,
+            textAlign: 'center',
+            marginTop: spacing.stackSm,
+          }}
+        >
+          HONE V0.1.0
+        </Text>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function Hairline() {
+  return (
+    <View style={{ height: 1, backgroundColor: color.outlineVariant, opacity: 0.5 }} />
   );
 }
 

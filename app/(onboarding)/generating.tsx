@@ -98,7 +98,7 @@ export default function Generating() {
     (async () => {
       const minDelay = new Promise((r) => setTimeout(r, TOTAL_MS));
       try {
-        const { days, focuses } = await buildProgram({
+        const { days, focuses, source } = await buildProgram({
           level,
           measurements: {
             pulsesIn30s: index.pulsesIn30s,
@@ -108,7 +108,13 @@ export default function Generating() {
           profile,
         });
         if (cancelled) return;
-        setGenerated({ level, program: days, stealthDefault: false, focuses });
+        setGenerated({
+          level,
+          program: days,
+          stealthDefault: false,
+          focuses,
+          source,
+        });
         await Promise.all([
           saveAssessmentAndProgram({
             answers: draft,

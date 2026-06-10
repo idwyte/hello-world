@@ -156,6 +156,9 @@ export type BuildProgramInput = {
 export type GeneratedProgram = {
   days: ProgramDay[];
   focuses: string[];
+  /** Which generator produced the plan — drives the plan-preview
+   * "rule-based" variant copy (Figma 64:201). */
+  source: 'ai' | 'rules';
 };
 
 const FALLBACK_FOCUSES_BY_LEVEL: Record<Level, string[]> = {
@@ -262,6 +265,7 @@ export async function buildProgram(input: BuildProgramInput): Promise<GeneratedP
     return {
       days: buildProgramLocal(input),
       focuses: fallbackFocuses(input),
+      source: 'rules',
     };
   }
 
@@ -269,6 +273,7 @@ export async function buildProgram(input: BuildProgramInput): Promise<GeneratedP
     return {
       days: buildProgramLocal(input),
       focuses: fallbackFocuses(input),
+      source: 'rules',
     };
   }
 
@@ -281,6 +286,7 @@ export async function buildProgram(input: BuildProgramInput): Promise<GeneratedP
     return {
       days: buildProgramLocal(input),
       focuses: fallbackFocuses(input),
+      source: 'rules',
     };
   }
 
@@ -309,11 +315,13 @@ export async function buildProgram(input: BuildProgramInput): Promise<GeneratedP
     return {
       days: buildProgramLocal(input),
       focuses: fallbackFocuses(input),
+      source: 'rules',
     };
   }
 
   return {
     days: resolveEdgeProgram(data.program),
     focuses: data.program.focuses,
+    source: 'ai',
   };
 }

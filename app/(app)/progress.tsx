@@ -1,18 +1,16 @@
+// Obsidian Kinetic: Streaks tab. No dedicated Figma frame ("still to
+// design") — derived from the system: Hone Index card with the
+// five-axis Radar (the retest before/after surface, handoff §4),
+// streak card with the weekly-bar pattern from Home, retest CTA.
+// All data wiring unchanged.
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { IndexTrendChart } from '@/components/charts/IndexTrendChart';
-import { StreakHeatmap } from '@/components/charts/StreakHeatmap';
-import {
-  Body,
-  Card,
-  Pill,
-  ScreenHeader,
-  SectionLabel,
-} from '@/components/ui';
+import { AxisRadar, Button, Chip, CountUp } from '@/components/obsidian';
 import { hasSupabaseConfig } from '@/lib/env';
+import { color, glass, radius, spacing, type } from '@/lib/obsidian/tokens';
 import {
   daysSinceLastIndex,
   fetchIndexHistory,
@@ -24,6 +22,26 @@ import { useSessionStore } from '@/stores/session';
 
 function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// Until per-axis history persists (needs schema change — see
+// SHIP-CHECKLIST), the radar approximates axes from the two stored
+// measures: speed from pulses, stamina from hold, the rest from the
+// composite. Replaced by real per-axis rows when migration lands.
+function approximateAxes(measure: {
+  pulsesIn30s: number;
+  maxHoldS: number;
+  composite: number;
+}): Array<{ label: string; value: number }> {
+  const clamp = (v: number) => Math.max(0.06, Math.min(1, v));
+  const c = measure.composite / 100;
+  return [
+    { label: 'STRENGTH', value: clamp(c) },
+    { label: 'STAMINA', value: clamp(measure.maxHoldS / 30) },
+    { label: 'REPEAT', value: clamp(c * 0.9) },
+    { label: 'SPEED', value: clamp(measure.pulsesIn30s / 40) },
+    { label: 'CONTROL', value: clamp(c * 1.05) },
+  ];
 }
 
 export default function Progress() {
@@ -50,144 +68,191 @@ export default function Progress() {
     current: local.streak.current,
     longest: local.streak.longest,
   };
-  const sessionDates =
+  const sessionsThisMonth = (
     sessionsQuery.data?.map((s) => s.endedAt ?? s.startedAt) ??
     local.history
       .filter((h) => h.completed)
-      .map((h) => new Date(h.endedAt).toISOString());
+      .map((h) => new Date(h.endedAt).toISOString())
+  ).filter(
+    (d) => Date.now() - new Date(d).getTime() < 30 * 86_400_000,
+  ).length;
 
   const indexHistory = indexQuery.data ?? [];
   const latest = indexHistory.at(-1) ?? null;
   const prev = indexHistory.at(-2) ?? null;
-  const delta = latest && prev ? latest.composite - prev.composite : null;
+  const delta =
+    latest && prev ? Math.round(latest.composite - prev.composite) : null;
 
-  // Bi-weekly retest cadence — show days-remaining on the pill if the
-  // user has retested recently, "Retest" otherwise. Soft enforcement —
-  // tapping always lets them through (the screen itself shows a warning
-  // banner if it's <14 days since last retest).
   const daysSince = daysSinceLastIndex(indexHistory);
   const daysRemaining =
     daysSince !== null ? Math.max(0, RETEST_INTERVAL_DAYS - daysSince) : 0;
   const retestDue = daysSince === null || daysRemaining === 0;
-  const retestLabel = retestDue ? 'Retest' : `In ${daysRemaining}d`;
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-canvas">
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
       <ScrollView
-        className="flex-1"
-        contentContainerClassName="pb-12"
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackLg,
+          paddingBottom: 24,
+          gap: spacing.stackMd,
+        }}
       >
-        {/* Figma 10·progress — title + Retest pill, h-14 */}
-        <ScreenHeader
-          kind="title"
-          title="Progress"
-          trailing={
-            <Pressable
-              onPress={() => router.push('/index-retest')}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel={
-                retestDue
-                  ? 'Retest your Pelvic Floor Index'
-                  : `Retest available in ${daysRemaining} days`
-              }
-              className="active:opacity-70"
-            >
-              <Pill
-                label={retestLabel}
-                tone={retestDue ? 'accent' : 'surface2'}
-                size="md"
-              />
-            </Pressable>
-          }
-        />
-
-        <View className="px-4 mt-5">
-          {/* Index card — Figma `92:83` (p-20, gap-16, radius 16) */}
-          <Card padding="xl" radius="card">
-            <SectionLabel tracking="wide">Pelvic Floor Index</SectionLabel>
-            <View className="mt-4 flex-row items-end justify-between">
-              <View className="flex-row items-end" style={{ gap: 12 }}>
-                <Body
-                  weight="semibold"
-                  color="primary"
-                  style={{ fontSize: 56, lineHeight: 60 }}
-                >
-                  {latest ? Math.round(latest.composite).toString() : '—'}
-                </Body>
-                {latest ? (
-                  <View className="pb-1.5">
-                    <Pill
-                      label={capitalize(latest.level)}
-                      tone="accent"
-                      size="sm"
-                    />
-                  </View>
-                ) : null}
-              </View>
-              {delta !== null ? (
-                <View className="pb-1.5">
-                  <Pill
-                    label={`${delta > 0 ? '+' : ''}${Math.round(delta)}`}
-                    tone="surface2"
-                    size="sm"
-                    textColor={delta >= 0 ? 'success' : 'danger'}
-                  />
-                </View>
-              ) : null}
-            </View>
-            <Body size="sm" color="muted" className="mt-4">
-              {indexHistory.length > 0
-                ? `Since last retest. ${indexHistory.length} measurement${indexHistory.length === 1 ? '' : 's'} · bi-weekly cadence.`
-                : 'Complete your first index test to start tracking trends.'}
-            </Body>
-            <View className="mt-4">
-              <IndexTrendChart history={indexHistory} />
-            </View>
-          </Card>
-
-          {/* Streak card — Figma `92:118` (same shell) */}
-          <Card padding="xl" radius="card" className="mt-4">
-            <SectionLabel tracking="wide">Streak</SectionLabel>
-            <View className="mt-4 flex-row items-end justify-between">
-              <View className="flex-row items-end" style={{ gap: 8 }}>
-                <Body
-                  weight="semibold"
-                  color="primary"
-                  style={{ fontSize: 56, lineHeight: 60 }}
-                >
-                  {streak.current}
-                </Body>
-                <Body
-                  color="muted"
-                  style={{ fontSize: 20, lineHeight: 28 }}
-                  className="pb-2"
-                >
-                  days
-                </Body>
-              </View>
-              <View className="items-end pb-2">
-                <Body
-                  weight="medium"
-                  color="muted"
-                  style={{ fontSize: 10, lineHeight: 14, letterSpacing: 1.2 }}
-                >
-                  BEST
-                </Body>
-                <Body
-                  weight="semibold"
-                  color="primary"
-                  style={{ fontSize: 15, lineHeight: 22 }}
-                >
-                  {streak.longest} days
-                </Body>
-              </View>
-            </View>
-            <View className="mt-4">
-              <StreakHeatmap dates={sessionDates} />
-            </View>
-          </Card>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <Text style={{ ...type.headlineMd, color: color.onSurface }}>
+            Streaks
+          </Text>
+          <Chip
+            label={retestDue ? 'RETEST DUE' : `RETEST IN ${daysRemaining}D`}
+            variant={retestDue ? 'active' : 'muted'}
+          />
         </View>
+
+        {/* Hone Index + radar */}
+        <View
+          style={{
+            backgroundColor: color.surfaceContainerLow,
+            borderColor: glass.border,
+            borderWidth: glass.borderWidth,
+            borderRadius: radius.xl,
+            padding: spacing.stackMd,
+            gap: spacing.gutter,
+            alignItems: 'center',
+          }}
+        >
+          <View
+            style={{
+              flexDirection: 'row',
+              width: '100%',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Text style={{ ...type.labelCaps, color: color.secondaryContainer }}>
+              HONE INDEX
+            </Text>
+            {latest ? (
+              <Text
+                style={{ ...type.labelCaps, color: color.onSurfaceVariant }}
+              >
+                {capitalize(latest.level)}
+              </Text>
+            ) : null}
+          </View>
+          <View
+            style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}
+          >
+            {latest ? (
+              <CountUp
+                value={Math.round(latest.composite)}
+                style={{ ...type.metricLg, fontSize: 56, lineHeight: 60, color: color.onSurface }}
+              />
+            ) : (
+              <Text
+                style={{
+                  ...type.metricLg,
+                  fontSize: 56,
+                  lineHeight: 60,
+                  color: color.onSurface,
+                }}
+              >
+                —
+              </Text>
+            )}
+            {delta !== null && delta !== 0 ? (
+              <Text
+                style={{
+                  ...type.bodyLg,
+                  color:
+                    delta > 0 ? color.primaryFixedDim : color.onSurfaceVariant,
+                }}
+              >
+                {delta > 0 ? `▲ ${delta}` : `▼ ${Math.abs(delta)}`}
+              </Text>
+            ) : null}
+          </View>
+          {/* Radar — before/after when a prior measurement exists. The
+              "look what changed" beat (motion spec §3.3). */}
+          {latest ? (
+            <AxisRadar
+              scores={approximateAxes(latest)}
+              compare={prev ? approximateAxes(prev) : undefined}
+              size={260}
+            />
+          ) : (
+            <Text
+              style={{
+                ...type.bodyMd,
+                color: color.onSurfaceVariant,
+                textAlign: 'center',
+              }}
+            >
+              Complete your first assessment to start the trend.
+            </Text>
+          )}
+          {prev ? (
+            <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
+              SOLID = NOW · DASHED = LAST RETEST
+            </Text>
+          ) : null}
+        </View>
+
+        {/* Streak card */}
+        <View
+          style={{
+            backgroundColor: color.surfaceContainerLow,
+            borderColor: glass.border,
+            borderWidth: glass.borderWidth,
+            borderRadius: radius.xl,
+            padding: spacing.stackMd,
+            gap: 4,
+          }}
+        >
+          <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
+            STREAK
+          </Text>
+          <View
+            style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}
+          >
+            <Text style={{ ...type.metricLg, color: color.onSurface }}>
+              {streak.current}
+            </Text>
+            <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
+              days running · best {streak.longest}
+            </Text>
+          </View>
+          <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
+            {sessionsThisMonth} session{sessionsThisMonth === 1 ? '' : 's'} in
+            the last 30 days.
+          </Text>
+        </View>
+
+        <Button
+          label={retestDue ? 'Retest now' : 'Retest early'}
+          onPress={() => router.push('/index-retest')}
+          style={{ width: '100%' }}
+        />
+        {!retestDue && (
+          <Text
+            style={{
+              ...type.bodyMd,
+              fontSize: 14,
+              lineHeight: 20,
+              color: color.onSurfaceVariant,
+              textAlign: 'center',
+            }}
+          >
+            Retesting early adds noise — {daysRemaining} more day
+            {daysRemaining === 1 ? '' : 's'} gives a cleaner trend.
+          </Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

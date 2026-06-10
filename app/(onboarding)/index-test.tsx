@@ -16,7 +16,12 @@ import { Check } from 'lucide-react-native';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, PhaseRing, ScreenHeader } from '@/components/obsidian';
+import {
+  Button,
+  PhaseRing,
+  ScreenHeader,
+  StateScreen,
+} from '@/components/obsidian';
 import {
   FAST_WINDOW_S,
   HOLD_CAP_S,
@@ -100,6 +105,9 @@ export default function AssessmentBattery() {
   const [coordinationNone, setCoordinationNone] = useState(false);
   const [release, setRelease] = useState<ReleaseAnswer | null>(null);
   const [symptoms, setSymptoms] = useState<SymptomFlag[]>([]);
+  // "Can't Feel It" interstitial (Figma 50:204): shown when the user
+  // picks "couldn't feel anything" — normalising, never alarming.
+  const [showCantFeel, setShowCantFeel] = useState(false);
 
   function goBack() {
     if (step === 1) {
@@ -135,6 +143,29 @@ export default function AssessmentBattery() {
     router.push('/assessment');
   }
 
+  if (showCantFeel) {
+    return (
+      <StateScreen
+        onBack={() => setShowCantFeel(false)}
+        kicker="STEP 1 · STRENGTH"
+        title="That's completely normal"
+        body="Lots of people can't feel much at first — it doesn't mean it isn't working. We'll start you with awareness and breathing, and you'll build the connection over a couple of weeks."
+        primaryLabel="Start with the basics"
+        onPrimary={() => {
+          // strength stays 0 → the foundation archetype routes them to
+          // awareness/isolation work automatically.
+          setShowCantFeel(false);
+          setStep(2);
+        }}
+        ghostLabel="Try the squeeze again"
+        onGhost={() => {
+          setStrength(null);
+          setShowCantFeel(false);
+        }}
+      />
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
       <ScreenHeader variant="back" title="Assessment" onPress={goBack} />
@@ -145,7 +176,9 @@ export default function AssessmentBattery() {
             void fireHaptic('selection');
             setStrength(v);
           }}
-          onContinue={() => setStep(2)}
+          onContinue={() =>
+            strength === 0 ? setShowCantFeel(true) : setStep(2)
+          }
         />
       )}
       {step === 2 && (

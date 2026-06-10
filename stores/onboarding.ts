@@ -12,6 +12,8 @@ export type Generated = {
   // Populated by buildProgram() — AI-generated from measurements +
   // lifestyle, or a level-based fallback in dev mode.
   focuses: string[];
+  /** Which generator produced the plan (drives preview variant copy). */
+  source: 'ai' | 'rules';
 };
 
 type OnboardingStore = {
