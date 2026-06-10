@@ -1,10 +1,18 @@
+// Obsidian Kinetic: 10 · Assess · Age (context) — Figma node 27:33.
+// One template for all four context questions (age band, strength days,
+// cardio days, intimacy frequency). 2-col option grid per Figma; the
+// numeric questions wrap the same option pills into rows.
+//
+// Flow unchanged: measurements (/index-test) happen BEFORE these; after
+// the last question we route through /ai-consent then /generating.
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ProgressDots } from '@/components/assessment/ProgressDots';
-import { QuestionCard } from '@/components/assessment/QuestionCard';
+import { Button, ScreenHeader } from '@/components/obsidian';
 import { QUESTIONS } from '@/lib/assessment-questions';
+import { fireHaptic } from '@/lib/obsidian/haptics';
+import { color, glass, radius, spacing, type } from '@/lib/obsidian/tokens';
 import { useOnboardingStore } from '@/stores/onboarding';
 
 export default function Assessment() {
@@ -23,65 +31,103 @@ export default function Assessment() {
     if (step < QUESTIONS.length - 1) {
       next();
     } else {
-      // v1.2 flow: measurements (/index-test) happen BEFORE the
-      // lifestyle questions. After the last question we route through
-      // /ai-consent (PII gate before lifestyle answers can be sent to
-      // Anthropic) and then on to /generating.
+      // AI-consent gate before lifestyle answers can leave the device.
       router.replace('/ai-consent');
     }
   }
 
+  // Compact numeric scales (0–7) render as a wrapping row of square
+  // pills; everything else uses the Figma 2-col grid.
+  const isSegmented = question.layout === 'segmented';
+
   return (
-    <SafeAreaView className="flex-1 bg-bg">
-      <View className="flex-1 px-6 pt-4 pb-6">
-        <View className="flex-row items-center justify-between">
-          <Pressable
-            onPress={() => (step === 0 ? router.back() : prev())}
-            className="py-3 px-3 -ml-3 active:opacity-60"
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="Previous question"
-          >
-            <Text className="text-muted">← Back</Text>
-          </Pressable>
-          <Text className="text-muted text-xs">
-            {step + 1} / {QUESTIONS.length}
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
+      <ScreenHeader
+        variant="back"
+        onPress={() => (step === 0 ? router.back() : prev())}
+      />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackLg,
+          paddingBottom: spacing.stackLg + spacing.stackMd,
+          gap: spacing.containerPadding,
+        }}
+      >
+        <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
+          QUESTION {step + 1} OF {QUESTIONS.length}
+        </Text>
+        <Text style={{ ...type.headlineLg, color: color.onSurface }}>
+          {question.prompt}
+        </Text>
+        {question.help ? (
+          <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
+            {question.help}
           </Text>
-        </View>
+        ) : null}
 
-        <View className="mt-3">
-          <ProgressDots total={QUESTIONS.length} current={step} />
-        </View>
-
-        <ScrollView
-          className="flex-1 mt-8"
-          contentContainerClassName="pb-6"
-          showsVerticalScrollIndicator={false}
+        <View
+          style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            gap: spacing.gutter,
+          }}
         >
-          <QuestionCard
-            question={question}
-            value={value}
-            onSelect={(v) => setAnswer(question.id, v as never)}
-          />
-        </ScrollView>
+          {question.choices.map((choice) => {
+            const selected = value === choice.value;
+            return (
+              <Pressable
+                key={String(choice.value)}
+                onPress={() => {
+                  void fireHaptic('selection');
+                  setAnswer(question.id, choice.value as never);
+                }}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                accessibilityLabel={choice.label}
+                style={{
+                  height: 64,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: radius.xl,
+                  backgroundColor: color.surfaceContainerLow,
+                  borderColor: selected
+                    ? color.primaryContainer
+                    : glass.border,
+                  borderWidth: selected ? 2 : 1,
+                  // 2-col grid for normal options; ~4-up squares for the
+                  // 0–7 segmented scales.
+                  flexBasis: isSegmented ? '21%' : '47%',
+                  flexGrow: 1,
+                }}
+              >
+                <Text
+                  style={{
+                    ...(selected ? type.labelButton : type.bodyLg),
+                    color: selected
+                      ? color.primaryFixedDim
+                      : color.onSurface,
+                  }}
+                >
+                  {choice.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
-        <Pressable
-          onPress={handleNext}
-          disabled={!hasValue}
-          accessibilityRole="button"
-          accessibilityLabel={
-            step === QUESTIONS.length - 1 ? 'Build my plan' : 'Next question'
+        <View style={{ flex: 1 }} />
+        <Button
+          label={
+            step === QUESTIONS.length - 1 ? 'Build my plan' : 'Continue'
           }
-          accessibilityState={{ disabled: !hasValue }}
-          className={`rounded-xl py-4 items-center active:opacity-80 ${
-            hasValue ? 'bg-accent' : 'bg-surface2'
-          }`}
-        >
-          <Text className="text-ink font-semibold">
-            {step === QUESTIONS.length - 1 ? 'Build my plan' : 'Continue'}
-          </Text>
-        </Pressable>
-      </View>
+          disabled={!hasValue}
+          onPress={handleNext}
+          style={{ width: '100%' }}
+        />
+      </ScrollView>
     </SafeAreaView>
   );
 }

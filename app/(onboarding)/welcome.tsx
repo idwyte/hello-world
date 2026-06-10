@@ -1,33 +1,66 @@
+// Obsidian Kinetic: 01 · Welcome — Figma node 26:2.
+// Centered lime H tile + HONE display + tagline; bottom CTA pair.
 import { useRouter } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { Button } from '@/components/obsidian';
+import { color, radius, spacing, type } from '@/lib/obsidian/tokens';
 
 export default function Welcome() {
   const router = useRouter();
   return (
-    <SafeAreaView className="flex-1 bg-bg">
-      <View className="flex-1 px-6 pt-10 pb-8">
-        <View className="flex-1 justify-center">
-          <Text className="text-muted text-xs uppercase tracking-wider">
-            Welcome
-          </Text>
-          <Text className="text-ink text-4xl font-semibold mt-2 leading-10">
-            A few questions to{'\n'}personalize your plan.
-          </Text>
-          <Text className="text-muted mt-3 leading-6">
-            10 quick questions — about 60 seconds. Your answers stay private and
-            shape the program you'll see next.
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
+      <View
+        style={{
+          flex: 1,
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackLg,
+          paddingBottom: spacing.stackLg * 2,
+        }}
+      >
+        <View style={{ flex: 1 }} />
+        <View style={{ alignItems: 'center', gap: spacing.containerPadding }}>
+          <View
+            style={{
+              width: 96,
+              height: 96,
+              borderRadius: 24,
+              backgroundColor: color.primaryContainer,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{ ...type.display, color: color.onPrimaryFixed }}>
+              H
+            </Text>
+          </View>
+          <Text style={{ ...type.display, color: color.onSurface }}>HONE</Text>
+          <Text
+            style={{
+              ...type.bodyLg,
+              color: color.onSurfaceVariant,
+              textAlign: 'center',
+              width: 280,
+            }}
+          >
+            Pelvic floor training that actually measures.
           </Text>
         </View>
-
-        <Pressable
-          onPress={() => router.push('/assessment-intro')}
-          accessibilityRole="button"
-          accessibilityLabel="Start assessment"
-          className="bg-accent rounded-xl py-4 items-center active:opacity-80"
-        >
-          <Text className="text-ink font-semibold">Start assessment</Text>
-        </Pressable>
+        <View style={{ flex: 1 }} />
+        <View style={{ gap: spacing.gutter }}>
+          <Button
+            label="Get started"
+            onPress={() => router.push('/assessment-intro')}
+            style={{ width: '100%', borderRadius: radius.xl }}
+          />
+          <Button
+            label="I already have an account"
+            variant="ghost"
+            onPress={() => router.push('/sign-in')}
+            style={{ width: '100%' }}
+          />
+        </View>
       </View>
     </SafeAreaView>
   );

@@ -1,3 +1,4 @@
+import type { AssessmentProfileV2 } from './assessment-v2';
 import { EXERCISES } from './exercises';
 import { hasSupabaseConfig } from './env';
 import { levelFromComposite, type PelvicFloorIndex, type PelvicFloorMeasurements } from './pelvic-floor-index';
@@ -60,6 +61,46 @@ function applyTrendBias(
   return { pool, level };
 }
 
+// Archetype + fiber-bias pool selection (assessment v2). Runs in the
+// rule-based path so the SAFE routing works without any AI call — the
+// decline path and the safety path share this code (handoff §5).
+//
+// Down-training prohibitions (down-training spec): no strengthening
+// kegels, no progressive overload — content pool is release work only.
+function applyProfileBias(
+  pool: string[],
+  profile: AssessmentProfileV2 | undefined,
+): string[] {
+  if (!profile) return pool;
+  if (profile.archetype === 'down_training') {
+    return ['deep_squat_breath', 'reverse_kegels'];
+  }
+  if (profile.archetype === 'foundation') {
+    // Awareness + isolation + breath coordination before load.
+    return ['short_holds', 'reverse_kegels', 'quick_flicks'];
+  }
+  // Strengthening: rebalance toward the fiber deficit.
+  if (profile.fiber_bias === 'slow_deficit') {
+    const front = pool.filter(
+      (e) => e === 'long_holds' || e === 'endurance_ladder',
+    );
+    const rest = pool.filter(
+      (e) => e !== 'long_holds' && e !== 'endurance_ladder',
+    );
+    return [...front, ...rest];
+  }
+  if (profile.fiber_bias === 'fast_deficit') {
+    const fast = ['quick_flicks', 'pulse_hold_combo'];
+    const front = pool.filter((e) => fast.includes(e));
+    const rest = pool.filter((e) => !fast.includes(e));
+    return [...new Set([...front, 'pulse_hold_combo', ...rest])];
+  }
+  if (profile.fiber_bias === 'advanced') {
+    return [...new Set([...pool, 'pulse_hold_combo', 'glute_bridge'])];
+  }
+  return pool;
+}
+
 function estimateExerciseDurationS(ex: ExerciseTemplate): number {
   const perRepMs = ex.phases.reduce((acc, p) => acc + p.durationMs, 0);
   const setMs = ex.reps * perRepMs;
@@ -97,6 +138,12 @@ export type BuildProgramInput = {
   level: Level;
   measurements: PelvicFloorMeasurements;
   answers: AssessmentAnswers;
+  /**
+   * Assessment v2 profile vector. When present, archetype routing +
+   * fiber bias drive the pool in BOTH the rule-based and AI paths
+   * (the Edge Function receives it verbatim — handoff §5).
+   */
+  profile?: AssessmentProfileV2;
   indexHistory?: PelvicFloorIndex[];
   weeks?: number;
   dailyMinutes?: number;
@@ -137,8 +184,11 @@ export function buildProgramLocal(input: BuildProgramInput): ProgramDay[] {
   const { level, indexHistory = [], weeks = 8, dailyMinutes = DEFAULT_DAILY_MINUTES } = input;
   const initialPool = pickExercisesFor(level);
   const adjusted = applyTrendBias(initialPool, level, indexHistory);
-  const effectivePool =
+  const trendPool =
     adjusted.level !== level ? pickExercisesFor(adjusted.level) : adjusted.pool;
+  // Archetype routing runs LAST so down_training/foundation override any
+  // level-based pool entirely (safety wins over dosing).
+  const effectivePool = applyProfileBias(trendPool, input.profile);
   const targetSeconds = dailyMinutes * 60;
   const days: ProgramDay[] = [];
   for (let d = 0; d < weeks * 7; d++) {
@@ -180,14 +230,45 @@ function resolveEdgeProgram(edge: EdgeProgramResponse['program']): ProgramDay[] 
   }));
 }
 
+const ARCHETYPE_FOCUSES: Record<string, string[]> = {
+  down_training: [
+    'Release — daily pelvic-floor breathing',
+    'Lengthen — gentle reverse Kegels',
+    'Ease — no loading, no pushing',
+  ],
+  foundation: [
+    'Awareness — find the right muscles',
+    'Isolation — no breath-holds or bracing',
+    'Coordination before any load',
+  ],
+};
+
+function fallbackFocuses(input: BuildProgramInput): string[] {
+  const archetype = input.profile?.archetype;
+  if (archetype && ARCHETYPE_FOCUSES[archetype]) {
+    return ARCHETYPE_FOCUSES[archetype];
+  }
+  return FALLBACK_FOCUSES_BY_LEVEL[input.level];
+}
+
 // Primary entry point. Calls the Supabase Edge Function (which calls
 // Claude) when configured; falls back to the rule-based local generator
 // in dev mode. Returns `days` + 3 `focuses` strings for /plan-preview.
 export async function buildProgram(input: BuildProgramInput): Promise<GeneratedProgram> {
+  // Down-training is fully deterministic — prohibitions, not dosing
+  // (down-training spec). No AI call: nothing to personalise, and the
+  // safety path must not depend on a network round trip.
+  if (input.profile?.archetype === 'down_training') {
+    return {
+      days: buildProgramLocal(input),
+      focuses: fallbackFocuses(input),
+    };
+  }
+
   if (!hasSupabaseConfig()) {
     return {
       days: buildProgramLocal(input),
-      focuses: FALLBACK_FOCUSES_BY_LEVEL[input.level],
+      focuses: fallbackFocuses(input),
     };
   }
 
@@ -199,7 +280,7 @@ export async function buildProgram(input: BuildProgramInput): Promise<GeneratedP
   if (!consented) {
     return {
       days: buildProgramLocal(input),
-      focuses: FALLBACK_FOCUSES_BY_LEVEL[input.level],
+      focuses: fallbackFocuses(input),
     };
   }
 
@@ -211,6 +292,9 @@ export async function buildProgram(input: BuildProgramInput): Promise<GeneratedP
         measurements: input.measurements,
         answers: input.answers,
         level: input.level,
+        // Assessment v2 profile vector — archetype, raw axis values,
+        // fiber bias, safety context (handoff §5 input change).
+        profile: input.profile,
       },
     },
   );
@@ -224,7 +308,7 @@ export async function buildProgram(input: BuildProgramInput): Promise<GeneratedP
     );
     return {
       days: buildProgramLocal(input),
-      focuses: FALLBACK_FOCUSES_BY_LEVEL[input.level],
+      focuses: fallbackFocuses(input),
     };
   }
 

@@ -1,3 +1,7 @@
+// Obsidian Kinetic: 02 · Sign-in — Figma node 26:15.
+// White Apple/Google buttons, OR divider, cyan-focus email Input, lime
+// Send magic link, terms footer. Auth wiring unchanged (Supabase OAuth +
+// magic link + anonymous guest path; dev-mode notice when unconfigured).
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -6,17 +10,13 @@ import {
   Alert,
   Platform,
   Pressable,
+  ScrollView,
+  Text,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import {
-  Body,
-  Button,
-  Card,
-  Heading,
-  TextField,
-} from '@/components/ui';
+import { Button, Input, ScreenHeader } from '@/components/obsidian';
 import {
   sendMagicLink,
   signInAnonymously,
@@ -24,7 +24,7 @@ import {
   signInWithGoogle,
 } from '@/lib/auth';
 import { hasGoogleConfig, hasSupabaseConfig } from '@/lib/env';
-import { semantic } from '@/lib/theme';
+import { color, radius, spacing, type } from '@/lib/obsidian/tokens';
 
 export default function SignIn() {
   const router = useRouter();
@@ -54,136 +54,162 @@ export default function SignIn() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-canvas">
-      <View className="flex-1 px-6 pt-10 pb-8">
-        <View className="flex-1 justify-center">
-          <Heading level="display-lg">Hone</Heading>
-          <Body size="lg" color="muted" className="mt-3">
-            Train pelvic floor strength in a few minutes a day.
-          </Body>
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
+      <ScreenHeader variant="back" onPress={() => router.back()} />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackLg,
+          paddingBottom: spacing.stackLg + spacing.stackMd,
+          gap: spacing.stackLg,
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={{ gap: spacing.stackSm }}>
+          <Text style={{ ...type.headlineLg, color: color.onSurface }}>
+            Sign in
+          </Text>
+          <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
+            Pick up where you left off.
+          </Text>
         </View>
 
-        <View className="gap-3">
-          {!configured ? (
-            <Card padding="sm" bordered surface="sunken">
-              <Body size="xs" color="muted">
-                Auth backend not configured yet. Set EXPO_PUBLIC_SUPABASE_URL
-                and EXPO_PUBLIC_SUPABASE_ANON_KEY to enable sign-in.
-              </Body>
-            </Card>
-          ) : null}
-
-          {configured ? (
-            <Button
-              label={busy === 'guest' ? '…' : 'Skip sign-in — start training'}
-              variant="primary"
-              size="lg"
-              disabled={busy !== null}
-              onPress={() => withBusy('guest', signInAnonymously)}
-              accessibilityLabel="Continue without signing in"
-            />
-          ) : null}
-
-          <Body size="xs" color="muted" className="text-center my-1">
-            Sync across devices (optional)
-          </Body>
-
-          {Platform.OS === 'ios' && configured ? (
-            <AppleAuthentication.AppleAuthenticationButton
-              buttonType={
-                AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
-              }
-              buttonStyle={
-                AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
-              }
-              cornerRadius={12}
-              style={{ height: 48 }}
-              onPress={() => withBusy('apple', signInWithApple)}
-            />
-          ) : null}
-
-          {hasGoogleConfig() ? (
-            <Button
-              label={busy === 'google' ? '…' : 'Continue with Google'}
-              variant="secondary"
-              size="lg"
-              disabled={busy !== null || !configured}
-              onPress={() => withBusy('google', signInWithGoogle)}
-            />
-          ) : null}
-
-          <View className="flex-row items-center my-2 gap-3">
-            <View className="flex-1 h-px bg-border-default" />
-            <Body size="xs" color="muted">
-              or
-            </Body>
-            <View className="flex-1 h-px bg-border-default" />
-          </View>
-
-          <TextField
-            placeholder="you@example.com"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="email"
-            value={email}
-            editable={!busy && configured}
-            onChangeText={setEmail}
-            accessibilityLabel="Email address"
-          />
-
-          <Button
-            label={
-              busy === 'email'
-                ? '…'
-                : emailSent
-                  ? 'Check your inbox'
-                  : 'Send magic link'
-            }
-            variant={
-              busy || !configured || email.length === 0 ? 'secondary' : 'primary'
-            }
-            size="lg"
-            disabled={busy !== null || !configured || email.length === 0}
-            onPress={() =>
-              withBusy('email', async () => {
-                await sendMagicLink(email);
-                setEmailSent(true);
-                router.push({ pathname: '/check-email', params: { email } });
-              })
-            }
-          />
-
-          {busy ? (
-            <View className="items-center mt-2">
-              <ActivityIndicator color={semantic.interactivePrimary} />
-            </View>
-          ) : null}
-
-          {/* New here? — Figma 02·sign-in flow: sign-in & sign-up are mirror
-              screens, link to /sign-up for first-time framing. */}
-          <View className="flex-row items-center justify-center mt-3 gap-1.5">
-            <Body size="sm" color="muted">
-              New here?
-            </Body>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Sign up"
-              onPress={() => router.push('/sign-up')}
+        {!configured && (
+          <View
+            style={{
+              backgroundColor: color.surfaceContainerLow,
+              borderColor: color.outlineVariant,
+              borderWidth: 1,
+              borderRadius: radius.xl,
+              padding: spacing.stackMd,
+            }}
+          >
+            <Text
+              style={{
+                ...type.bodyMd,
+                fontSize: 14,
+                lineHeight: 20,
+                color: color.onSurfaceVariant,
+              }}
             >
-              <Body size="sm" weight="semibold" color="accent">
-                Sign up
-              </Body>
-            </Pressable>
+              Auth backend not configured yet. Set EXPO_PUBLIC_SUPABASE_URL
+              and EXPO_PUBLIC_SUPABASE_ANON_KEY to enable sign-in.
+            </Text>
           </View>
+        )}
 
-          <Body size="xs" color="muted" className="text-center mt-4 px-2">
-            By continuing you agree that pelvic floor training is general
-            wellness, not medical advice. Consult a clinician for any
-            pelvic-floor condition.
-          </Body>
+        {Platform.OS === 'ios' && configured ? (
+          <AppleAuthentication.AppleAuthenticationButton
+            buttonType={
+              AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
+            }
+            buttonStyle={
+              AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+            }
+            cornerRadius={radius.xl}
+            style={{ height: 56 }}
+            onPress={() => withBusy('apple', signInWithApple)}
+          />
+        ) : null}
+
+        {hasGoogleConfig() && configured ? (
+          <Pressable
+            onPress={() => withBusy('google', signInWithGoogle)}
+            disabled={busy !== null}
+            accessibilityRole="button"
+            accessibilityLabel="Continue with Google"
+            style={({ pressed }) => ({
+              height: 56,
+              borderRadius: radius.xl,
+              backgroundColor: '#ffffff',
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: pressed || busy ? 0.85 : 1,
+            })}
+          >
+            <Text style={{ ...type.labelButton, color: '#0d0d0d' }}>
+              {busy === 'google' ? '…' : 'Continue with Google'}
+            </Text>
+          </Pressable>
+        ) : null}
+
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.gutter,
+          }}
+        >
+          <View
+            style={{ flex: 1, height: 1, backgroundColor: color.outlineVariant }}
+          />
+          <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
+            OR
+          </Text>
+          <View
+            style={{ flex: 1, height: 1, backgroundColor: color.outlineVariant }}
+          />
         </View>
-      </View>
+
+        <Input
+          label="EMAIL"
+          placeholder="you@example.com"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="email"
+          value={email}
+          editable={!busy && configured}
+          onChangeText={setEmail}
+          accessibilityLabel="Email address"
+        />
+
+        <Button
+          label={
+            busy === 'email'
+              ? '…'
+              : emailSent
+                ? 'Check your inbox'
+                : 'Send magic link'
+          }
+          disabled={busy !== null || !configured || email.length === 0}
+          onPress={() =>
+            void withBusy('email', async () => {
+              await sendMagicLink(email);
+              setEmailSent(true);
+              router.push({ pathname: '/check-email', params: { email } });
+            })
+          }
+          style={{ width: '100%' }}
+        />
+
+        {configured ? (
+          <Button
+            label={busy === 'guest' ? '…' : 'Continue as guest'}
+            variant="ghost"
+            disabled={busy !== null}
+            onPress={() => void withBusy('guest', signInAnonymously)}
+            style={{ width: '100%' }}
+          />
+        ) : null}
+
+        {busy ? (
+          <ActivityIndicator color={color.primaryContainer} />
+        ) : null}
+
+        <View style={{ flex: 1 }} />
+        <Text
+          style={{
+            ...type.bodyMd,
+            color: color.onSurfaceVariant,
+            textAlign: 'center',
+          }}
+        >
+          By continuing, you agree to our Terms and Privacy Policy.
+        </Text>
+      </ScrollView>
     </SafeAreaView>
   );
 }

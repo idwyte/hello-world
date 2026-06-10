@@ -61,6 +61,38 @@ INPUTS
 - answers.cardioDaysPerWeek: 0-7
 - answers.intimacyPerWeek: 0-7
 - level: beginner | intermediate | advanced
+- profile (optional, assessment v2): {
+    archetype: strengthening | foundation | down_training,
+    strength_oxford: 0-5 (modified Oxford self-rating),
+    endurance_seconds: 0-12 (timed hold),
+    rep_ceiling: 0-10 (quality-gated reps),
+    fast_count: 0-30 (quick flicks in 15 s),
+    fiber_bias: slow_deficit | fast_deficit | balanced | advanced,
+    coordination: clean | compensating,
+    relaxation: ok | possible_hypertonic
+  }
+
+ARCHETYPE RULES (apply BEFORE all other dosing; profile wins over level)
+- archetype=down_training: This request should not normally reach you
+  (the client doses it deterministically), but if it does: use ONLY
+  reverse_kegels and deep_squat_breath. NO strengthening contractions,
+  NO progressive overload — week 8 must not be harder than week 1.
+  Focuses must describe release/ease, never strength gains.
+- archetype=foundation: weeks 1-3 use only short_holds, reverse_kegels
+  and quick_flicks at low volume — awareness and isolation before any
+  load. Ramp into normal strengthening content from week 4 only.
+- archetype=strengthening: dose normally, then weight by fiber_bias:
+  - slow_deficit: front-load long_holds + endurance_ladder; hold
+    durations derive from endurance_seconds (start at their max).
+  - fast_deficit: front-load quick_flicks + pulse_hold_combo; flick
+    volume derives from fast_count.
+  - balanced: even mix, conservative volume.
+  - advanced: maintenance + functional integration (glute_bridge,
+    bird_dog, pulse_hold_combo).
+- coordination=compensating: include reverse_kegels or
+  deep_squat_breath weekly as technique reset work.
+- Sets × reps must leave headroom below rep_ceiling — never prescribe
+  more consecutive quality reps than the user measured.
 
 EXERCISE CATALOG (use only these slugs)
 Pure pelvic-floor work (foundational):
@@ -156,6 +188,9 @@ type GenerateProgramInput = {
     intimacyPerWeek: number;
   };
   level: 'beginner' | 'intermediate' | 'advanced';
+  /** Assessment v2 profile vector (optional for v1 clients). Passed to
+   * the model verbatim; archetype rules in the system prompt consume it. */
+  profile?: Record<string, unknown>;
 };
 
 function isValidInput(body: unknown): body is GenerateProgramInput {
