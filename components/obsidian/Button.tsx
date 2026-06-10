@@ -103,7 +103,10 @@ export function Button({
       <Text
         style={{
           ...type.labelButton,
-          color: isPrimary ? color.onPrimaryContainer : color.secondaryContainer,
+          // Near-black on lime per handoff §3 — that's the onPrimaryFixed
+          // role; DESIGN.md's onPrimaryContainer (#556d00) is NOT a text
+          // color for lime fills.
+          color: isPrimary ? color.onPrimaryFixed : color.secondaryContainer,
         }}
       >
         {label}

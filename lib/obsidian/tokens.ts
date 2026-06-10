@@ -1,80 +1,106 @@
 // Obsidian Kinetic — design tokens.
 // Canonical contract for the presentation-layer rebuild (June 2026).
 //
-// Source of truth: DESIGN.md → mirrored 1:1 by the Figma variable
-// collections in file 9j7Lhai90BdMe7xwK4aPbF ("Hone — Obsidian Kinetic").
+// Source of truth: DESIGN.md (repo root) — all 47 color tokens, the type
+// scale, radius and spacing are transcribed verbatim from its YAML
+// frontmatter. The Figma variable collections in file 9j7Lhai90BdMe7xwK4aPbF
+// mirror the same values. Two deliberate overrides, both flagged in
+// docs/hone-claude-code-handoff.md §2 (mocks/variables win over the
+// DESIGN.md prose):
+//   · buttons/cards use radius.xl (12), not the prose's 0.25rem
+//   · metrics render UPRIGHT, not italic
+// One addition from the handoff: the `label-button` type style (18
+// SemiBold) — it isn't in DESIGN.md's frontmatter but is specified in
+// the handoff's 8-style list.
 //
-// ⚠ PROVENANCE (review me): DESIGN.md was not present in the repo or the
-// upload set, and the shared Figma file exposes only the Cover page. The
-// values below are therefore assembled from three sources, marked inline:
-//   [F] confirmed from Figma variables on the cover node (9:2)
-//   [H] specified verbatim in docs/hone-claude-code-handoff.md §2–3
-//   [D] DERIVED — M3 dark-scheme convention anchored on [F]/[H] values.
-//       Reconcile against DESIGN.md as soon as it lands; every [D] is a
-//       candidate for correction and nothing else may depend on its
-//       exact hex.
-//
-// Naming follows the Material-3-style keys the handoff confirms
-// (`surface-container-high`, `on-primary-container`, …), camelCased for
-// TS. The NativeWind/Tailwind config maps from this file — never inline
-// a raw hex in a component.
+// NativeWind/Tailwind config maps from this file — never inline a raw
+// hex in a component.
 
 export const color = {
   // — Surfaces (Obsidian) —
-  background: '#131314', // [F]
-  surface: '#131314', // [D] = background per M3 dark
-  surfaceContainerLowest: '#0e0e0f', // [D]
-  surfaceContainerLow: '#1b1b1d', // [D] · glass-card base, see glass below
-  surfaceContainer: '#1f1f21', // [D]
-  surfaceContainerHigh: '#28282b', // [D]
-  surfaceContainerHighest: '#333336', // [D]
-  onSurface: '#e6e3da', // [D] lime-tinted near-white
-  onSurfaceVariant: '#c4c9ac', // [F] muted text — lime-tinted grey
-  outline: '#8f937f', // [D]
-  outlineVariant: '#43463a', // [D] hairlines, inactive ring track
+  surface: '#131314',
+  surfaceDim: '#131314',
+  surfaceBright: '#3a393a',
+  surfaceContainerLowest: '#0e0e0f',
+  surfaceContainerLow: '#1c1b1c',
+  surfaceContainer: '#201f20',
+  surfaceContainerHigh: '#2a2a2b',
+  surfaceContainerHighest: '#353436',
+  surfaceVariant: '#353436',
+  onSurface: '#e5e2e3',
+  onSurfaceVariant: '#c4c9ac',
+  inverseSurface: '#e5e2e3',
+  inverseOnSurface: '#313031',
+  outline: '#8e9379',
+  outlineVariant: '#444933',
+  surfaceTint: '#abd600',
+  background: '#131314',
+  onBackground: '#e5e2e3',
 
   // — Primary (Electric Lime) —
-  primary: '#d9ff4d', // [D] lighter lime for text/icons on dark
-  onPrimary: '#1a1c00', // [D]
-  primaryContainer: '#c3f400', // [H][F] Electric Lime — button fill, ring arc
-  onPrimaryContainer: '#131400', // [H] "near-black text" on lime
+  primary: '#ffffff',
+  onPrimary: '#283500',
+  primaryContainer: '#c3f400', // Electric Lime — fills, ring arc, glow
+  onPrimaryContainer: '#556d00',
+  inversePrimary: '#506600',
+  primaryFixed: '#c3f400',
+  primaryFixedDim: '#abd600',
+  onPrimaryFixed: '#161e00', // near-black — the label on lime fills
+  onPrimaryFixedVariant: '#3c4d00',
 
   // — Secondary (Cyan Pulse) —
-  secondary: '#7df3ff', // [D]
-  onSecondary: '#00363b', // [D]
-  secondaryContainer: '#00eefc', // [H] Cyan Pulse — ghost border/text, breathing ring
-  onSecondaryContainer: '#001417', // [D]
+  secondary: '#d3fbff',
+  onSecondary: '#00363a',
+  secondaryContainer: '#00eefc', // Cyan Pulse — ghost border/text, breathing ring
+  onSecondaryContainer: '#00686f',
+  secondaryFixed: '#7df4ff',
+  secondaryFixedDim: '#00dbe9',
+  onSecondaryFixed: '#002022',
+  onSecondaryFixedVariant: '#004f54',
 
-  // — Error (Coral) —
-  error: '#ff7a66', // [H] "coral" input error border; exact hex [D]
-  onError: '#2d0600', // [D]
-  errorContainer: '#5c1505', // [D]
-  onErrorContainer: '#ffd9d1', // [D]
+  // — Tertiary —
+  tertiary: '#ffffff',
+  onTertiary: '#2f2e43',
+  tertiaryContainer: '#e2e0fc',
+  onTertiaryContainer: '#63627a',
+  tertiaryFixed: '#e2e0fc',
+  tertiaryFixedDim: '#c6c4df',
+  onTertiaryFixed: '#1a1a2e',
+  onTertiaryFixedVariant: '#45455b',
+
+  // — Error —
+  error: '#ffb4ab',
+  onError: '#690005',
+  errorContainer: '#93000a',
+  onErrorContainer: '#ffdad6',
 } as const;
 
 // Glow is a STATE, not a style (motion spec §4): only the single most
-// active element glows. Opacities per spec §3.1 (30% resting → 45%
-// approaching completion).
+// active element glows. DESIGN.md prose: 0 0 12px outer glow, primary
+// at 30%; motion spec §3.1: 30% resting → 45% approaching completion.
 export const glow = {
   primary: color.primaryContainer,
-  restingOpacity: 0.3, // [H]
-  peakOpacity: 0.45, // [H]
+  radius: 12,
+  restingOpacity: 0.3,
+  peakOpacity: 0.45,
 } as const;
 
-// Glass card recipe — [H] §3: surface-container-low @85% + 1px
+// Glass card recipe — handoff §3: surface-container-low @85% + 1px
 // 10%-white inner border.
 export const glass = {
-  fill: 'rgba(27, 27, 29, 0.85)', // surfaceContainerLow @ 85%
+  fill: 'rgba(28, 27, 28, 0.85)', // surfaceContainerLow @ 85%
   border: 'rgba(255, 255, 255, 0.10)',
   borderWidth: 1,
 } as const;
 
-// Modal/sheet backdrop ("blur/overlay" per motion spec §3.5). [D] depth.
+// Modal/sheet backdrop — DESIGN.md prose: 70% opacity + 20px backdrop
+// blur ("blur/overlay" in the motion spec §3.5).
 export const overlay = {
-  scrim: 'rgba(0, 0, 0, 0.6)',
+  scrim: 'rgba(0, 0, 0, 0.7)',
+  blurRadius: 20,
 } as const;
 
-// — Spacing — [H] §2, complete.
+// — Spacing — DESIGN.md frontmatter, complete.
 export const spacing = {
   base: 4,
   gutter: 12,
@@ -84,9 +110,8 @@ export const spacing = {
   stackLg: 24,
 } as const;
 
-// — Radius — [H] §2, complete. Buttons/cards use `xl` (12) per the
-// mocks/variables (the DESIGN.md prose's 4px is overruled by the
-// handoff note).
+// — Radius — DESIGN.md frontmatter (rem × 16). Buttons/cards use `xl`
+// (12) per the mocks/variables.
 export const radius = {
   sm: 2,
   default: 4,
@@ -96,34 +121,44 @@ export const radius = {
   full: 9999,
 } as const;
 
-// — Type — [H] §2: Archivo Narrow (display/headlines/body) + JetBrains
-// Mono (labels). Family strings match @expo-google-fonts exports; load
-// them in the root layout via useFonts. Metrics render UPRIGHT (the
-// YAML/mocks win over the DESIGN.md italic prose). Line-heights [D].
+// — Type — DESIGN.md frontmatter. Archivo Narrow (display/headlines/
+// body) + JetBrains Mono (labels). Family strings match the
+// @expo-google-fonts exports; load via useFonts in the root layout.
+// letterSpacing converted em → px at the style's own font size.
+// Metrics UPRIGHT (handoff override of the prose italic).
 export const font = {
-  display: 'ArchivoNarrow_700Bold',
-  headline: 'ArchivoNarrow_600SemiBold',
-  body: 'ArchivoNarrow_400Regular',
-  bodyMedium: 'ArchivoNarrow_500Medium',
+  bold: 'ArchivoNarrow_700Bold',
+  semibold: 'ArchivoNarrow_600SemiBold',
+  regular: 'ArchivoNarrow_400Regular',
   mono: 'JetBrainsMono_500Medium',
 } as const;
 
 export const type = {
-  display: { fontFamily: font.display, fontSize: 48, lineHeight: 52 },
-  headlineLg: { fontFamily: font.headline, fontSize: 32, lineHeight: 38 },
-  headlineMd: { fontFamily: font.headline, fontSize: 24, lineHeight: 30 },
-  bodyLg: { fontFamily: font.body, fontSize: 18, lineHeight: 26 },
-  bodyMd: { fontFamily: font.body, fontSize: 16, lineHeight: 24 },
-  // [H] mono caps, +10% tracking (12 × 0.10 = 1.2)
+  display: {
+    fontFamily: font.bold,
+    fontSize: 48,
+    lineHeight: 52,
+    letterSpacing: -0.96, // -0.02em
+  },
+  headlineLg: {
+    fontFamily: font.bold,
+    fontSize: 32,
+    lineHeight: 36,
+    letterSpacing: -0.32, // -0.01em
+  },
+  headlineMd: { fontFamily: font.semibold, fontSize: 24, lineHeight: 28 },
+  bodyLg: { fontFamily: font.regular, fontSize: 18, lineHeight: 26 },
+  bodyMd: { fontFamily: font.regular, fontSize: 16, lineHeight: 24 },
   labelCaps: {
     fontFamily: font.mono,
     fontSize: 12,
     lineHeight: 16,
-    letterSpacing: 1.2,
+    letterSpacing: 1.2, // 0.1em
     textTransform: 'uppercase' as const,
   },
-  metricLg: { fontFamily: font.display, fontSize: 40, lineHeight: 44 },
-  labelButton: { fontFamily: font.headline, fontSize: 18, lineHeight: 24 },
+  metricLg: { fontFamily: font.bold, fontSize: 40, lineHeight: 40 },
+  // Handoff §2 addition (not in DESIGN.md frontmatter): button labels.
+  labelButton: { fontFamily: font.semibold, fontSize: 18, lineHeight: 24 },
 } as const;
 
 // — Motion — hone-motion-haptic-spec.md §1, complete. Reanimated takes
