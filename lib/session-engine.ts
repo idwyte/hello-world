@@ -72,6 +72,8 @@ export type SessionRunner = {
   pause: () => void;
   resume: () => void;
   stop: () => void;
+  /** User-driven fast-forward of the current phase (Figma 11 "Skip phase"). */
+  skip: () => void;
   getState: () => SessionState;
   /** Advance internal clock — used by tests; in production driver, `tick()` is called from setInterval. */
   tick: (now: number) => void;
@@ -174,6 +176,19 @@ export function createSessionRunner(
       if (wasRunning) {
         callbacks.onAbort?.(state());
       }
+    },
+    /**
+     * Skip the current phase — fast-forwards phaseStartedAt so the next
+     * advance() (or the very next tick) treats this phase as elapsed.
+     * Powers the "Skip phase" affordance on /session/player (Figma 11).
+     */
+    skip() {
+      if (status !== 'running') return;
+      // Force the current phase to look fully elapsed; advance() fires
+      // onPhaseEnd + onPhaseStart and either lands on the next phase or
+      // marks the session done.
+      phaseStartedAt = now() - timeline[phaseIndex].durationMs;
+      advance(now());
     },
     getState: state,
     tick(time: number) {

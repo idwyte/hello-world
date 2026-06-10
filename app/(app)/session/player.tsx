@@ -1,24 +1,40 @@
-// Obsidian Kinetic: 11 · Active Session (handoff §4 Phase A).
-// PhaseRing hero (glow = live), phase word + countdown inside the ring,
-// exercise progress dots, SET/REP/TIME meta row, lime pause disc, muted
-// End link. Pause sheet is "still to design" in Figma (handoff §4) so it
-// reuses the same token styling in-place.
+// Obsidian Kinetic: 11 · Active Session — Figma node 57:225.
 //
-// All engine + persistence logic is unchanged from the pre-redesign
-// player: session-engine runner, 50ms tick, Supabase logging, RPE
-// routing with the inserted session id.
+// Structure (top → bottom):
+//   - ScreenHeader (close × + centered title "Day N · {programName}")
+//   - PHASE n OF N · KIND lime caps kicker
+//   - HUGE phase verb headline (56px Bold uppercase, e.g. "HOLD")
+//   - PhaseRing — countdown + contextual caption inside ("HOLD —
+//     KEEP BREATHING")
+//   - Phase progress dots
+//   - Flex spacer
+//   - Full-width lime Pause button
+//   - "Skip phase" ghost text
+//
+// "Phases" in Figma maps to `day.exercises` length: the program day has
+// N exercises, each treated as a phase block. The engine's inner
+// squeeze/hold/release kinds become the contextual caption and big verb.
+//
+// Engine wiring unchanged: session-engine runner, 50ms tick, supabase
+// log on complete, sessionIdRef → /session/rpe.
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Pause } from 'lucide-react-native';
+import { X } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Alert, Pressable, Text, View } from 'react-native';
+import {
+  AccessibilityInfo,
+  Alert,
+  Pressable,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, PhaseRing } from '@/components/obsidian';
+import { PhaseRing } from '@/components/obsidian';
 import { hasSupabaseConfig } from '@/lib/env';
 import { EXERCISES, getExercise } from '@/lib/exercises';
 import { play, patternForPhase } from '@/lib/haptics';
-import { color, overlay, radius, spacing, type } from '@/lib/obsidian/tokens';
+import { color, radius, spacing, type } from '@/lib/obsidian/tokens';
 import {
   type SessionState,
   type SessionRunner,
@@ -26,12 +42,9 @@ import {
   createSessionRunner,
 } from '@/lib/session-engine';
 import { fetchTodayProgramDay, logCompletedSession } from '@/lib/sessions';
-import type { ExerciseTemplate, PhaseKind, ProgramDay } from '@/lib/types';
+import type { PhaseKind, ProgramDay } from '@/lib/types';
 import { useSessionStore } from '@/stores/session';
 
-// Hardcoded program day for the dev-without-backend M1 path. When Supabase
-// is configured the day comes from the user's active program (M3+ flow
-// reads program_days from Supabase in the pre-session screen).
 function fallbackDay(): ProgramDay {
   const short = getExercise('short_holds');
   const quick = getExercise('quick_flicks');
@@ -42,12 +55,50 @@ function fallbackDay(): ProgramDay {
   };
 }
 
+// Big headline word: CONTRACT / HOLD / RELEASE / REST / READY.
+function phaseVerb(kind: PhaseKind): string {
+  switch (kind) {
+    case 'prep':
+      return 'READY';
+    case 'squeeze':
+      return 'CONTRACT';
+    case 'hold':
+      return 'HOLD';
+    case 'release':
+      return 'RELEASE';
+    case 'rest':
+      return 'REST';
+    case 'done':
+      return 'DONE';
+  }
+}
+
+// Contextual caption shown INSIDE the ring under the countdown. Plain
+// English, mono caps — matches Figma "HOLD — KEEP BREATHING".
+function phaseRingCaption(kind: PhaseKind): string {
+  switch (kind) {
+    case 'prep':
+      return 'GET READY';
+    case 'squeeze':
+      return 'CONTRACT — FIRM AND LIFT';
+    case 'hold':
+      return 'HOLD — KEEP BREATHING';
+    case 'release':
+      return 'RELEASE — LET IT GO';
+    case 'rest':
+      return 'REST — RECOVER';
+    case 'done':
+      return 'DONE';
+  }
+}
+
+// VoiceOver announcement (full sentence, no caps tracking).
 function phaseAnnouncement(kind: PhaseKind): string {
   switch (kind) {
     case 'prep':
       return 'Get ready';
     case 'squeeze':
-      return 'Squeeze';
+      return 'Contract';
     case 'hold':
       return 'Hold';
     case 'release':
@@ -59,18 +110,11 @@ function phaseAnnouncement(kind: PhaseKind): string {
   }
 }
 
-// Work phases carry the lime; release is cyan ("system feedback");
-// prep/rest stay muted. Used for the phase caption above the ring.
-function phaseColor(kind: PhaseKind): string {
-  switch (kind) {
-    case 'squeeze':
-    case 'hold':
-      return color.primaryContainer;
-    case 'release':
-      return color.secondaryContainer;
-    default:
-      return color.onSurfaceVariant;
-  }
+function formatCountdown(ms: number): string {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
 export default function Player() {
@@ -96,9 +140,12 @@ export default function Player() {
     AccessibilityInfo.announceForAccessibility('Resumed');
   }
 
-  function handleEnd() {
-    // Double-confirm: the affordance is small + muted but the action is
-    // destructive (this session's progress won't be saved).
+  function handleSkipPhase() {
+    runnerRef.current?.skip();
+    setTick((t) => t + 1);
+  }
+
+  function handleClose() {
     Alert.alert(
       'End this session?',
       "Your progress for this day won't be saved.",
@@ -116,10 +163,6 @@ export default function Player() {
     );
   }
 
-  // Fetch today's program day. If the query is still loading we start a
-  // session against the fallback (M1 demo) day; the player blocks navigation
-  // until the timeline is built so this is effectively synchronous from the
-  // user's POV.
   const todayDayQuery = useQuery({
     queryKey: ['program-day', 'today'],
     enabled: hasSupabaseConfig(),
@@ -160,12 +203,12 @@ export default function Player() {
       onPhaseStart: (phase) => {
         const pattern = patternForPhase(phase.kind);
         if (pattern) void play(pattern);
-        AccessibilityInfo.announceForAccessibility(phaseAnnouncement(phase.kind));
+        AccessibilityInfo.announceForAccessibility(
+          phaseAnnouncement(phase.kind),
+        );
         setTick((t) => t + 1);
       },
-      onPhaseEnd: () => {
-        setTick((t) => t + 1);
-      },
+      onPhaseEnd: () => setTick((t) => t + 1),
       onComplete: () => {
         const endedAt = Date.now();
         logSession({
@@ -190,14 +233,10 @@ export default function Player() {
             void queryClient.invalidateQueries({ queryKey: ['streak'] });
             void queryClient.invalidateQueries({ queryKey: ['sessions'] });
           })
-          .catch(() => {
-            // Don't block the success screen on a sync failure.
-          });
+          .catch(() => {});
         setTick((t) => t + 1);
       },
-      onAbort: () => {
-        setTick((t) => t + 1);
-      },
+      onAbort: () => setTick((t) => t + 1),
     });
 
     runnerRef.current = runner;
@@ -217,7 +256,6 @@ export default function Player() {
   }, [day, programDayId]);
 
   const state: SessionState | null = runnerRef.current?.getState() ?? null;
-
   void tick;
 
   if (!state) {
@@ -238,8 +276,6 @@ export default function Player() {
   }
 
   if (state.status === 'done') {
-    // Pass session stats as router params: player → RPE → complete. The
-    // RPE screen attaches the effort rating to the just-logged session row.
     const durationS = Math.max(
       0,
       Math.floor((Date.now() - startedAtRef.current) / 1000),
@@ -249,74 +285,55 @@ export default function Player() {
       0,
     );
     const todayMeta = todayDayQuery.data;
+    // Auto-forward to RPE — no intermediate confirm needed in the
+    // Obsidian Kinetic flow (Figma 12 acts as that confirmation).
+    setTimeout(() => {
+      router.replace({
+        pathname: '/session/rpe',
+        params: {
+          sessionId: sessionIdRef.current ?? '',
+          durationS: durationS.toString(),
+          reps: totalReps.toString(),
+          dayNumber: todayMeta?.dayNumber?.toString() ?? '',
+          weekNumber: todayMeta?.weekNumber?.toString() ?? '',
+        },
+      });
+    }, 0);
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
-        <View
-          style={{
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: spacing.containerPadding,
-          }}
-        >
-          <Text style={{ ...type.headlineLg, color: color.primaryContainer }}>
-            Session complete
-          </Text>
-          <Text
-            style={{
-              ...type.bodyMd,
-              color: color.onSurfaceVariant,
-              marginTop: spacing.stackSm,
-              textAlign: 'center',
-            }}
-          >
-            Nice. Consistency is the whole game.
-          </Text>
-          <Button
-            label="Continue"
-            onPress={() =>
-              router.replace({
-                pathname: '/session/rpe',
-                params: {
-                  sessionId: sessionIdRef.current ?? '',
-                  durationS: durationS.toString(),
-                  reps: totalReps.toString(),
-                  dayNumber: todayMeta?.dayNumber?.toString() ?? '',
-                  weekNumber: todayMeta?.weekNumber?.toString() ?? '',
-                },
-              })
-            }
-            style={{ marginTop: spacing.stackLg, alignSelf: 'stretch' }}
-          />
-        </View>
+      <SafeAreaView
+        style={{
+          flex: 1,
+          backgroundColor: color.background,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
+          Finishing…
+        </Text>
       </SafeAreaView>
     );
   }
 
+  const phase = state.phase;
+  const phaseCountdownMs = Math.max(0, phase.durationMs - state.phaseElapsedMs);
   const phaseProgress =
-    state.phase.durationMs > 0
-      ? Math.min(1, state.phaseElapsedMs / state.phase.durationMs)
+    phase.durationMs > 0
+      ? Math.min(1, state.phaseElapsedMs / phase.durationMs)
       : 1;
 
-  const currentExercise = day.exercises[state.phase.exerciseIndex];
-  const dayNumber = todayDayQuery.data?.dayNumber;
-  const countdownS = Math.ceil(
-    (state.phase.durationMs - state.phaseElapsedMs) / 1000,
-  );
-  const elapsedLabel = formatElapsed(Math.floor(state.totalElapsedMs / 1000));
-  const headerLabel = currentExercise
-    ? dayNumber
-      ? `DAY ${dayNumber} · ${currentExercise.name}`
-      : currentExercise.name
-    : dayNumber
-      ? `DAY ${dayNumber}`
-      : '';
-  const setLabel = currentExercise
-    ? `${state.phase.setIndex + 1}/${currentExercise.sets}`
-    : '—';
-  const repLabel = currentExercise
-    ? `${state.phase.repIndex + 1}/${currentExercise.reps}`
-    : '—';
+  const programName =
+    day.exercises
+      .map((ex) => ex.name)
+      .slice(0, 2)
+      .join(' + ') || 'Session';
+  const dayNumber = todayDayQuery.data?.dayNumber ?? 1;
+
+  // "Phases" unit = exercises in the day. The current "phase number" is
+  // the exercise index + 1.
+  const phaseNumber = phase.exerciseIndex + 1;
+  const totalPhases = day.exercises.length;
+  const verb = phaseVerb(phase.kind);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
@@ -324,324 +341,150 @@ export default function Player() {
         style={{
           flex: 1,
           alignItems: 'center',
-          justifyContent: 'space-between',
           paddingHorizontal: spacing.containerPadding,
-          paddingVertical: spacing.stackLg,
+          paddingBottom: spacing.stackLg + spacing.stackMd,
         }}
       >
-        {/* Context header */}
-        <View style={{ alignItems: 'center', minHeight: 24 }}>
-          <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
-            {headerLabel}
-          </Text>
-        </View>
-
-        {/* Hero: phase word above the ring, ring carries countdown +
-            SECONDS caption. Glow only while live (motion spec §4). */}
-        <View
-          style={{ alignItems: 'center' }}
-          accessibilityLabel={`${phaseAnnouncement(state.phase.kind)}, ${countdownS} seconds remaining`}
-          accessibilityLiveRegion="polite"
-        >
-          <Text
-            style={{
-              ...type.headlineMd,
-              color: phaseColor(state.phase.kind),
-              textTransform: 'uppercase',
-              letterSpacing: 2,
-            }}
-          >
-            {phaseAnnouncement(state.phase.kind)}
-          </Text>
-          <View style={{ marginTop: spacing.stackLg }}>
-            <PhaseRing
-              progress={phaseProgress}
-              glow={!isPaused}
-              time={String(countdownS)}
-              caption="seconds"
-              durationMs={state.phase.durationMs}
-            />
-          </View>
-          {/* Exercise progress dots — done dim-lime · current lime ·
-              upcoming outline */}
-          <View
-            style={{
-              flexDirection: 'row',
-              gap: spacing.stackSm,
-              marginTop: spacing.stackLg,
-            }}
-          >
-            {day.exercises.map((ex, i) => {
-              const dotColor =
-                i < state.phase.exerciseIndex
-                  ? color.primaryFixedDim
-                  : i === state.phase.exerciseIndex
-                    ? color.primaryContainer
-                    : color.outlineVariant;
-              return (
-                <View
-                  key={`${ex.slug}-${i}`}
-                  style={{
-                    width: i === state.phase.exerciseIndex ? 20 : 6,
-                    height: 6,
-                    borderRadius: radius.full,
-                    backgroundColor: dotColor,
-                  }}
-                />
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Bottom: meta row · lime pause disc · End link */}
-        <View style={{ alignItems: 'center' }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: spacing.stackLg,
-            }}
-          >
-            <StatCol kicker="SET" value={setLabel} />
-            <DividerDot />
-            <StatCol kicker="REP" value={repLabel} />
-            <DividerDot />
-            <StatCol kicker="TIME" value={elapsedLabel} />
-          </View>
-
-          <Pressable
-            onPress={handlePause}
-            accessibilityRole="button"
-            accessibilityLabel="Pause session"
-            hitSlop={8}
-            style={({ pressed }) => ({
-              marginTop: spacing.stackLg + spacing.stackSm,
-              width: 72,
-              height: 72,
-              borderRadius: radius.full,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: color.primaryContainer,
-              opacity: pressed ? 0.85 : 1,
-            })}
-          >
-            <Pause
-              size={28}
-              color={color.onPrimaryFixed}
-              fill={color.onPrimaryFixed}
-            />
-          </Pressable>
-
-          <Pressable
-            onPress={handleEnd}
-            accessibilityRole="button"
-            accessibilityLabel="End session"
-            hitSlop={8}
-            style={({ pressed }) => ({
-              marginTop: spacing.stackMd,
-              opacity: pressed ? 0.6 : 1,
-            })}
-          >
-            <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
-              End session
-            </Text>
-          </Pressable>
-        </View>
-      </View>
-
-      {isPaused ? (
-        <PauseOverlay
-          state={state}
-          exercise={currentExercise}
-          onResume={handleResume}
-          onEnd={handleEnd}
-        />
-      ) : null}
-    </SafeAreaView>
-  );
-}
-
-// Pause sheet — modal overlay on /session/player (keeps runner state
-// alive; a separate route would lose it on mount). Obsidian Kinetic
-// restyle of the v1.2 sheet; the dedicated Figma pause sheet is still
-// to design (handoff §4) so this is the token-faithful interim.
-function PauseOverlay({
-  state,
-  exercise,
-  onResume,
-  onEnd,
-}: {
-  state: SessionState;
-  exercise: ExerciseTemplate | undefined;
-  onResume: () => void;
-  onEnd: () => void;
-}) {
-  // totalElapsedMs is pause-aware in the engine — freezes at the moment
-  // of pause via the `pausedAt - sessionStartedAt - totalPausedMs` branch.
-  const elapsedS = Math.max(0, Math.floor(state.totalElapsedMs / 1000));
-  const elapsedLabel = formatElapsed(elapsedS);
-  const setLabel = exercise
-    ? `${state.phase.setIndex + 1}/${exercise.sets}`
-    : '—';
-  const repLabel = exercise
-    ? `${state.phase.repIndex + 1}/${exercise.reps}`
-    : '—';
-  const phaseLabel = shortPhaseLabel(state.phase.kind);
-
-  return (
-    <View
-      style={{
-        position: 'absolute',
-        top: 0,
-        right: 0,
-        bottom: 0,
-        left: 0,
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-        backgroundColor: overlay.scrim,
-      }}
-      accessibilityViewIsModal
-    >
-      <View
-        style={{
-          width: '100%',
-          paddingHorizontal: spacing.containerPadding,
-          paddingBottom: 28,
-          paddingTop: spacing.gutter,
-          backgroundColor: color.surfaceContainerLow,
-          borderTopLeftRadius: spacing.stackLg,
-          borderTopRightRadius: spacing.stackLg,
-        }}
-      >
+        {/* Header — × close, centered title */}
         <View
           style={{
-            alignSelf: 'center',
-            width: 36,
-            height: 5,
-            borderRadius: 2.5,
-            backgroundColor: color.outline,
-            opacity: 0.5,
-          }}
-        />
-
-        <View style={{ alignItems: 'center', marginTop: spacing.stackMd }}>
-          <Text style={{ ...type.labelCaps, color: color.primaryContainer }}>
-            Paused
-          </Text>
-          <Text
-            style={{
-              ...type.display,
-              fontSize: 64,
-              lineHeight: 72,
-              color: color.onSurface,
-              marginTop: 6,
-            }}
-          >
-            {elapsedLabel}
-          </Text>
-        </View>
-
-        <View
-          style={{
+            height: 56,
+            width: '100%',
             flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'center',
-            marginTop: spacing.stackMd + 4,
-            gap: spacing.stackLg,
+            justifyContent: 'space-between',
           }}
         >
-          <StatCol kicker="SET" value={setLabel} />
-          <DividerDot />
-          <StatCol kicker="REP" value={repLabel} />
-          <DividerDot />
-          <StatCol kicker="PHASE" value={phaseLabel} />
-        </View>
-
-        <View style={{ marginTop: spacing.stackLg + spacing.stackSm }}>
-          <Button label="Resume" onPress={onResume} />
           <Pressable
-            onPress={onEnd}
+            onPress={handleClose}
+            hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel="End session"
-            style={({ pressed }) => ({
-              height: 28,
-              marginTop: spacing.gutter,
+            style={{
+              width: 44,
+              height: 44,
               alignItems: 'center',
               justifyContent: 'center',
-              opacity: pressed ? 0.6 : 1,
-            })}
+            }}
           >
-            <Text
-              style={{
-                ...type.bodyMd,
-                fontSize: 14,
-                lineHeight: 20,
-                color: color.onSurfaceVariant,
-              }}
-            >
-              End session
-            </Text>
+            <X size={24} color={color.onSurface} />
           </Pressable>
+          <Text
+            style={{
+              ...type.labelButton,
+              color: color.onSurface,
+              flex: 1,
+              textAlign: 'center',
+            }}
+          >
+            Day {dayNumber} · {programName}
+          </Text>
+          <View style={{ width: 44, height: 44 }} />
         </View>
+
+        <View style={{ height: spacing.stackLg }} />
+
+        {/* PHASE n OF N · KIND */}
+        <Text
+          style={{ ...type.labelCaps, color: color.primaryFixedDim }}
+          accessibilityLiveRegion="polite"
+        >
+          PHASE {phaseNumber} OF {totalPhases} · {verb}
+        </Text>
+
+        <View style={{ height: spacing.stackSm }} />
+
+        {/* Huge verb headline */}
+        <Text
+          style={{
+            ...type.headlineLg,
+            fontSize: 56,
+            lineHeight: 52,
+            letterSpacing: -1.12,
+            color: color.onSurface,
+            textTransform: 'uppercase',
+          }}
+        >
+          {verb}
+        </Text>
+
+        <View style={{ height: spacing.stackLg + spacing.stackMd }} />
+
+        {/* Ring */}
+        <PhaseRing
+          progress={phaseProgress}
+          glow={!isPaused}
+          time={formatCountdown(phaseCountdownMs)}
+          caption={phaseRingCaption(phase.kind)}
+          size={280}
+          strokeWidth={6}
+          durationMs={phase.durationMs}
+        />
+
+        <View style={{ height: spacing.stackLg }} />
+
+        {/* Phase dots */}
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {day.exercises.map((ex, i) => {
+            const isDone = i < phase.exerciseIndex;
+            const isCurrent = i === phase.exerciseIndex;
+            return (
+              <View
+                key={`${ex.slug}-${i}`}
+                style={{
+                  width: isCurrent ? 12 : 8,
+                  height: 8,
+                  borderRadius: radius.full,
+                  backgroundColor:
+                    isDone || isCurrent
+                      ? color.primaryContainer
+                      : color.surfaceContainerHigh,
+                  opacity: isDone ? 0.55 : 1,
+                }}
+              />
+            );
+          })}
+        </View>
+
+        <View style={{ flex: 1 }} />
+
+        {/* Pause + Skip phase */}
+        <Pressable
+          onPress={isPaused ? handleResume : handlePause}
+          accessibilityRole="button"
+          accessibilityLabel={isPaused ? 'Resume session' : 'Pause session'}
+          style={({ pressed }) => ({
+            width: '100%',
+            height: 56,
+            borderRadius: radius.xl,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: color.primaryContainer,
+            opacity: pressed ? 0.85 : 1,
+          })}
+        >
+          <Text style={{ ...type.labelButton, color: color.onPrimaryFixed }}>
+            {isPaused ? 'Resume' : 'Pause'}
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={handleSkipPhase}
+          accessibilityRole="button"
+          accessibilityLabel="Skip phase"
+          hitSlop={8}
+          style={({ pressed }) => ({
+            marginTop: spacing.gutter,
+            opacity: pressed ? 0.6 : 1,
+          })}
+        >
+          <Text
+            style={{ ...type.labelButton, color: color.onSurfaceVariant }}
+          >
+            Skip phase
+          </Text>
+        </Pressable>
       </View>
-    </View>
+    </SafeAreaView>
   );
-}
-
-function StatCol({ kicker, value }: { kicker: string; value: string }) {
-  return (
-    <View style={{ alignItems: 'center', gap: 4 }}>
-      <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
-        {kicker}
-      </Text>
-      <Text
-        style={{
-          ...type.metricLg,
-          fontSize: 22,
-          lineHeight: 28,
-          color: color.onSurface,
-        }}
-      >
-        {value}
-      </Text>
-    </View>
-  );
-}
-
-function DividerDot() {
-  return (
-    <View
-      style={{
-        width: 4,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: color.outline,
-        opacity: 0.5,
-      }}
-    />
-  );
-}
-
-function shortPhaseLabel(kind: PhaseKind): string {
-  switch (kind) {
-    case 'prep':
-      return 'Prep';
-    case 'squeeze':
-      return 'Squeeze';
-    case 'hold':
-      return 'Hold';
-    case 'release':
-      return 'Release';
-    case 'rest':
-      return 'Rest';
-    case 'done':
-      return 'Done';
-  }
-}
-
-function formatElapsed(totalS: number): string {
-  const m = Math.floor(totalS / 60);
-  const s = totalS % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
 }

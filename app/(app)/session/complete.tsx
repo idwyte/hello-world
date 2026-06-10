@@ -1,35 +1,66 @@
-// Obsidian Kinetic: 13 · Session Complete (handoff §4 Phase A).
-// Success hero + DURATION/REPS/STREAK glass stats + the post-session
-// Index-impact card (ambient measurement: the Hone Index surfaced at
-// the moment of payoff) + rating prompt + Done.
+// Obsidian Kinetic: 13 · Session Complete — Figma node 58:258.
 //
-// Wiring (unchanged): params from player→RPE→here; user display name
-// from auth metadata; expo-store-review for the 4+ star path;
-// notificationSuccess haptic on mount = "earned closure" (spec §2).
+// Layout:
+//   - 72px lime check ring (border-only, primary-container, check inside)
+//   - "Session complete" headlineLg, centered
+//   - "Day N of 56 · X minutes" body-md muted
+//   - 3-up stat row: TIME / EFFORT / STREAK (label-less third tile per
+//     Figma — just the metric)
+//   - INDEX IMPACT card: lime border 1.5px, primary-fixed-dim kicker,
+//     "{AXIS} trending up" axis hint, body copy about the week and the
+//     retest cadence
+//   - Done (primary) + Share progress (ghost)
+//
+// Rating prompt deferred — Figma 58:258 doesn't include it. Store-review
+// wiring kept as a lib import for future surfaces (paywall etc.).
+//
+// INDEX IMPACT axis label: v2 assessment introduces 5 axes (STRENGTH ·
+// STAMINA · REPEAT · SPEED · CONTROL); the per-axis impact logic is a
+// Phase B follow-up. For now the most recent index level is shown as a
+// proxy ("Stamina trending up" maps to the strongest axis when v2 data
+// is available).
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as StoreReview from 'expo-store-review';
 import { Check } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useEffect } from 'react';
+import { Share, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Card } from '@/components/obsidian';
+import { Button } from '@/components/obsidian';
 import { hasSupabaseConfig } from '@/lib/env';
 import { fireHaptic } from '@/lib/obsidian/haptics';
-import { color, glass, radius, spacing, type } from '@/lib/obsidian/tokens';
+import {
+  color,
+  glass,
+  radius,
+  spacing,
+  type,
+} from '@/lib/obsidian/tokens';
 import {
   RETEST_INTERVAL_DAYS,
   daysSinceLastIndex,
   fetchIndexHistory,
-  fetchUserDisplayName,
+  fetchRecentSessions,
 } from '@/lib/sessions';
 
-function formatDuration(s: number): string {
+function formatTime(s: number): string {
   if (!Number.isFinite(s) || s < 0) return '—';
   const mins = Math.floor(s / 60);
   const secs = Math.floor(s % 60);
-  return `${mins}:${String(secs).padStart(2, '0')}`;
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+function formatMinutes(s: number): string {
+  if (!Number.isFinite(s) || s < 0) return '—';
+  const mins = Math.max(1, Math.round(s / 60));
+  return `${mins} minute${mins === 1 ? '' : 's'}`;
+}
+
+function indexAxisLabel(level: string | undefined): string {
+  // Until the v2 5-axis profile lands, surface the active level (beginner/
+  // intermediate/advanced) as a proxy axis. Caps for the kicker pattern.
+  if (!level) return 'STAMINA';
+  return level.toUpperCase();
 }
 
 export default function SessionComplete() {
@@ -43,293 +74,199 @@ export default function SessionComplete() {
     rpe?: string;
   }>();
   const durationS = Number(params.durationS);
-  const reps = Number(params.reps);
   const dayNumber = Number(params.dayNumber);
-  const weekNumber = Number(params.weekNumber);
-  // Default streak delta = +1 (session completed extends today's streak).
-  const streakDelta = Number(params.streakDelta ?? '1');
-
-  const nameQuery = useQuery({
-    queryKey: ['user', 'name'],
-    enabled: hasSupabaseConfig(),
-    queryFn: fetchUserDisplayName,
-  });
-  const userName = nameQuery.data || 'friend';
+  const rpe = Number(params.rpe);
 
   const indexQuery = useQuery({
     queryKey: ['index', 'history'],
     enabled: hasSupabaseConfig(),
     queryFn: () => fetchIndexHistory(12),
   });
+  const sessionsQuery = useQuery({
+    queryKey: ['sessions', 'recent'],
+    enabled: hasSupabaseConfig(),
+    queryFn: () => fetchRecentSessions(60),
+  });
+
   const history = indexQuery.data ?? [];
   const latest = history.at(-1) ?? null;
   const prior = history.at(-2) ?? null;
   const indexDelta =
     latest && prior ? Math.round(latest.composite - prior.composite) : null;
   const daysSince = daysSinceLastIndex(history);
-  const retestDue = daysSince !== null && daysSince >= RETEST_INTERVAL_DAYS;
+  const weeksToRetest =
+    daysSince !== null
+      ? Math.max(0, Math.ceil((RETEST_INTERVAL_DAYS - daysSince) / 7))
+      : null;
+
+  const strongSessionsThisWeek = (sessionsQuery.data ?? []).filter((s) => {
+    const t =
+      typeof s.endedAt === 'string' ? new Date(s.endedAt).getTime() : 0;
+    return t > Date.now() - 7 * 86_400_000;
+  }).length;
 
   // Earned closure — one success notification as the screen lands.
   useEffect(() => {
     void fireHaptic('sessionComplete');
   }, []);
 
-  const subhead =
-    Number.isFinite(dayNumber) && Number.isFinite(weekNumber)
-      ? `Day ${dayNumber} of Week ${weekNumber} · complete.`
-      : 'Session complete.';
+  const safeDay = Number.isFinite(dayNumber) ? dayNumber : 1;
+  const timeLabel = formatTime(durationS);
+  const effortLabel = Number.isFinite(rpe) && rpe > 0 ? `${rpe}/10` : '—';
+  const streakLabel = String(history.length || strongSessionsThisWeek || 0);
 
-  const durationLabel = formatDuration(durationS);
-  const repsLabel = Number.isFinite(reps) && reps > 0 ? reps.toString() : '—';
-  const streakLabel =
-    streakDelta > 0
-      ? `+${streakDelta}`
-      : streakDelta === 0
-        ? '—'
-        : streakDelta.toString();
+  const axisLabel = indexAxisLabel(latest?.level);
+  const trend =
+    indexDelta === null
+      ? 'tracking'
+      : indexDelta > 0
+        ? 'trending up'
+        : indexDelta < 0
+          ? 'easing back'
+          : 'steady';
+
+  function handleShare() {
+    void Share.share({
+      message: `Day ${safeDay} done — ${formatMinutes(durationS)} on Hone. ${axisLabel} ${trend}.`,
+    });
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{
+      <View
+        style={{
+          flex: 1,
           paddingHorizontal: spacing.containerPadding,
-          paddingBottom: 120,
+          paddingTop: 72 - 32, // Figma puts the hero ~72px from top
+          paddingBottom: spacing.stackLg + spacing.stackMd,
+          gap: spacing.stackMd,
         }}
       >
-        {/* Hero — lime success disc + halo (glow = the one live element) */}
-        <View style={{ alignItems: 'center', marginTop: spacing.stackLg * 2 }}>
+        {/* Lime check ring */}
+        <View style={{ alignItems: 'center' }}>
           <View
             style={{
-              width: 120,
-              height: 120,
+              width: 72,
+              height: 72,
               borderRadius: radius.full,
+              borderWidth: 2,
+              borderColor: color.primaryContainer,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: 'rgba(195, 244, 0, 0.18)',
             }}
           >
-            <View
-              style={{
-                width: 96,
-                height: 96,
-                borderRadius: radius.full,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: color.primaryContainer,
-              }}
-            >
-              <Check size={48} color={color.onPrimaryFixed} strokeWidth={3} />
-            </View>
+            <Check size={36} color={color.primaryContainer} strokeWidth={3} />
           </View>
           <Text
             style={{
               ...type.headlineLg,
               color: color.onSurface,
-              marginTop: spacing.stackLg,
               textAlign: 'center',
+              marginTop: spacing.stackMd,
             }}
           >
-            Nice work, {userName}
+            Session complete
           </Text>
           <Text
             style={{
               ...type.bodyMd,
               color: color.onSurfaceVariant,
-              marginTop: spacing.stackSm,
               textAlign: 'center',
+              marginTop: 2,
             }}
           >
-            {subhead}
+            Day {safeDay} of 56 · {formatMinutes(durationS)}
           </Text>
         </View>
 
-        {/* 3-up glass stats */}
+        {/* 3-up stat row */}
+        <View style={{ flexDirection: 'row', gap: spacing.gutter }}>
+          <StatTile label="TIME" value={timeLabel} />
+          <StatTile label="EFFORT" value={effortLabel} />
+          <StatTile value={streakLabel} />
+        </View>
+
+        {/* INDEX IMPACT — lime-bordered card */}
         <View
           style={{
-            flexDirection: 'row',
-            gap: spacing.gutter,
-            marginTop: spacing.stackLg + spacing.stackSm,
+            backgroundColor: color.surfaceContainerLow,
+            borderColor: color.primaryContainer,
+            borderWidth: 1.5,
+            borderRadius: radius.xl,
+            padding: spacing.stackMd,
+            gap: 6,
           }}
         >
-          <Card label="Duration" value={durationLabel} compact style={{ flex: 1 }} />
-          <Card label="Reps" value={repsLabel} compact style={{ flex: 1 }} />
-          <Card label="Streak" value={streakLabel} compact style={{ flex: 1 }} />
-        </View>
-
-        {/* Post-session Index-impact card — ambient measurement. Shown
-            only when there's at least one real measurement. */}
-        {latest && (
-          <Card label="Hone Index" style={{ marginTop: spacing.gutter }}>
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'flex-end',
-                justifyContent: 'space-between',
-                marginTop: spacing.stackSm,
-              }}
-            >
-              <Text style={{ ...type.metricLg, color: color.onSurface }}>
-                {Math.round(latest.composite)}
-              </Text>
-              {indexDelta !== null && (
-                <Text
-                  style={{
-                    ...type.labelCaps,
-                    color:
-                      indexDelta >= 0
-                        ? color.primaryContainer
-                        : color.onSurfaceVariant,
-                    paddingBottom: 6,
-                  }}
-                >
-                  {indexDelta >= 0 ? `▲ +${indexDelta}` : `▼ ${indexDelta}`}
-                </Text>
-              )}
-            </View>
+          <Text
+            style={{ ...type.labelCaps, color: color.primaryFixedDim }}
+          >
+            INDEX IMPACT
+          </Text>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'baseline',
+              gap: 8,
+            }}
+          >
             <Text
               style={{
-                ...type.bodyMd,
-                fontSize: 14,
-                lineHeight: 20,
+                ...type.labelCaps,
                 color: color.onSurfaceVariant,
-                marginTop: spacing.stackSm,
               }}
             >
-              {retestDue
-                ? 'Retest due — two minutes refreshes your trend.'
-                : daysSince !== null
-                  ? `Next retest in ${Math.max(0, RETEST_INTERVAL_DAYS - daysSince)} days. Consistent sessions move this number.`
-                  : 'Consistent sessions move this number.'}
+              {axisLabel}
             </Text>
-          </Card>
-        )}
-
-        <View style={{ alignItems: 'center', marginTop: spacing.stackLg }}>
-          <RatingPrompt />
+            <Text style={{ ...type.bodyMd, color: color.onSurface }}>
+              {trend}
+            </Text>
+          </View>
+          <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
+            {strongSessionsThisWeek} strong session
+            {strongSessionsThisWeek === 1 ? '' : 's'} this week
+            {weeksToRetest !== null
+              ? ` — your next retest is in ${weeksToRetest} week${weeksToRetest === 1 ? '' : 's'}.`
+              : '.'}
+          </Text>
         </View>
-      </ScrollView>
 
-      <View
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          paddingHorizontal: spacing.containerPadding,
-          paddingBottom: spacing.stackLg + spacing.stackSm,
-        }}
-      >
-        <Button label="Done" onPress={() => router.replace('/home')} />
+        <View style={{ flex: 1 }} />
+
+        <Button
+          label="Done"
+          onPress={() => router.replace('/home')}
+          style={{ width: '100%' }}
+        />
+        <Button
+          label="Share progress"
+          variant="ghost"
+          onPress={handleShare}
+          style={{ width: '100%' }}
+        />
       </View>
     </SafeAreaView>
   );
 }
 
-// Rating widget — value 0 = awaiting tap; 1-3 = thanks; 4-5 = store
-// review CTA via expo-store-review (SKStoreReviewController on iOS,
-// Play in-app review on Android; both throttle silently).
-function RatingPrompt() {
-  const [value, setValue] = useState(0);
-  const isSubmitted = value > 0;
-  const isHighRating = value >= 4;
-
-  const headline = !isSubmitted
-    ? 'How was your session?'
-    : isHighRating
-      ? 'Glad it landed.'
-      : 'Thanks for the feedback.';
-  const body = !isSubmitted
-    ? 'Tap a star to rate. It helps us tune the program.'
-    : isHighRating
-      ? 'Would you mind rating Hone on the App Store? Takes 10 seconds.'
-      : 'We’ll keep tuning the program from your retest data.';
-
+function StatTile({ label, value }: { label?: string; value: string }) {
   return (
     <View
       style={{
-        width: '100%',
-        alignItems: 'center',
-        backgroundColor: glass.fill,
+        flex: 1,
+        backgroundColor: color.surfaceContainerLow,
         borderColor: glass.border,
         borderWidth: glass.borderWidth,
         borderRadius: radius.xl,
-        paddingVertical: 28,
-        paddingHorizontal: spacing.stackLg,
+        padding: spacing.stackMd,
+        gap: spacing.stackMd,
       }}
     >
-      <Text
-        style={{
-          ...type.headlineMd,
-          fontSize: 18,
-          lineHeight: 26,
-          color: color.onSurface,
-          textAlign: 'center',
-        }}
-      >
-        {headline}
-      </Text>
-      <Text
-        style={{
-          ...type.bodyMd,
-          fontSize: 14,
-          lineHeight: 20,
-          color: color.onSurfaceVariant,
-          marginTop: spacing.stackSm,
-          textAlign: 'center',
-        }}
-      >
-        {body}
-      </Text>
-
-      {/* 5 stars — interactive even after submit so users can change */}
-      <View
-        style={{
-          flexDirection: 'row',
-          marginTop: spacing.stackLg,
-          gap: spacing.stackSm,
-        }}
-      >
-        {[1, 2, 3, 4, 5].map((n) => (
-          <Pressable
-            key={n}
-            onPress={() => setValue(n)}
-            hitSlop={6}
-            accessibilityRole="button"
-            accessibilityLabel={`${n} star${n === 1 ? '' : 's'}`}
-            accessibilityState={{ selected: n <= value }}
-          >
-            <Text
-              style={{
-                fontSize: 28,
-                lineHeight: 32,
-                color:
-                  n <= value ? color.primaryContainer : color.outlineVariant,
-              }}
-            >
-              {n <= value ? '★' : '☆'}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      {isHighRating ? (
-        <Button
-          label="Rate on the App Store"
-          onPress={() => {
-            void (async () => {
-              try {
-                if (await StoreReview.isAvailableAsync()) {
-                  await StoreReview.requestReview();
-                }
-              } catch {
-                // Native sheet unavailable — silent no-op.
-              }
-            })();
-          }}
-          style={{ marginTop: spacing.stackLg, alignSelf: 'stretch' }}
-        />
+      {label ? (
+        <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
+          {label}
+        </Text>
       ) : null}
+      <Text style={{ ...type.metricLg, color: color.onSurface }}>{value}</Text>
     </View>
   );
 }

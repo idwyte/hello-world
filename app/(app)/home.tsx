@@ -1,24 +1,31 @@
-// Obsidian Kinetic: 10 · Home (handoff §4 Phase A).
-// The ambient-measurement screen: Hone Index + trend lives here daily —
-// the brand promise kept visible — plus streak chip, today's session
-// card, and the weekly bars.
+// Obsidian Kinetic: 10 · Home — Figma node 53:207.
 //
-// Data wiring unchanged: streak / recent sessions / today's program day /
-// index history / display name queries, local Zustand fallbacks in dev.
+// Layout, top → bottom:
+//   - HONE wordmark (headlineMd 24/28 SemiBold) + 32px avatar (right)
+//   - Today HERO card: lime border 1.5px, TODAY · DAY N OF 56 kicker
+//     (primary-fixed-dim lime), 32/36 Bold title, "X min · Y phases"
+//     body-md muted, full-width lime Start session button
+//   - 2-up stat row:
+//       HONE INDEX card (cyan caps kicker) — 40px composite + ▲/▼ delta
+//       STREAK card — 40px day count + "days running" muted
+//   - THIS WEEK card with right-aligned "N / 7" lime — chunky bars (22px
+//     wide, heights scale with intensity), surface-container-high for
+//     untrained days
+//   - TOMORROW card — TOMORROW · HH:MM kicker, title 24/28, body muted
+//
+// All data wiring preserved: index/streak/today/sessions/name queries,
+// local Zustand fallbacks in dev.
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Droplet } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Card, Chip } from '@/components/obsidian';
+import { Button } from '@/components/obsidian';
 import { hasSupabaseConfig } from '@/lib/env';
 import { EXERCISES } from '@/lib/exercises';
-import { color, radius, spacing, type } from '@/lib/obsidian/tokens';
+import { color, glass, radius, spacing, type } from '@/lib/obsidian/tokens';
 import {
-  RETEST_INTERVAL_DAYS,
-  daysSinceLastIndex,
   fetchIndexHistory,
   fetchRecentSessions,
   fetchStreak,
@@ -27,37 +34,24 @@ import {
 } from '@/lib/sessions';
 import { useSessionStore } from '@/stores/session';
 
-function greetingFor(now: Date): string {
-  const h = now.getHours();
-  if (h >= 5 && h < 12) return 'Good morning';
-  if (h >= 12 && h < 18) return 'Good afternoon';
-  return 'Good evening';
-}
-
-function exerciseLabel(slug: string): string {
-  const ex = EXERCISES[slug];
-  if (!ex) return slug;
-  const holdPhase = ex.phases.find((p) => p.kind === 'hold');
-  if (holdPhase) {
-    const seconds = Math.round(holdPhase.durationMs / 1000);
-    return `${ex.name} · ${ex.sets} × ${seconds} s`;
-  }
-  return `${ex.name} · ${ex.sets} × ${ex.reps} reps`;
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
 const WEEKDAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-/** Monday-anchored start of the current week. */
 function weekStart(now: Date): Date {
   const d = new Date(now);
   const dow = (d.getDay() + 6) % 7; // Mon=0 … Sun=6
   d.setDate(d.getDate() - dow);
   d.setHours(0, 0, 0, 0);
   return d;
+}
+
+function tomorrow8am(): string {
+  return '08:00';
+}
+
+// Translate one user's initial into the avatar (uppercase letter); falls
+// back to the first character of "friend".
+function avatarInitial(name: string): string {
+  return (name.trim().charAt(0) || 'F').toUpperCase();
 }
 
 export default function Home() {
@@ -121,7 +115,10 @@ export default function Home() {
     }
     return counts;
   }, [sessionEnds]);
-  const sessionsThisWeek = weekCounts.reduce((a, b) => a + (b > 0 ? 1 : 0), 0);
+  const sessionsThisWeek = weekCounts.reduce(
+    (a, b) => a + (b > 0 ? 1 : 0),
+    0,
+  );
   const todayBarIndex = (new Date().getDay() + 6) % 7;
 
   const history = indexQuery.data ?? [];
@@ -131,21 +128,25 @@ export default function Home() {
     latestIndex && priorIndex
       ? Math.round(latestIndex.composite - priorIndex.composite)
       : null;
-  const daysSince = daysSinceLastIndex(history);
-  const retestDue = daysSince !== null && daysSince >= RETEST_INTERVAL_DAYS;
 
-  const greeting = greetingFor(new Date());
   const today = todayQuery.data;
-  const todayExercises = today?.exercises ?? [];
-  const todayMinutes = today ? Math.round(today.targetDurationS / 60) : 5;
+  const todayPhases = today?.exercises ?? [];
+  const todayMinutes = today ? Math.round(today.targetDurationS / 60) : 10;
   const todayTitle = today
-    ? todayExercises
+    ? todayPhases
         .map((s) => EXERCISES[s]?.name ?? s)
         .slice(0, 2)
         .join(' + ') || 'Foundation session'
     : 'Foundation Day 1';
+  const dayNumber = today?.dayNumber ?? 1;
 
-  const hasStreak = streak.current > 0;
+  // Bar geometry: Figma uses heights between 12 (untrained, no work) and
+  // 38 (a strong day). Untrained renders as a flat surface-container-high
+  // 12px chip. Trained scales 28 → 38 with the count.
+  function barHeight(count: number): number {
+    if (count <= 0) return 12;
+    return Math.min(38, 28 + count * 4);
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
@@ -153,175 +154,168 @@ export default function Home() {
         style={{ flex: 1 }}
         contentContainerStyle={{
           paddingHorizontal: spacing.containerPadding,
-          paddingBottom: spacing.stackLg * 2,
+          paddingTop: spacing.stackLg,
+          paddingBottom: 24,
+          gap: spacing.stackMd,
         }}
       >
-        {/* Greeting + streak chip */}
+        {/* HONE wordmark + avatar */}
         <View
           style={{
             flexDirection: 'row',
-            alignItems: 'flex-end',
+            alignItems: 'center',
             justifyContent: 'space-between',
-            marginTop: spacing.stackMd,
           }}
         >
-          <View>
-            <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
-              {greeting}
-            </Text>
-            <Text
-              style={{
-                ...type.headlineLg,
-                color: color.onSurface,
-                marginTop: 2,
-              }}
-            >
-              {userName}
-            </Text>
-          </View>
-          <Chip
-            label={hasStreak ? `${streak.current} days` : 'Start streak'}
-            variant={hasStreak ? 'active' : 'muted'}
-            leading={
-              <Droplet
-                size={12}
-                color={
-                  hasStreak ? color.primaryContainer : color.onSurfaceVariant
-                }
-                fill={hasStreak ? color.primaryContainer : 'transparent'}
-              />
-            }
-          />
-        </View>
-
-        {/* Ambient measurement — the Hone Index, visible daily */}
-        <Card label="Hone Index" style={{ marginTop: spacing.stackLg }}>
+          <Text style={{ ...type.headlineMd, color: color.onSurface }}>
+            HONE
+          </Text>
           <View
             style={{
-              flexDirection: 'row',
-              alignItems: 'flex-end',
-              justifyContent: 'space-between',
-              marginTop: spacing.stackSm,
+              width: 32,
+              height: 32,
+              borderRadius: radius.full,
+              backgroundColor: color.surfaceContainerHigh,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            accessibilityLabel={`Account · ${userName}`}
+          >
+            <Text
+              style={{
+                ...type.labelCaps,
+                color: color.onSurface,
+                letterSpacing: 0,
+              }}
+            >
+              {avatarInitial(userName)}
+            </Text>
+          </View>
+        </View>
+
+        {/* Today HERO — lime-bordered, Start session embedded */}
+        <View
+          style={{
+            backgroundColor: color.surfaceContainerLow,
+            borderColor: color.primaryContainer,
+            borderWidth: 1.5,
+            borderRadius: radius.xl,
+            padding: spacing.containerPadding,
+          }}
+        >
+          <Text
+            style={{ ...type.labelCaps, color: color.primaryFixedDim }}
+          >
+            TODAY · DAY {dayNumber} OF 56
+          </Text>
+          <Text
+            style={{
+              ...type.headlineLg,
+              color: color.onSurface,
+              marginTop: 4,
             }}
           >
-            <Text style={{ ...type.metricLg, color: color.onSurface }}>
-              {latestIndex ? String(Math.round(latestIndex.composite)) : '—'}
-            </Text>
-            {indexDelta !== null ? (
-              <Text
-                style={{
-                  ...type.labelCaps,
-                  color:
-                    indexDelta >= 0
-                      ? color.primaryContainer
-                      : color.onSurfaceVariant,
-                  paddingBottom: 4,
-                }}
-              >
-                {indexDelta >= 0 ? `▲ +${indexDelta}` : `▼ ${indexDelta}`}
-              </Text>
-            ) : null}
-          </View>
+            {todayTitle}
+          </Text>
           <Text
             style={{
               ...type.bodyMd,
-              fontSize: 14,
-              lineHeight: 20,
               color: color.onSurfaceVariant,
-              marginTop: spacing.stackSm,
+              marginTop: 2,
             }}
           >
-            {latestIndex
-              ? retestDue
-                ? `${capitalize(latestIndex.level)} · retest due`
-                : `${capitalize(latestIndex.level)} · next retest in ${Math.max(0, RETEST_INTERVAL_DAYS - (daysSince ?? 0))} days`
-              : 'No measurement yet — your baseline starts the trend.'}
+            {todayMinutes} min · {todayPhases.length || 5} phases
           </Text>
-        </Card>
-
-        {/* Today's session */}
-        <Card
-          label={today ? `Today · Day ${today.dayNumber}` : 'Today'}
-          style={{ marginTop: spacing.gutter }}
-        >
-          <Text
-            style={{
-              ...type.headlineMd,
-              color: color.onSurface,
-              marginTop: spacing.stackSm,
-            }}
-          >
-            {todayTitle} · {todayMinutes} min
-          </Text>
-          {todayExercises.length > 0 ? (
-            <View style={{ marginTop: spacing.stackMd, gap: 6 }}>
-              {todayExercises.map((slug) => (
-                <View
-                  key={slug}
-                  style={{ flexDirection: 'row', alignItems: 'center' }}
-                >
-                  <View
-                    style={{
-                      width: 4,
-                      height: 4,
-                      borderRadius: radius.full,
-                      backgroundColor: color.outline,
-                      marginRight: 10,
-                    }}
-                  />
-                  <Text
-                    style={{
-                      ...type.bodyMd,
-                      fontSize: 14,
-                      lineHeight: 20,
-                      color: color.onSurfaceVariant,
-                    }}
-                  >
-                    {exerciseLabel(slug)}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
           <Button
             label="Start session"
             onPress={() => router.push('/session/today')}
-            style={{ marginTop: spacing.stackLg }}
+            style={{ marginTop: spacing.stackMd, width: '100%' }}
           />
-        </Card>
+        </View>
+
+        {/* 2-up stats — Hone Index (cyan) + Streak (muted) */}
+        <View style={{ flexDirection: 'row', gap: spacing.gutter }}>
+          <StatTile
+            kicker="HONE INDEX"
+            kickerColor={color.secondaryContainer}
+            value={
+              latestIndex ? String(Math.round(latestIndex.composite)) : '—'
+            }
+            valueSuffix={
+              indexDelta !== null && indexDelta !== 0
+                ? indexDelta > 0
+                  ? `▲ ${indexDelta}`
+                  : `▼ ${Math.abs(indexDelta)}`
+                : undefined
+            }
+            footer={latestIndex ? 'since last week' : 'no measurement yet'}
+          />
+          <StatTile
+            kicker="STREAK"
+            value={String(streak.current)}
+            footer="days running"
+          />
+        </View>
 
         {/* Weekly bars */}
-        <Card label="This week" style={{ marginTop: spacing.gutter }}>
+        <View
+          style={{
+            backgroundColor: color.surfaceContainerLow,
+            borderColor: glass.border,
+            borderWidth: glass.borderWidth,
+            borderRadius: radius.xl,
+            padding: spacing.stackMd,
+            gap: spacing.gutter,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Text
+              style={{ ...type.labelCaps, color: color.onSurfaceVariant }}
+            >
+              THIS WEEK
+            </Text>
+            <Text
+              style={{ ...type.labelCaps, color: color.primaryFixedDim }}
+            >
+              {sessionsThisWeek} / 7
+            </Text>
+          </View>
           <View
             style={{
               flexDirection: 'row',
               alignItems: 'flex-end',
               justifyContent: 'space-between',
-              marginTop: spacing.stackMd,
             }}
           >
             {weekCounts.map((count, i) => {
               const filled = count > 0;
               const isToday = i === todayBarIndex;
-              const barHeight = 12 + Math.min(count, 3) * 12;
               return (
-                <View key={i} style={{ alignItems: 'center', gap: 6, flex: 1 }}>
+                <View
+                  key={i}
+                  style={{ alignItems: 'center', gap: 6, flex: 1 }}
+                >
                   <View
                     style={{
-                      width: 10,
-                      height: filled ? barHeight : 12,
-                      borderRadius: radius.full,
+                      width: 22,
+                      height: barHeight(count),
+                      borderRadius: 6,
                       backgroundColor: filled
                         ? color.primaryContainer
-                        : color.outlineVariant,
-                      opacity: filled || isToday ? 1 : 0.6,
+                        : color.surfaceContainerHigh,
                     }}
                   />
                   <Text
                     style={{
                       ...type.labelCaps,
                       fontSize: 10,
-                      lineHeight: 14,
+                      letterSpacing: 1,
                       color: isToday
                         ? color.onSurface
                         : color.onSurfaceVariant,
@@ -333,17 +327,97 @@ export default function Home() {
               );
             })}
           </View>
+        </View>
+
+        {/* Tomorrow preview */}
+        <View
+          style={{
+            backgroundColor: color.surfaceContainerLow,
+            borderColor: glass.border,
+            borderWidth: glass.borderWidth,
+            borderRadius: radius.xl,
+            padding: spacing.stackMd,
+          }}
+        >
+          <Text
+            style={{ ...type.labelCaps, color: color.onSurfaceVariant }}
+          >
+            TOMORROW · {tomorrow8am()}
+          </Text>
           <Text
             style={{
-              ...type.labelCaps,
-              color: color.onSurfaceVariant,
-              marginTop: spacing.stackMd,
+              ...type.headlineMd,
+              color: color.onSurface,
+              marginTop: 4,
             }}
           >
-            {sessionsThisWeek} / 7 days trained
+            {todayTitle}
           </Text>
-        </Card>
+          <Text
+            style={{
+              ...type.bodyMd,
+              color: color.onSurfaceVariant,
+              marginTop: 2,
+            }}
+          >
+            Advanced · {todayMinutes + 5} min
+          </Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function StatTile({
+  kicker,
+  kickerColor = color.onSurfaceVariant,
+  value,
+  valueSuffix,
+  footer,
+}: {
+  kicker: string;
+  kickerColor?: string;
+  value: string;
+  valueSuffix?: string;
+  footer: string;
+}) {
+  return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: color.surfaceContainerLow,
+        borderColor: glass.border,
+        borderWidth: glass.borderWidth,
+        borderRadius: radius.xl,
+        padding: spacing.stackMd,
+        gap: 2,
+      }}
+    >
+      <Text style={{ ...type.labelCaps, color: kickerColor }}>{kicker}</Text>
+      <View
+        style={{
+          flexDirection: 'row',
+          gap: 6,
+          alignItems: 'baseline',
+        }}
+      >
+        <Text style={{ ...type.metricLg, color: color.onSurface }}>
+          {value}
+        </Text>
+        {valueSuffix ? (
+          <Text
+            style={{
+              ...type.bodyMd,
+              color: color.primaryFixedDim,
+            }}
+          >
+            {valueSuffix}
+          </Text>
+        ) : null}
+      </View>
+      <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
+        {footer}
+      </Text>
+    </View>
   );
 }

@@ -8,4 +8,8 @@ export { Input } from './Input';
 export { PhaseRing } from './PhaseRing';
 export { PriceCard } from './PriceCard';
 export { ScreenHeader } from './ScreenHeader';
-export { obsidianTabBarStyle, obsidianTabIcon } from './TabBar';
+export {
+  obsidianTabBarStyle,
+  obsidianTabIcon,
+  obsidianTabLabel,
+} from './TabBar';

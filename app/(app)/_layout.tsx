@@ -1,10 +1,14 @@
-// Obsidian Kinetic tab bar (Figma: Tab Bar [4] — Home / Program /
-// Streaks / Settings). Active tab = lime icon + faint glow disc; glow
-// is a state, only the active tab carries it.
+// Obsidian Kinetic tab bar (Figma 18:2): 84px tall, 24px icons + JetBrains
+// Mono caps labels underneath, lime when active. Glow is NOT used on the
+// tab bar in this system — lime + caps label carries the active state.
 import { Tabs } from 'expo-router';
 import { CalendarDays, Flame, Home, Settings } from 'lucide-react-native';
 
-import { obsidianTabBarStyle, obsidianTabIcon } from '@/components/obsidian';
+import {
+  obsidianTabBarStyle,
+  obsidianTabIcon,
+  obsidianTabLabel,
+} from '@/components/obsidian';
 import { color } from '@/lib/obsidian/tokens';
 
 export default function AppLayout() {
@@ -12,8 +16,10 @@ export default function AppLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: false,
         tabBarStyle: obsidianTabBarStyle,
+        // Reanimated label component takes over the rendering of the
+        // text label — but expo-router still needs labels enabled.
+        tabBarShowLabel: true,
         sceneStyle: { backgroundColor: color.background },
       }}
     >
@@ -21,6 +27,7 @@ export default function AppLayout() {
         name="home"
         options={{
           tabBarIcon: obsidianTabIcon(Home),
+          tabBarLabel: obsidianTabLabel('HOME'),
           tabBarAccessibilityLabel: 'Home',
         }}
       />
@@ -28,6 +35,7 @@ export default function AppLayout() {
         name="program"
         options={{
           tabBarIcon: obsidianTabIcon(CalendarDays),
+          tabBarLabel: obsidianTabLabel('PROGRAM'),
           tabBarAccessibilityLabel: 'Program',
         }}
       />
@@ -35,6 +43,7 @@ export default function AppLayout() {
         name="progress"
         options={{
           tabBarIcon: obsidianTabIcon(Flame),
+          tabBarLabel: obsidianTabLabel('STREAKS'),
           tabBarAccessibilityLabel: 'Streaks',
         }}
       />
@@ -42,6 +51,7 @@ export default function AppLayout() {
         name="settings"
         options={{
           tabBarIcon: obsidianTabIcon(Settings),
+          tabBarLabel: obsidianTabLabel('SETTINGS'),
           tabBarAccessibilityLabel: 'Settings',
         }}
       />

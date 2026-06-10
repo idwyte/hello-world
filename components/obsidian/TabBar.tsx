@@ -1,16 +1,12 @@
-// Obsidian Kinetic — Tab Bar pieces.
-// Figma: Tab Bar [4] — Home / Program / Streaks / Settings; active tab =
-// lime icon + faint glow (glow is a state: only the active tab carries
-// it, per motion spec §4). Consumed by app/(app)/_layout.tsx's
-// <Tabs screenOptions>.
-import { View } from 'react-native';
+// Obsidian Kinetic — Tab Bar (Figma 18:2, used in 53:207 Home).
+// 84px tall, surface-container-lowest fill, 6% white hairline on top.
+// Each tab: 24px icon + 12px JetBrains Mono caps label underneath.
+// Active tab = primary-container lime icon + lime label (NO glow disc;
+// the lime is the entire signal). Inactive = on-surface-variant muted.
+import { Text, View } from 'react-native';
 
-import { color, glow } from '@/lib/obsidian/tokens';
+import { color, type } from '@/lib/obsidian/tokens';
 
-/**
- * Wraps a lucide icon into a tabBarIcon render fn. Active = lime with a
- * faint lime disc ("glow"); inactive = muted, no glow.
- */
 export function obsidianTabIcon(
   Icon: React.ComponentType<{ color?: string; size?: number }>,
 ) {
@@ -18,27 +14,15 @@ export function obsidianTabIcon(
     return (
       <View
         style={{
-          width: 44,
-          height: 32,
+          width: 24,
+          height: 24,
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        {focused && (
-          <View
-            style={{
-              position: 'absolute',
-              width: 36,
-              height: 28,
-              borderRadius: 14,
-              backgroundColor: glow.primary,
-              opacity: 0.16,
-            }}
-          />
-        )}
         <Icon
           color={focused ? color.primaryContainer : color.onSurfaceVariant}
-          size={20}
+          size={24}
         />
       </View>
     );
@@ -46,12 +30,34 @@ export function obsidianTabIcon(
   return TabBarIcon;
 }
 
+/**
+ * Wraps the tab label so we can colour-tint per active state. Pass via
+ * `tabBarLabel` on the route Tabs.Screen.
+ */
+export function obsidianTabLabel(text: string) {
+  function TabBarLabel({ focused }: { focused: boolean }) {
+    return (
+      <Text
+        style={{
+          ...type.labelCaps,
+          color: focused ? color.primaryContainer : color.onSurfaceVariant,
+          marginTop: 4,
+        }}
+      >
+        {text}
+      </Text>
+    );
+  }
+  return TabBarLabel;
+}
+
 /** Tabs screenOptions.tabBarStyle for the obsidian system. */
 export const obsidianTabBarStyle = {
   backgroundColor: color.surfaceContainerLowest,
-  borderTopColor: color.outlineVariant,
+  borderTopColor: 'rgba(255, 255, 255, 0.06)',
   borderTopWidth: 1,
-  height: 56,
-  paddingTop: 10,
-  paddingBottom: 10,
+  height: 84,
+  paddingTop: 12,
+  paddingBottom: 20,
+  paddingHorizontal: 8,
 } as const;
