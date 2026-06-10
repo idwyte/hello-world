@@ -28,6 +28,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PhaseRing } from '@/components/obsidian';
@@ -35,6 +36,7 @@ import { hasSupabaseConfig } from '@/lib/env';
 import { EXERCISES, getExercise } from '@/lib/exercises';
 import { play, patternForPhase } from '@/lib/haptics';
 import { color, radius, spacing, type } from '@/lib/obsidian/tokens';
+import { motion } from '@/lib/obsidian/tokens';
 import {
   type SessionState,
   type SessionRunner,
@@ -56,6 +58,18 @@ function fallbackDay(): ProgramDay {
 }
 
 // Big headline word: CONTRACT / HOLD / RELEASE / REST / READY.
+// Down-training days contain only release-pool content. They get the
+// breathing ring (anti-hero animation, motion spec §3.2) and the
+// haptic exception: no impactMedium punches, the ring's own faint
+// selectionClick at the top of each inhale is the only feedback.
+const RELEASE_POOL = ['reverse_kegels', 'deep_squat_breath'];
+function isReleaseDay(day: ProgramDay): boolean {
+  return (
+    day.exercises.length > 0 &&
+    day.exercises.every((ex) => RELEASE_POOL.includes(ex.slug))
+  );
+}
+
 function phaseVerb(kind: PhaseKind): string {
   switch (kind) {
     case 'prep':
@@ -201,7 +215,9 @@ export default function Player() {
 
     const runner = createSessionRunner(timeline, {
       onPhaseStart: (phase) => {
-        const pattern = patternForPhase(phase.kind);
+        // Down-training exception (motion spec §2): punchy haptics
+        // contradict "let go" — release days stay silent here.
+        const pattern = isReleaseDay(day) ? null : patternForPhase(phase.kind);
         if (pattern) void play(pattern);
         AccessibilityInfo.announceForAccessibility(
           phaseAnnouncement(phase.kind),
@@ -255,6 +271,8 @@ export default function Player() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [day, programDayId]);
 
+  const releaseDay = isReleaseDay(day);
+  const reducedMotion = useReducedMotion();
   const state: SessionState | null = runnerRef.current?.getState() ?? null;
   void tick;
 
@@ -394,28 +412,40 @@ export default function Player() {
 
         <View style={{ height: spacing.stackSm }} />
 
-        {/* Huge verb headline */}
-        <Text
-          style={{
-            ...type.headlineLg,
-            fontSize: 56,
-            lineHeight: 52,
-            letterSpacing: -1.12,
-            color: color.onSurface,
-            textTransform: 'uppercase',
-          }}
+        {/* Huge verb headline — cross-fades on phase change (spec §3.5:
+            session phases cross-fade, you're in one place, time passes) */}
+        <Animated.View
+          key={`verb-${state.phaseIndex}`}
+          entering={reducedMotion ? undefined : FadeIn.duration(motion.base)}
         >
-          {verb}
-        </Text>
+          <Text
+            style={{
+              ...type.headlineLg,
+              fontSize: 56,
+              lineHeight: 52,
+              letterSpacing: -1.12,
+              color: releaseDay ? color.secondaryContainer : color.onSurface,
+              textTransform: 'uppercase',
+            }}
+          >
+            {releaseDay ? 'BREATHE' : verb}
+          </Text>
+        </Animated.View>
 
         <View style={{ height: spacing.stackLg + spacing.stackMd }} />
 
-        {/* Ring */}
+        {/* Ring — breathing mode on release days (4s in · 2s hold ·
+            6s out, no glow pulse) */}
         <PhaseRing
           progress={phaseProgress}
-          glow={!isPaused}
+          mode={releaseDay ? 'breathing' : 'performance'}
+          glow={!isPaused && !releaseDay}
           time={formatCountdown(phaseCountdownMs)}
-          caption={phaseRingCaption(phase.kind)}
+          caption={
+            releaseDay
+              ? 'BREATHE WITH THE RING'
+              : phaseRingCaption(phase.kind)
+          }
           size={280}
           strokeWidth={6}
           durationMs={phase.durationMs}

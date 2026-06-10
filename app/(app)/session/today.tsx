@@ -1,11 +1,18 @@
+// Obsidian Kinetic: pre-session mode picker. No dedicated Figma frame
+// ("still to design") — derived from option-card + Chip patterns.
+// Logic unchanged: entitlement gate, Focus-mode stealth promotion,
+// Siri quick_discreet deeplink, settings.defaultMode.
 import { useQuery } from '@tanstack/react-query';
-import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button, Chip, ScreenHeader } from '@/components/obsidian';
 import { hasSupabaseConfig } from '@/lib/env';
 import { getFocusStatus, subscribeFocus } from '@/lib/focus';
+import { fireHaptic } from '@/lib/obsidian/haptics';
+import { color, glass, radius, spacing, type } from '@/lib/obsidian/tokens';
 import { hasRevenueCatConfig, useEntitlement } from '@/lib/revenuecat';
 import { fetchTodayProgramDay } from '@/lib/sessions';
 import { useSettingsStore } from '@/stores/settings';
@@ -23,24 +30,17 @@ export default function SessionPreview() {
       ? params.preset
       : null;
 
-  // Hydrate so we can honor `defaultMode` and pre-select the user's chosen
-  // entry point.
   useEffect(() => {
     if (!hydrated) void hydrate();
   }, [hydrate, hydrated]);
 
-  // ?preset=quick_discreet — deep-linked from the Siri/AppIntents "Quick
-  // discreet" shortcut. Skip the mode picker; route straight to stealth.
-  // Subscription gate still applies (paywall, not the player).
+  // ?preset=quick_discreet — Siri/AppIntents deeplink straight to stealth.
   useEffect(() => {
     if (!preset || blockedBySubscription) return;
     router.replace(`/session/stealth?preset=${preset}`);
   }, [preset, blockedBySubscription, router]);
 
-  // Focus-mode awareness: if the user has a Focus filter active (Do Not
-  // Disturb, Work, Sleep…) auto-promote the Stealth card to primary. The
-  // subscription is best-effort — silently disabled when the native module
-  // isn't linked or the user hasn't granted permission.
+  // Focus-mode awareness: an active Focus promotes Stealth to primary.
   const [focusActive, setFocusActive] = useState(false);
   useEffect(() => {
     let removed = false;
@@ -52,9 +52,6 @@ export default function SessionPreview() {
       const handle = await subscribeFocus((isFocus) => {
         if (!removed) setFocusActive(isFocus);
       });
-      // The component may have unmounted while subscribeFocus resolved.
-      // If so, tear down immediately rather than leaving a dangling
-      // native observer.
       if (removed) {
         handle();
       } else {
@@ -75,70 +72,127 @@ export default function SessionPreview() {
 
   const exercises =
     todayQuery.data?.exercises ?? ['short_holds', 'quick_flicks'];
-  const targetMin = Math.round(
-    (todayQuery.data?.targetDurationS ?? 240) / 60,
-  );
-  const title = todayQuery.data ? 'Today' : 'Foundation Day 1';
+  const targetMin = Math.round((todayQuery.data?.targetDurationS ?? 240) / 60);
+  const dayNumber = todayQuery.data?.dayNumber ?? 1;
+  const stealthFirst =
+    focusActive || (hydrated && settings.defaultMode === 'stealth');
 
   return (
-    <SafeAreaView className="flex-1 bg-bg">
-      <View className="flex-1 px-6 pt-6">
-        <Pressable
-          onPress={() => router.back()}
-          className="self-start py-3 px-3 -ml-3 active:opacity-60"
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-        >
-          <Text className="text-muted">← Back</Text>
-        </Pressable>
-
-        <Text className="text-ink text-3xl font-semibold mt-4">{title}</Text>
-        <Text className="text-muted mt-2">
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.background }}>
+      <ScreenHeader
+        variant="back"
+        title={`Day ${dayNumber}`}
+        onPress={() => router.back()}
+      />
+      <View
+        style={{
+          flex: 1,
+          paddingHorizontal: spacing.containerPadding,
+          paddingTop: spacing.stackMd,
+          paddingBottom: spacing.stackLg + spacing.stackMd,
+          gap: spacing.stackMd,
+        }}
+      >
+        <Text style={{ ...type.headlineLg, color: color.onSurface }}>
+          Ready to train?
+        </Text>
+        <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
           {exercises.map(prettyName).join(' · ')} · ~{targetMin} min
         </Text>
 
-        <View className="bg-surface rounded-2xl p-5 mt-8 border border-border">
-          <Text className="text-muted text-xs uppercase tracking-wider">
-            Choose mode
-          </Text>
-
-          {blockedBySubscription ? (
-            <View className="mt-4 bg-surface2 rounded-xl p-4 border border-border">
-              <Text className="text-ink font-semibold">
-                Subscribe to start a session
-              </Text>
-              <Text className="text-muted text-sm mt-1">
-                Your trial or subscription has ended. Resume access to keep
-                training.
-              </Text>
-              <Pressable
-                onPress={() => router.push('/paywall')}
-                accessibilityRole="button"
-                accessibilityLabel="See plans"
-                className="bg-accent rounded-xl mt-3 py-3 items-center active:opacity-80"
-              >
-                <Text className="text-ink font-semibold">See plans</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <>
-              <ModePicker
-                stealthFirst={
-                  focusActive ||
-                  (hydrated && settings.defaultMode === 'stealth')
-                }
+        {blockedBySubscription ? (
+          <View
+            style={{
+              backgroundColor: color.surfaceContainerLow,
+              borderColor: glass.border,
+              borderWidth: glass.borderWidth,
+              borderRadius: radius.xl,
+              padding: spacing.stackMd,
+              gap: spacing.stackSm,
+            }}
+          >
+            <Text style={{ ...type.labelButton, color: color.onSurface }}>
+              Subscribe to start a session
+            </Text>
+            <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
+              Your trial or subscription has ended. Resume access to keep
+              training.
+            </Text>
+            <Button
+              label="See plans"
+              onPress={() => router.push('/paywall')}
+              style={{ width: '100%', marginTop: spacing.stackSm }}
+            />
+          </View>
+        ) : (
+          <View style={{ gap: spacing.gutter, marginTop: spacing.stackSm }}>
+            {(stealthFirst
+              ? (['stealth', 'normal'] as const)
+              : (['normal', 'stealth'] as const)
+            ).map((mode, i) => (
+              <ModeCard
+                key={mode}
+                mode={mode}
+                primary={i === 0}
+                onPress={() => {
+                  void fireHaptic('selection');
+                  router.push(
+                    mode === 'stealth' ? '/session/stealth' : '/session/player',
+                  );
+                }}
               />
-              {focusActive ? (
-                <Text className="text-muted text-xs mt-3 leading-5">
-                  Focus mode is on — Stealth is a quieter fit.
-                </Text>
-              ) : null}
-            </>
-          )}
-        </View>
+            ))}
+            {focusActive ? (
+              <Chip label="FOCUS ON · STEALTH SUGGESTED" variant="active" />
+            ) : null}
+          </View>
+        )}
       </View>
     </SafeAreaView>
+  );
+}
+
+function ModeCard({
+  mode,
+  primary,
+  onPress,
+}: {
+  mode: 'normal' | 'stealth';
+  primary: boolean;
+  onPress: () => void;
+}) {
+  const title = mode === 'normal' ? 'Guided' : 'Stealth';
+  const sub =
+    mode === 'normal'
+      ? 'On-screen ring + haptics'
+      : 'AirPods + haptics, podcast-decoy lockscreen';
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Start ${title} session — ${sub}`}
+      style={({ pressed }) => ({
+        backgroundColor: color.surfaceContainerLow,
+        borderColor: primary ? color.primaryContainer : glass.border,
+        borderWidth: primary ? 1.5 : 1,
+        borderRadius: radius.xl,
+        padding: spacing.stackMd,
+        gap: 2,
+        opacity: pressed ? 0.8 : 1,
+      })}
+    >
+      <Text
+        style={{
+          ...type.labelButton,
+          color: primary ? color.primaryFixedDim : color.onSurface,
+        }}
+      >
+        {title}
+      </Text>
+      <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
+        {sub}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -147,63 +201,4 @@ function prettyName(slug: string): string {
     .split('_')
     .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
     .join(' ');
-}
-
-function NormalCard({ primary }: { primary: boolean }) {
-  return (
-    <Link href="/session/player" asChild>
-      <Pressable
-        className={`rounded-xl py-4 px-5 active:opacity-80 ${
-          primary ? 'bg-accent' : 'bg-surface2 border border-border'
-        }`}
-        accessibilityRole="button"
-        accessibilityLabel="Start session in Normal mode with on-screen pacer and haptics"
-      >
-        <Text className="text-ink font-semibold text-lg">Normal</Text>
-        <Text
-          className={`text-sm mt-1 ${primary ? 'text-ink/70' : 'text-muted'}`}
-        >
-          On-screen pacer + haptics
-        </Text>
-      </Pressable>
-    </Link>
-  );
-}
-
-function StealthCard({ primary }: { primary: boolean }) {
-  return (
-    <Link href="/session/stealth" asChild>
-      <Pressable
-        className={`rounded-xl py-4 px-5 active:opacity-80 ${
-          primary ? 'bg-accent' : 'bg-surface2 border border-border'
-        }`}
-        accessibilityRole="button"
-        accessibilityLabel="Start a Stealth session — AirPods and haptics, podcast-style lockscreen"
-      >
-        <Text className="text-ink font-semibold text-lg">Stealth</Text>
-        <Text
-          className={`text-sm mt-1 ${primary ? 'text-ink/70' : 'text-muted'}`}
-        >
-          AirPods + haptics, podcast-decoy lockscreen
-        </Text>
-      </Pressable>
-    </Link>
-  );
-}
-
-function ModePicker({ stealthFirst }: { stealthFirst: boolean }) {
-  if (stealthFirst) {
-    return (
-      <View className="mt-4 gap-3">
-        <StealthCard primary />
-        <NormalCard primary={false} />
-      </View>
-    );
-  }
-  return (
-    <View className="mt-4 gap-3">
-      <NormalCard primary />
-      <StealthCard primary={false} />
-    </View>
-  );
 }
