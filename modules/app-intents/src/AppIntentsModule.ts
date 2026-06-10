@@ -1,4 +1,4 @@
-import { requireNativeModule } from 'expo-modules-core';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 
 import type { AppIntentSummary } from './types';
 
@@ -15,4 +15,8 @@ type AppIntentsModuleType = {
   registerIntents(): Promise<AppIntentSummary>;
 };
 
-export default requireNativeModule<AppIntentsModuleType>('HoneAppIntentsModule');
+// Optional: returns null (instead of throwing at import time) when the
+// native module isn't linked — Expo Go, web, Jest. Callers null-guard.
+export default requireOptionalNativeModule<AppIntentsModuleType>(
+  'HoneAppIntentsModule',
+);

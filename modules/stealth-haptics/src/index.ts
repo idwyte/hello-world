@@ -1,34 +1,48 @@
 import StealthHapticsModule from './StealthHapticsModule';
+import type { AudioRoute, ScheduleHandle, StealthPattern } from './types';
 
 export type { StealthPattern, ScheduleHandle, AudioRoute } from './types';
 
+// Every wrapper degrades to a safe no-op when the native module isn't
+// linked (Expo Go / web / Jest) — StealthHapticsModule is null there.
+// Consumers (lib/haptics/native.ts, lib/audio/routing.ts) additionally
+// lazy-import + catch, so the app runs fully without the module.
+
 export function prepareEngine(): Promise<void> {
-  return StealthHapticsModule.prepareEngine();
+  return StealthHapticsModule?.prepareEngine() ?? Promise.resolve();
 }
 export function playPattern(
-  pattern: import('./types').StealthPattern,
+  pattern: StealthPattern,
   intensity = 1,
 ): Promise<void> {
-  return StealthHapticsModule.playPattern(pattern, intensity);
+  return StealthHapticsModule?.playPattern(pattern, intensity) ?? Promise.resolve();
 }
 export function schedulePattern(
-  pattern: import('./types').StealthPattern,
+  pattern: StealthPattern,
   atMs: number,
   intensity = 1,
-): Promise<import('./types').ScheduleHandle> {
-  return StealthHapticsModule.schedulePattern(pattern, atMs, intensity);
+): Promise<ScheduleHandle> {
+  return (
+    StealthHapticsModule?.schedulePattern(pattern, atMs, intensity) ??
+    Promise.resolve('')
+  );
 }
-export function cancelScheduled(handle: import('./types').ScheduleHandle) {
-  return StealthHapticsModule.cancelScheduled(handle);
+export function cancelScheduled(handle: ScheduleHandle): Promise<void> {
+  return StealthHapticsModule?.cancelScheduled(handle) ?? Promise.resolve();
 }
 export function cancelAll(): Promise<void> {
-  return StealthHapticsModule.cancelAll();
+  return StealthHapticsModule?.cancelAll() ?? Promise.resolve();
 }
-export function currentAudioRoute() {
-  return StealthHapticsModule.currentAudioRoute();
+export function currentAudioRoute(): Promise<AudioRoute> {
+  return (
+    StealthHapticsModule?.currentAudioRoute() ??
+    Promise.resolve('unknown' as AudioRoute)
+  );
 }
 export function isBluetoothAudioConnected(): Promise<boolean> {
-  return StealthHapticsModule.isBluetoothAudioConnected();
+  return (
+    StealthHapticsModule?.isBluetoothAudioConnected() ?? Promise.resolve(false)
+  );
 }
 
 export default StealthHapticsModule;

@@ -4,6 +4,7 @@ import type { CalendarGap, FindGapOptions } from './types';
 export type { CalendarAuthorization, CalendarGap, FindGapOptions } from './types';
 
 export function isAvailable(): boolean {
+  if (!CalendarGapsModule) return false;
   try {
     return CalendarGapsModule.isAvailable();
   } catch {
@@ -12,6 +13,7 @@ export function isAvailable(): boolean {
 }
 
 export async function requestAuthorization() {
+  if (!CalendarGapsModule) return 'denied' as const;
   try {
     return await CalendarGapsModule.requestAuthorization();
   } catch {
@@ -30,6 +32,7 @@ export async function findNextGap(
 ): Promise<CalendarGap | null> {
   const minMinutes = Math.max(1, options.minMinutes ?? 3);
   const withinSeconds = Math.max(60, options.withinSeconds ?? 2 * 60 * 60);
+  if (!CalendarGapsModule) return null;
   try {
     return await CalendarGapsModule.findNextGap(minMinutes, withinSeconds);
   } catch {

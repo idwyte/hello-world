@@ -1,4 +1,4 @@
-import { requireNativeModule } from 'expo-modules-core';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 
 import type { FocusAuthorization, FocusStatus } from './types';
 
@@ -12,4 +12,7 @@ type FocusFilterModuleType = {
   removeListeners(count: number): void;
 };
 
-export default requireNativeModule<FocusFilterModuleType>('HoneFocusFilterModule');
+// Optional: null when not linked (Expo Go / web / Jest).
+export default requireOptionalNativeModule<FocusFilterModuleType>(
+  'HoneFocusFilterModule',
+);

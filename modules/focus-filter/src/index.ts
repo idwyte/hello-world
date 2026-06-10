@@ -18,6 +18,7 @@ const emitter = FocusFilterModule as unknown as {
 };
 
 export function isAvailable(): boolean {
+  if (!FocusFilterModule) return false;
   try {
     return FocusFilterModule.isAvailable();
   } catch {
@@ -26,6 +27,7 @@ export function isAvailable(): boolean {
 }
 
 export async function requestAuthorization() {
+  if (!FocusFilterModule) return 'denied' as const;
   try {
     return await FocusFilterModule.requestAuthorization();
   } catch {
@@ -34,6 +36,9 @@ export async function requestAuthorization() {
 }
 
 export async function getStatus() {
+  if (!FocusFilterModule) {
+    return { isFocus: false, authorization: 'denied' as const };
+  }
   try {
     return await FocusFilterModule.getStatus();
   } catch {
@@ -54,6 +59,7 @@ export async function getStatus() {
 export function subscribe(
   callback: (status: { isFocus: boolean }) => void,
 ): EventSubscription {
+  if (!FocusFilterModule) return { remove: () => undefined };
   try {
     void FocusFilterModule.startListening?.();
   } catch {
@@ -67,7 +73,7 @@ export function subscribe(
     remove: () => {
       sub.remove();
       try {
-        void FocusFilterModule.stopListening?.();
+        void FocusFilterModule?.stopListening?.();
       } catch {
         // ignore
       }

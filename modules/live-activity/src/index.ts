@@ -8,6 +8,7 @@ import type {
 export type { LiveActivityHandle, LiveActivityStart, LiveActivityUpdate };
 
 export function isAvailable(): boolean {
+  if (!LiveActivityModule) return false;
   try {
     return LiveActivityModule.isAvailable();
   } catch {
@@ -18,6 +19,7 @@ export function isAvailable(): boolean {
 export async function startActivity(
   input: LiveActivityStart,
 ): Promise<LiveActivityHandle | null> {
+  if (!LiveActivityModule) return null;
   try {
     return await LiveActivityModule.startActivity(input);
   } catch {
@@ -29,6 +31,7 @@ export async function updateActivity(
   activityId: string,
   update: LiveActivityUpdate,
 ): Promise<void> {
+  if (!LiveActivityModule) return;
   try {
     await LiveActivityModule.updateActivity(activityId, update);
   } catch {
@@ -37,6 +40,7 @@ export async function updateActivity(
 }
 
 export async function endActivity(activityId: string): Promise<void> {
+  if (!LiveActivityModule) return;
   try {
     await LiveActivityModule.endActivity(activityId);
   } catch {

@@ -1,4 +1,4 @@
-import { requireNativeModule } from 'expo-modules-core';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 
 import type { CalendarAuthorization, CalendarGap } from './types';
 
@@ -11,6 +11,7 @@ type CalendarGapsModuleType = {
   ): Promise<CalendarGap | null>;
 };
 
-export default requireNativeModule<CalendarGapsModuleType>(
+// Optional: null when not linked (Expo Go / web / Jest).
+export default requireOptionalNativeModule<CalendarGapsModuleType>(
   'HoneCalendarGapsModule',
 );

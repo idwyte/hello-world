@@ -1,4 +1,4 @@
-import { requireNativeModule } from 'expo-modules-core';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 
 import type {
   LiveActivityHandle,
@@ -13,6 +13,7 @@ type LiveActivityModuleType = {
   endActivity(activityId: string): Promise<void>;
 };
 
-export default requireNativeModule<LiveActivityModuleType>(
+// Optional: null when not linked (Expo Go / web / Jest).
+export default requireOptionalNativeModule<LiveActivityModuleType>(
   'HoneLiveActivityModule',
 );

@@ -1,4 +1,4 @@
-import { requireNativeModule } from 'expo-modules-core';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 
 import type { AudioRoute, ScheduleHandle, StealthPattern } from './types';
 
@@ -17,7 +17,8 @@ type StealthHapticsModuleType = {
   isBluetoothAudioConnected(): Promise<boolean>;
 };
 
-// Will throw if the native module isn't linked (e.g., running in Expo Go,
-// running on web, running under Jest). Callers use the high-level
-// `lib/haptics/native.ts` wrapper which catches this.
-export default requireNativeModule<StealthHapticsModuleType>('StealthHapticsModule');
+// Optional: null when the native module isn't linked (Expo Go, web,
+// Jest). The lib/haptics/native.ts wrapper null-guards before use.
+export default requireOptionalNativeModule<StealthHapticsModuleType>(
+  'StealthHapticsModule',
+);
