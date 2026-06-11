@@ -1,0 +1,11 @@
+{
+  "name": "stealth-haptics",
+  "version": "0.0.1",
+  "description": "Custom Core Haptics + VibrationEffect bridge for Hone Stealth Mode.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "echo skip"
+  },
+  "private": true
+}
