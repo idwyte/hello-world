@@ -1,8 +1,5 @@
-import type {
-  AssessmentAnswers,
-  Level,
-  ProgramDay,
-} from './types';
+import type { AssessmentV2Answers } from './assessment-v2';
+import type { AssessmentAnswers, Level, ProgramDay } from './types';
 import type { PelvicFloorIndex } from './pelvic-floor-index';
 import { hasSupabaseConfig } from './env';
 import { getSupabase } from './supabase';
@@ -21,6 +18,9 @@ export async function saveAssessmentAndProgram(input: {
   index: PelvicFloorIndex;
   level: Level;
   program: ProgramDay[];
+  /** v2 vector — persisted alongside the legacy index per migration
+   *  0008. Optional so a v1-shaped caller still works. */
+  v2Answers?: AssessmentV2Answers;
 }): Promise<string | null> {
   if (!hasSupabaseConfig()) return null;
   const supabase = getSupabase();
@@ -39,7 +39,7 @@ export async function saveAssessmentAndProgram(input: {
   });
   if (aErr) throw aErr;
 
-  // 2. pelvic floor index
+  // 2. pelvic floor index (+ v2 vector when supplied — migration 0008)
   const { error: iErr } = await supabase
     .from('pelvic_floor_assessments')
     .insert({
@@ -48,6 +48,7 @@ export async function saveAssessmentAndProgram(input: {
       max_hold_s: input.index.maxHoldS,
       composite: input.index.composite,
       level: input.index.level,
+      v2_answers: input.v2Answers ?? null,
     });
   if (iErr) throw iErr;
 
@@ -139,6 +140,10 @@ export async function markOnboarded(): Promise<void> {
 
 export async function saveIndexRetest(
   index: PelvicFloorIndex,
+  /** v2 vector from the retest — persisted via migration 0008 so the
+   *  Streaks radar reads real axes and a future hypertonic re-screen
+   *  can compare against the prior retest. */
+  v2Answers?: AssessmentV2Answers,
 ): Promise<void> {
   if (!hasSupabaseConfig()) return;
   const supabase = getSupabase();
@@ -154,6 +159,7 @@ export async function saveIndexRetest(
       max_hold_s: index.maxHoldS,
       composite: index.composite,
       level: index.level,
+      v2_answers: v2Answers ?? null,
     });
   if (iErr) throw iErr;
 }

@@ -108,6 +108,13 @@ export default function Generating() {
           profile,
         });
         if (cancelled) return;
+        // `source` records whether THIS specific build hit the AI Edge
+        // Function or the rule-based fallback — drives the plan-preview
+        // variant copy ("Built from your baseline" vs "WANT IT
+        // TAILORED?"). On retest / re-funnel the consent decision is
+        // re-evaluated server-side (profiles.ai_consent_at), so a user
+        // who declined once still sees the correct variant after
+        // reset() + a fresh buildProgram() call.
         setGenerated({
           level,
           program: days,
@@ -121,6 +128,10 @@ export default function Generating() {
             index,
             level,
             program: days,
+            // Persist the v2 vector alongside the legacy index per
+            // migration 0008 — the source of truth for the Streaks
+            // radar and any future hypertonic re-screen.
+            v2Answers: v2 as AssessmentV2Answers,
           }),
           minDelay,
         ]);

@@ -31,12 +31,11 @@ import {
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PhaseRing } from '@/components/obsidian';
+import { Button, PhaseRing } from '@/components/obsidian';
 import { hasSupabaseConfig } from '@/lib/env';
 import { EXERCISES, getExercise } from '@/lib/exercises';
 import { play, patternForPhase } from '@/lib/haptics';
-import { color, radius, spacing, type } from '@/lib/obsidian/tokens';
-import { motion } from '@/lib/obsidian/tokens';
+import { color, motion, radius, spacing, type } from '@/lib/obsidian/tokens';
 import {
   type SessionState,
   type SessionRunner,
@@ -478,25 +477,15 @@ export default function Player() {
 
         <View style={{ flex: 1 }} />
 
-        {/* Pause + Skip phase */}
-        <Pressable
+        {/* Pause + Skip phase — uses the shared Button so the press
+            feedback (scale to 0.98 + primaryPress haptic) matches the
+            rest of the system instead of a custom opacity dim. */}
+        <Button
+          label={isPaused ? 'Resume' : 'Pause'}
           onPress={isPaused ? handleResume : handlePause}
-          accessibilityRole="button"
           accessibilityLabel={isPaused ? 'Resume session' : 'Pause session'}
-          style={({ pressed }) => ({
-            width: '100%',
-            height: 56,
-            borderRadius: radius.xl,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: color.primaryContainer,
-            opacity: pressed ? 0.85 : 1,
-          })}
-        >
-          <Text style={{ ...type.labelButton, color: color.onPrimaryFixed }}>
-            {isPaused ? 'Resume' : 'Pause'}
-          </Text>
-        </Pressable>
+          style={{ width: '100%' }}
+        />
 
         <Pressable
           onPress={handleSkipPhase}

@@ -5,7 +5,8 @@
 //
 // Motion: press feedback is a motion-instant (100ms, ease-out) scale to
 // 0.98 + impactLight haptic (spec §2 "Primary button press"). Disabled
-// renders at 40% opacity, never glows, never haptics.
+// swaps to a muted-surface fill (NOT opacity-dimming) so the label
+// stays legible while the inactive state reads clearly.
 import { useCallback } from 'react';
 import { Pressable, Text, type ViewStyle } from 'react-native';
 import Animated, {
@@ -76,6 +77,28 @@ export function Button({
 
   const isPrimary = variant === 'primary';
 
+  // Disabled: muted surface fill, outline-variant border, muted label.
+  // Active primary: Electric Lime fill, near-black label (onPrimaryFixed
+  // per handoff §3 — DESIGN.md's onPrimaryContainer #556d00 is NOT a
+  // text color for lime fills).
+  // Active ghost: Cyan Pulse border + text on transparent.
+  const backgroundColor = disabled
+    ? color.surfaceContainerHigh
+    : isPrimary
+      ? color.primaryContainer
+      : 'transparent';
+  const borderWidth = disabled || !isPrimary ? 1.5 : 0;
+  const borderColor = disabled
+    ? color.outlineVariant
+    : isPrimary
+      ? undefined
+      : color.secondaryContainer;
+  const labelColor = disabled
+    ? color.onSurfaceVariant
+    : isPrimary
+      ? color.onPrimaryFixed
+      : color.secondaryContainer;
+
   return (
     <AnimatedPressable
       onPress={handlePress}
@@ -91,26 +114,15 @@ export function Button({
           borderRadius: radius.xl,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: isPrimary ? color.primaryContainer : 'transparent',
-          borderWidth: isPrimary ? 0 : 1.5,
-          borderColor: isPrimary ? undefined : color.secondaryContainer,
-          opacity: disabled ? 0.4 : 1,
+          backgroundColor,
+          borderWidth,
+          borderColor,
         },
         animatedStyle,
         style,
       ]}
     >
-      <Text
-        style={{
-          ...type.labelButton,
-          // Near-black on lime per handoff §3 — that's the onPrimaryFixed
-          // role; DESIGN.md's onPrimaryContainer (#556d00) is NOT a text
-          // color for lime fills.
-          color: isPrimary ? color.onPrimaryFixed : color.secondaryContainer,
-        }}
-      >
-        {label}
-      </Text>
+      <Text style={{ ...type.labelButton, color: labelColor }}>{label}</Text>
     </AnimatedPressable>
   );
 }

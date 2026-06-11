@@ -85,10 +85,23 @@ export default function Assessment() {
                   setAnswer(question.id, choice.value as never);
                 }}
                 accessibilityRole="radio"
-                accessibilityState={{ selected }}
+                // Pass both `selected` AND `checked` so Android
+                // TalkBack announces "selected" rather than just
+                // "double tap to activate" — matches the pattern in
+                // AssessmentBatteryV2 OptionRow.
+                accessibilityState={{ selected, checked: selected }}
                 accessibilityLabel={choice.label}
                 style={{
-                  height: 64,
+                  // Explicit width + flexShrink:0 stops RN's default
+                  // flexShrink:1 from collapsing a 4-item list into one
+                  // narrow row (which is what was wrapping "A few times
+                  // a week" awkwardly).
+                  // Segmented (0-7 scales) → 4 per row; lists → 2 per row.
+                  width: isSegmented ? '22%' : '48%',
+                  flexShrink: 0,
+                  minHeight: 64,
+                  paddingHorizontal: 8,
+                  paddingVertical: 8,
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderRadius: radius.xl,
@@ -97,15 +110,19 @@ export default function Assessment() {
                     ? color.primaryContainer
                     : glass.border,
                   borderWidth: selected ? 2 : 1,
-                  // 2-col grid for normal options; ~4-up squares for the
-                  // 0–7 segmented scales.
-                  flexBasis: isSegmented ? '21%' : '47%',
-                  flexGrow: 1,
                 }}
               >
                 <Text
+                  numberOfLines={2}
                   style={{
                     ...(selected ? type.labelButton : type.bodyLg),
+                    // Drop one size on wide labels so "A few times a
+                    // week" lands on a single line on a Pixel-7-class
+                    // device.
+                    ...(choice.label.length > 12
+                      ? { fontSize: 15, lineHeight: 20 }
+                      : null),
+                    textAlign: 'center',
                     color: selected
                       ? color.primaryFixedDim
                       : color.onSurface,

@@ -67,7 +67,10 @@ export default function IndexRetest() {
         if (saving) return;
         setSaving(true);
         const index = scoreIndex(v2ToLegacyMeasurements(answers));
-        saveIndexRetest(index)
+        // Persist the full v2 vector alongside the legacy index
+        // (migration 0008) so the radar reads real axes and a future
+        // hypertonic re-screen can compare to the prior retest.
+        saveIndexRetest(index, answers)
           .then(async () => {
             await qc.invalidateQueries({ queryKey: ['index', 'history'] });
             router.replace('/progress');
