@@ -5,6 +5,7 @@ import { ActivityIndicator, View } from 'react-native';
 
 import { useAuth } from '@/lib/auth';
 import { hasSupabaseConfig } from '@/lib/env';
+import { color } from '@/lib/obsidian/tokens';
 import {
   configureRevenueCat,
   hasRevenueCatConfig,
@@ -30,36 +31,14 @@ function useOnboardingState(userId: string | null) {
 }
 
 export default function Index() {
-  // Dev / walk-through entry point — unconditional in __DEV__ so the user
-  // can validate the Figma flow regardless of cached auth state or env
-  // configuration. Switch DEV_ENTRY to '/welcome' to walk from screen 01,
-  // or any other route to jump in mid-flow.
-  if (__DEV__) {
-    return <Redirect href={DEV_ENTRY} />;
-  }
-  // Production: no backend wired up yet → still demo flow, but enter at
-  // /welcome (the persistence layer no-ops without Supabase).
+  // No backend configured (pure dev walkthrough): enter at /welcome —
+  // every persistence call no-ops without Supabase.
   if (!hasSupabaseConfig()) {
     return <Redirect href="/welcome" />;
   }
 
   return <Router />;
 }
-
-// Edit this to change the dev launch destination. Examples:
-//   '/welcome'           — Figma 01, full onboarding walk
-//   '/assessment-intro'  — Figma 03 (NEW), 6-step preview before tests
-//   '/index-test'        — Figma 04+05 (NEW), pulse + hold measurements
-//   '/assessment'        — Figma 06-09 (NEW), 4 lifestyle questions
-//   '/home'              — Figma 08, skip onboarding entirely
-//   '/sign-in'           — Figma 02, validate auth screen
-const DEV_ENTRY:
-  | '/assessment-intro'
-  | '/welcome'
-  | '/index-test'
-  | '/assessment'
-  | '/home'
-  | '/sign-in' = '/assessment-intro';
 
 function Router() {
   const auth = useAuth();
@@ -77,14 +56,24 @@ function Router() {
     (auth.user && entLoading && hasRevenueCatConfig())
   ) {
     return (
-      <View className="flex-1 bg-bg items-center justify-center">
-        <ActivityIndicator color="#7C5CFF" />
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: color.background,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <ActivityIndicator color={color.primaryContainer} />
       </View>
     );
   }
 
+  // No session → the brand entry (Figma 01 Welcome). Its "Get started"
+  // creates an anonymous session before the funnel (deferred auth);
+  // "I already have an account" routes to /sign-in.
   if (!auth.session) {
-    return <Redirect href="/sign-in" />;
+    return <Redirect href="/welcome" />;
   }
   if (onboarded.data !== true) {
     return <Redirect href="/welcome" />;
