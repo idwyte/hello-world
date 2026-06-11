@@ -56,14 +56,32 @@ export default function Assessment() {
           gap: spacing.containerPadding,
         }}
       >
-        <Text style={{ ...type.labelCaps, color: color.onSurfaceVariant }}>
+        <Text
+          style={{
+            ...type.labelCaps,
+            color: color.onSurfaceVariant,
+            textAlign: 'center',
+          }}
+        >
           QUESTION {step + 1} OF {QUESTIONS.length}
         </Text>
-        <Text style={{ ...type.headlineLg, color: color.onSurface }}>
+        <Text
+          style={{
+            ...type.headlineLg,
+            color: color.onSurface,
+            textAlign: 'center',
+          }}
+        >
           {question.prompt}
         </Text>
         {question.help ? (
-          <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
+          <Text
+            style={{
+              ...type.bodyMd,
+              color: color.onSurfaceVariant,
+              textAlign: 'center',
+            }}
+          >
             {question.help}
           </Text>
         ) : null}

@@ -247,7 +247,6 @@ function StepShell({
   cta,
   ctaDisabled,
   onCta,
-  centered = false,
 }: {
   kicker: string;
   kickerColor?: string;
@@ -257,8 +256,10 @@ function StepShell({
   cta: string;
   ctaDisabled?: boolean;
   onCta: () => void;
-  centered?: boolean;
 }) {
+  // Headers (kicker / title / body) are always centered per the latest
+  // Figma. The container stays alignItems: stretch so option rows,
+  // PhaseRings and the CTA still take the full width.
   return (
     <ScrollView
       style={{ flex: 1 }}
@@ -268,15 +269,23 @@ function StepShell({
         paddingTop: spacing.containerPadding,
         paddingBottom: spacing.stackLg + spacing.stackMd,
         gap: spacing.gutter,
-        alignItems: centered ? 'center' : 'stretch',
+        alignItems: 'stretch',
       }}
     >
-      <Text style={{ ...type.labelCaps, color: kickerColor }}>{kicker}</Text>
+      <Text
+        style={{
+          ...type.labelCaps,
+          color: kickerColor,
+          textAlign: 'center',
+        }}
+      >
+        {kicker}
+      </Text>
       <Text
         style={{
           ...type.headlineLg,
           color: color.onSurface,
-          textAlign: centered ? 'center' : 'left',
+          textAlign: 'center',
         }}
       >
         {title}
@@ -285,7 +294,7 @@ function StepShell({
         style={{
           ...type.bodyMd,
           color: color.onSurfaceVariant,
-          textAlign: centered ? 'center' : 'left',
+          textAlign: 'center',
         }}
       >
         {body}
@@ -440,7 +449,6 @@ function StaminaStep({ onDone }: { onDone: (seconds: number) => void }) {
         body="That's your starting hold. It'll grow — and you'll see it move at every retest."
         cta="Continue"
         onCta={() => onDone(seconds)}
-        centered
       >
         <View style={{ flex: 1 }} />
       </StepShell>
@@ -462,7 +470,6 @@ function StaminaStep({ onDone }: { onDone: (seconds: number) => void }) {
           setPhase('result');
         }
       }}
-      centered
     >
       <View style={{ flex: 1 }} />
       <PhaseRing
@@ -584,7 +591,6 @@ function SpeedStep({ onDone }: { onDone: (count: number) => void }) {
         body="That's your fast-twitch baseline — the muscles that catch a cough or a sneeze."
         cta="Continue"
         onCta={() => onDone(count)}
-        centered
       >
         <View style={{ flex: 1 }} />
       </StepShell>
@@ -607,7 +613,6 @@ function SpeedStep({ onDone }: { onDone: (count: number) => void }) {
           setPhase('result');
         }
       }}
-      centered
     >
       <View style={{ flex: 1 }} />
       <Pressable
@@ -703,13 +708,31 @@ function ReleaseStep({
         gap: spacing.gutter,
       }}
     >
-      <Text style={{ ...type.labelCaps, color: color.secondaryContainer }}>
+      <Text
+        style={{
+          ...type.labelCaps,
+          color: color.secondaryContainer,
+          textAlign: 'center',
+        }}
+      >
         STEP 6 OF 6 · RELEASE
       </Text>
-      <Text style={{ ...type.headlineLg, color: color.onSurface }}>
+      <Text
+        style={{
+          ...type.headlineLg,
+          color: color.onSurface,
+          textAlign: 'center',
+        }}
+      >
         Letting go is half the job
       </Text>
-      <Text style={{ ...type.bodyMd, color: color.onSurfaceVariant }}>
+      <Text
+        style={{
+          ...type.bodyMd,
+          color: color.onSurfaceVariant,
+          textAlign: 'center',
+        }}
+      >
         Healthy pelvic floor muscles release as well as squeeze. After a
         squeeze, can you fully relax and feel everything settle back down?
       </Text>
